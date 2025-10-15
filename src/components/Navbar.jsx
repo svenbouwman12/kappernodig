@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabase'
 export default function Navbar() {
   const [query, setQuery] = useState('')
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, userProfile } = useAuth()
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -30,8 +30,12 @@ export default function Navbar() {
           <Link className="btn btn-secondary px-3 py-2 hidden sm:inline-flex" to="/map">Kaart</Link>
           {user ? (
             <>
-              <Link className="btn btn-secondary px-3 py-2" to="/dashboard">Dashboard</Link>
-              <Link className="btn btn-secondary px-3 py-2" to="/admin">Admin</Link>
+              {userProfile?.role === 'barber' && (
+                <Link className="btn btn-secondary px-3 py-2" to="/dashboard">Dashboard</Link>
+              )}
+              {userProfile?.role === 'admin' && (
+                <Link className="btn btn-secondary px-3 py-2" to="/admin">Admin</Link>
+              )}
               <button className="btn btn-primary px-3 py-2" onClick={handleLogout}>Log uit</button>
             </>
           ) : (

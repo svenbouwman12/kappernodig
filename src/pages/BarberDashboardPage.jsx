@@ -2,25 +2,33 @@ import React, { useEffect, useState } from 'react'
 import Card from '../components/Card.jsx'
 import Button from '../components/Button.jsx'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext.jsx'
 
 export default function BarberDashboardPage() {
   const [profile, setProfile] = useState({ name: '', description: '', location: '', price_range: '€€', image_url: '', address: '', phone: '', website: '' })
   const [saving, setSaving] = useState(false)
+  const { user, userProfile } = useAuth()
 
   useEffect(() => {
     let cancelled = false
     async function load() {
-      const { data } = await supabase.from('barbers').select('*').limit(1).maybeSingle()
-      if (!cancelled && data) setProfile(data)
+      if (userProfile?.barber_id) {
+        const { data } = await supabase.from('barbers').select('*').eq('id', userProfile.barber_id).single()
+        if (!cancelled && data) setProfile(data)
+      }
     }
     load()
     return () => { cancelled = true }
-  }, [])
+  }, [userProfile])
 
   async function saveProfile(e) {
     e.preventDefault()
     setSaving(true)
-    const upsert = { ...profile, id: profile.id }
+    const upsert = { 
+      ...profile, 
+      id: profile.id || userProfile?.barber_id,
+      owner_id: user?.id 
+    }
     await supabase.from('barbers').upsert(upsert).select()
     setSaving(false)
   }

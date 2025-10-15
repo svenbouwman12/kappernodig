@@ -1,22 +1,49 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-const AuthContext = createContext({ user: null, loading: true })
+const AuthContext = createContext({ user: null, userProfile: null, loading: true })
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
+  const [userProfile, setUserProfile] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let mounted = true
-    supabase.auth.getSession().then(({ data }) => {
+    
+    async function loadUserProfile(userId) {
+      if (!userId) {
+        setUserProfile(null)
+        return
+      }
+      
+      const { data } = await supabase
+        .from('users')
+        .select('role, barber_id')
+        .eq('id', userId)
+        .single()
+      
+      if (mounted) {
+        setUserProfile(data)
+      }
+    }
+
+    supabase.auth.getSession().then(async ({ data }) => {
       if (!mounted) return
       setUser(data.session?.user ?? null)
+      if (data.session?.user) {
+        await loadUserProfile(data.session.user.id)
+      }
       setLoading(false)
     })
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null)
+      if (session?.user) {
+        await loadUserProfile(session.user.id)
+      } else {
+        setUserProfile(null)
+      }
     })
 
     return () => {
@@ -25,12 +52,13 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  const value = { user, loading }
+  const value = { user, userProfile, loading }
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {
   return useContext(AuthContext)
 }
+
 
 

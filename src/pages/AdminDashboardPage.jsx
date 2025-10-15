@@ -3,13 +3,15 @@ import { Link } from 'react-router-dom'
 import Card from '../components/Card.jsx'
 import Button from '../components/Button.jsx'
 import { supabase } from '../lib/supabase'
-import { Edit, Trash2, Plus, MapPin, Phone, Globe } from 'lucide-react'
+import { Edit, Trash2, Plus, MapPin, Phone, Globe, UserPlus, Users } from 'lucide-react'
 
 export default function AdminDashboardPage() {
   const [barbers, setBarbers] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingBarber, setEditingBarber] = useState(null)
+  const [showUserForm, setShowUserForm] = useState(null)
+  const [barberUsers, setBarberUsers] = useState({})
 
   useEffect(() => {
     loadBarbers()
@@ -20,6 +22,20 @@ export default function AdminDashboardPage() {
     const { data, error } = await supabase.from('barbers').select('*').order('created_at', { ascending: false })
     if (error) console.error('Error loading barbers:', error)
     setBarbers(data || [])
+    
+    // Load users for each barber
+    if (data) {
+      const usersData = {}
+      for (const barber of data) {
+        const { data: users } = await supabase
+          .from('users')
+          .select('id, email, role')
+          .eq('barber_id', barber.id)
+        usersData[barber.id] = users || []
+      }
+      setBarberUsers(usersData)
+    }
+    
     setLoading(false)
   }
 
@@ -43,6 +59,34 @@ export default function AdminDashboardPage() {
     setShowAddForm(false)
     setEditingBarber(null)
     loadBarbers()
+  }
+
+  async function createUserForBarber(barberId, email, password) {
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+    })
+    
+    if (authError) {
+      alert('Fout bij aanmaken gebruiker: ' + authError.message)
+      return
+    }
+    
+    if (authData.user) {
+      const { error: userError } = await supabase.from('users').insert({
+        id: authData.user.id,
+        email,
+        role: 'barber',
+        barber_id: barberId
+      })
+      
+      if (userError) {
+        alert('Fout bij opslaan gebruiker: ' + userError.message)
+        return
+      }
+      
+      loadBarbers()
+    }
   }
 
   if (loading) return <div className="p-8">Laden...</div>
@@ -69,6 +113,14 @@ export default function AdminDashboardPage() {
           barber={editingBarber}
           onSave={saveBarber} 
           onCancel={() => setEditingBarber(null)} 
+        />
+      )}
+
+      {showUserForm && (
+        <UserForm 
+          barberId={showUserForm}
+          onSave={createUserForBarber} 
+          onCancel={() => setShowUserForm(null)} 
         />
       )}
 
@@ -116,6 +168,13 @@ export default function AdminDashboardPage() {
                       <span className="ml-2 text-success">📍 Geocoded</span>
                     )}
                   </div>
+                  
+                  <div className="mt-2 text-sm text-secondary/60">
+                    <div className="flex items-center gap-2">
+                      <Users size={14} />
+                      <span>{barberUsers[barber.id]?.length || 0} gebruikers</span>
+                    </div>
+                  </div>
                 </div>
               </div>
               
@@ -125,6 +184,12 @@ export default function AdminDashboardPage() {
                   onClick={() => setEditingBarber(barber)}
                 >
                   <Edit size={16} />
+                </Button>
+                <Button 
+                  variant="secondary" 
+                  onClick={() => setShowUserForm(barber.id)}
+                >
+                  <UserPlus size={16} />
                 </Button>
                 <Button 
                   variant="secondary" 
@@ -266,6 +331,56 @@ function BarberForm({ barber, onSave, onCancel }) {
           </Button>
           <Button type="submit" disabled={saving}>
             {saving ? 'Opslaan...' : 'Opslaan'}
+          </Button>
+        </div>
+      </form>
+    </Card>
+  )
+}
+
+function UserForm({ barberId, onSave, onCancel }) {
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  })
+  const [saving, setSaving] = useState(false)
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setSaving(true)
+    await onSave(barberId, formData.email, formData.password)
+    setSaving(false)
+  }
+
+  return (
+    <Card>
+      <h2 className="text-xl font-semibold mb-4">Gebruiker toevoegen</h2>
+      
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <input
+          value={formData.email}
+          onChange={(e) => setFormData({...formData, email: e.target.value})}
+          placeholder="Email"
+          type="email"
+          className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2"
+          required
+        />
+        
+        <input
+          value={formData.password}
+          onChange={(e) => setFormData({...formData, password: e.target.value})}
+          placeholder="Wachtwoord"
+          type="password"
+          className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2"
+          required
+        />
+        
+        <div className="flex gap-3 justify-end">
+          <Button type="button" variant="secondary" onClick={onCancel}>
+            Annuleren
+          </Button>
+          <Button type="submit" disabled={saving}>
+            {saving ? 'Aanmaken...' : 'Gebruiker aanmaken'}
           </Button>
         </div>
       </form>
