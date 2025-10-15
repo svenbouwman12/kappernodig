@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import Card from '../components/Card.jsx'
 import Button from '../components/Button.jsx'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext.jsx'
 import { Edit, Trash2, Plus, MapPin, Phone, Globe, UserPlus, Users } from 'lucide-react'
 
 export default function AdminDashboardPage() {
@@ -53,7 +54,12 @@ export default function AdminDashboardPage() {
   }
 
   async function saveBarber(barberData) {
-    const { error } = await supabase.from('barbers').upsert(barberData)
+    const { user } = useAuth()
+    const dataWithOwner = {
+      ...barberData,
+      owner_id: user?.id
+    }
+    const { error } = await supabase.from('barbers').upsert(dataWithOwner)
     if (error) {
       alert('Fout bij opslaan: ' + error.message)
       return
