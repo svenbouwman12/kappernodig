@@ -7,8 +7,8 @@ import { Link } from 'react-router-dom'
 
 // Smart clustering based on zoom level and city proximity
 function clusterPoints(points, zoom) {
-  // More aggressive clustering at lower zoom levels
-  const clusterSize = zoom < 8 ? 120 : zoom < 10 ? 60 : 30
+  // Much more aggressive clustering - keep numbers longer
+  const clusterSize = zoom < 9 ? 150 : zoom < 11 ? 100 : zoom < 13 ? 60 : 30
   const buckets = new Map()
   
   for (const p of points) {
@@ -20,8 +20,8 @@ function clusterPoints(points, zoom) {
   
   const clusters = []
   buckets.forEach((list) => {
-    if (list.length === 1 && zoom >= 10) {
-      // Show individual markers only when zoomed in enough
+    if (list.length === 1 && zoom >= 13) {
+      // Show individual markers only when very zoomed in
       clusters.push({ type: 'point', ...list[0] })
     } else {
       // Always cluster when zoomed out or multiple points
@@ -118,7 +118,7 @@ export default function MapPage() {
         marker.addTo(layer)
       } else {
         // Show pin first, then label when zoomed in enough
-        if (zoom < 14) {
+        if (zoom < 15) {
           // Orange pin marker matching the theme
           const html = `
             <div style="
@@ -156,9 +156,9 @@ export default function MapPage() {
           marker.addTo(layer)
         } else {
           // Full label when zoomed in enough (only at very high zoom)
-          const labelSize = zoom >= 16 ? '14px' : '12px'
-          const padding = zoom >= 16 ? '10px 16px' : '8px 12px'
-          const maxWidth = zoom >= 16 ? '150px' : '120px'
+          const labelSize = zoom >= 17 ? '14px' : '12px'
+          const padding = zoom >= 17 ? '10px 16px' : '8px 12px'
+          const maxWidth = zoom >= 17 ? '150px' : '120px'
           
           const html = `
             <div style="
