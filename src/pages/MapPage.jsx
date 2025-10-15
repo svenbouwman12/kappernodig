@@ -5,95 +5,134 @@ import Card from '../components/Card.jsx'
 import { supabase } from '../lib/supabase'
 import { Link } from 'react-router-dom'
 
-// Improved clustering with stable positions and consistent behavior
+// Simple and reliable clustering function
 function clusterPoints(points, zoom) {
-  // Force single cluster at very low zoom
+  // Very simple approach: just use zoom level to determine clustering
   if (zoom < 7) {
-    const totalCount = points.length
-    const centerLat = points.reduce((sum, p) => sum + p.lat, 0) / totalCount
-    const centerLng = points.reduce((sum, p) => sum + p.lng, 0) / totalCount
-    return [{ type: 'cluster', lat: centerLat, lng: centerLng, count: totalCount, points: points }]
+    // One big cluster for all Netherlands
+    const centerLat = points.reduce((sum, p) => sum + p.lat, 0) / points.length
+    const centerLng = points.reduce((sum, p) => sum + p.lng, 0) / points.length
+    return [{ type: 'cluster', lat: centerLat, lng: centerLng, count: points.length, points: points }]
   }
   
-  // Calculate cluster size based on zoom level
-  // Use a more stable approach with fixed grid cells
-  const gridSize = Math.pow(2, Math.max(0, 18 - zoom)) // More stable grid
-  const clusters = new Map()
-  
-  // Group points into stable grid cells
-  for (const point of points) {
-    const gridLat = Math.floor(point.lat * gridSize) / gridSize
-    const gridLng = Math.floor(point.lng * gridSize) / gridSize
-    const key = `${gridLat},${gridLng}`
-    
-    if (!clusters.has(key)) {
-      clusters.set(key, [])
+  if (zoom < 8) {
+    // Split into 4 regions (North, South, East, West)
+    const regions = {
+      north: points.filter(p => p.lat > 52.0),
+      south: points.filter(p => p.lat <= 52.0 && p.lng < 5.0),
+      east: points.filter(p => p.lat <= 52.0 && p.lng >= 5.0 && p.lng < 6.0),
+      west: points.filter(p => p.lat <= 52.0 && p.lng >= 6.0)
     }
-    clusters.get(key).push(point)
-  }
-  
-  const result = []
-  
-  // Convert clusters to result format
-  for (const [key, pointsInCluster] of clusters) {
-    if (pointsInCluster.length === 1 && zoom >= 17) {
-      // Show individual markers only when very zoomed in
-      result.push({ type: 'point', ...pointsInCluster[0] })
-    } else {
-      // Calculate center of cluster (weighted average)
-      const lat = pointsInCluster.reduce((sum, p) => sum + p.lat, 0) / pointsInCluster.length
-      const lng = pointsInCluster.reduce((sum, p) => sum + p.lng, 0) / pointsInCluster.length
-      result.push({ 
-        type: 'cluster', 
-        lat, 
-        lng, 
-        count: pointsInCluster.length, 
-        points: pointsInCluster 
-      })
-    }
-  }
-  
-  // Merge nearby clusters at low zoom levels for smoother progression
-  if (zoom < 10 && result.length > 1) {
-    const merged = []
-    const mergeDistance = zoom < 8 ? 0.5 : zoom < 9 ? 0.3 : 0.2 // Degrees
     
-    for (const cluster of result) {
-      if (cluster.type === 'cluster') {
-        let foundMerge = false
-        
-        for (const mergedCluster of merged) {
-          if (mergedCluster.type === 'cluster') {
-            const distance = Math.sqrt(
-              Math.pow(cluster.lat - mergedCluster.lat, 2) + 
-              Math.pow(cluster.lng - mergedCluster.lng, 2)
-            )
-            
-            if (distance < mergeDistance) {
-              // Merge clusters
-              const totalCount = cluster.count + mergedCluster.count
-              mergedCluster.lat = (cluster.lat * cluster.count + mergedCluster.lat * mergedCluster.count) / totalCount
-              mergedCluster.lng = (cluster.lng * cluster.count + mergedCluster.lng * mergedCluster.count) / totalCount
-              mergedCluster.count = totalCount
-              mergedCluster.points = [...mergedCluster.points, ...cluster.points]
-              foundMerge = true
-              break
-            }
-          }
-        }
-        
-        if (!foundMerge) {
-          merged.push(cluster)
-        }
-      } else {
-        merged.push(cluster)
+    const clusters = []
+    Object.values(regions).forEach(regionPoints => {
+      if (regionPoints.length > 0) {
+        const lat = regionPoints.reduce((sum, p) => sum + p.lat, 0) / regionPoints.length
+        const lng = regionPoints.reduce((sum, p) => sum + p.lng, 0) / regionPoints.length
+        clusters.push({ type: 'cluster', lat, lng, count: regionPoints.length, points: regionPoints })
       }
-    }
-    
-    return merged
+    })
+    return clusters
   }
   
-  return result
+  if (zoom < 10) {
+    // Split into major cities
+    const cities = {
+      amsterdam: points.filter(p => p.lat > 52.3 && p.lat < 52.4 && p.lng > 4.8 && p.lng < 5.0),
+      rotterdam: points.filter(p => p.lat > 51.9 && p.lat < 52.0 && p.lng > 4.4 && p.lng < 4.6),
+      utrecht: points.filter(p => p.lat > 52.0 && p.lat < 52.1 && p.lng > 5.0 && p.lng < 5.2),
+      denhaag: points.filter(p => p.lat > 52.0 && p.lat < 52.1 && p.lng > 4.2 && p.lng < 4.4),
+      eindhoven: points.filter(p => p.lat > 51.4 && p.lat < 51.5 && p.lng > 5.4 && p.lng < 5.5),
+      groningen: points.filter(p => p.lat > 53.2 && p.lat < 53.3 && p.lng > 6.5 && p.lng < 6.6),
+      other: []
+    }
+    
+    // Put remaining points in "other"
+    const usedPoints = new Set()
+    Object.values(cities).forEach(cityPoints => {
+      cityPoints.forEach(p => usedPoints.add(p.id))
+    })
+    cities.other = points.filter(p => !usedPoints.has(p.id))
+    
+    const clusters = []
+    Object.entries(cities).forEach(([cityName, cityPoints]) => {
+      if (cityPoints.length > 0) {
+        const lat = cityPoints.reduce((sum, p) => sum + p.lat, 0) / cityPoints.length
+        const lng = cityPoints.reduce((sum, p) => sum + p.lng, 0) / cityPoints.length
+        clusters.push({ type: 'cluster', lat, lng, count: cityPoints.length, points: cityPoints })
+      }
+    })
+    return clusters
+  }
+  
+  if (zoom < 12) {
+    // More detailed city areas
+    const clusters = []
+    const gridSize = 0.1 // 0.1 degree grid
+    
+    for (const point of points) {
+      const gridLat = Math.floor(point.lat / gridSize) * gridSize
+      const gridLng = Math.floor(point.lng / gridSize) * gridSize
+      const key = `${gridLat},${gridLng}`
+      
+      let cluster = clusters.find(c => c.key === key)
+      if (!cluster) {
+        cluster = { key, type: 'cluster', lat: gridLat + gridSize/2, lng: gridLng + gridSize/2, count: 0, points: [] }
+        clusters.push(cluster)
+      }
+      cluster.count++
+      cluster.points.push(point)
+    }
+    
+    return clusters
+  }
+  
+  if (zoom < 15) {
+    // Smaller grid for neighborhoods
+    const clusters = []
+    const gridSize = 0.05 // 0.05 degree grid
+    
+    for (const point of points) {
+      const gridLat = Math.floor(point.lat / gridSize) * gridSize
+      const gridLng = Math.floor(point.lng / gridSize) * gridSize
+      const key = `${gridLat},${gridLng}`
+      
+      let cluster = clusters.find(c => c.key === key)
+      if (!cluster) {
+        cluster = { key, type: 'cluster', lat: gridLat + gridSize/2, lng: gridLng + gridSize/2, count: 0, points: [] }
+        clusters.push(cluster)
+      }
+      cluster.count++
+      cluster.points.push(point)
+    }
+    
+    return clusters
+  }
+  
+  if (zoom < 17) {
+    // Very small grid
+    const clusters = []
+    const gridSize = 0.02 // 0.02 degree grid
+    
+    for (const point of points) {
+      const gridLat = Math.floor(point.lat / gridSize) * gridSize
+      const gridLng = Math.floor(point.lng / gridSize) * gridSize
+      const key = `${gridLat},${gridLng}`
+      
+      let cluster = clusters.find(c => c.key === key)
+      if (!cluster) {
+        cluster = { key, type: 'cluster', lat: gridLat + gridSize/2, lng: gridLng + gridSize/2, count: 0, points: [] }
+        clusters.push(cluster)
+      }
+      cluster.count++
+      cluster.points.push(point)
+    }
+    
+    return clusters
+  }
+  
+  // Individual points at high zoom
+  return points.map(point => ({ type: 'point', ...point }))
 }
 
 export default function MapPage() {
