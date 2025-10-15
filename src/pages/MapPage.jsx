@@ -5,35 +5,35 @@ import Card from '../components/Card.jsx'
 import { supabase } from '../lib/supabase'
 import { Link } from 'react-router-dom'
 
-// Smart clustering based on zoom level - smaller clusterSize = more clusters
+// Smart clustering based on zoom level - consistent progressive breakdown
 function clusterPoints(points, zoom) {
-  // Progressive clustering - start with one big cluster, then break down smoothly
-  // Higher zoom = smaller clusterSize = more individual clusters
+  // Progressive clustering with consistent breakdown
+  // Each zoom level should have fewer clusters than the previous
   let clusterSize
   if (zoom < 7) {
-    clusterSize = 1000 // One big cluster for all Netherlands
+    clusterSize = 2000 // One big cluster for all Netherlands
   } else if (zoom < 8) {
-    clusterSize = 500 // Few large clusters
+    clusterSize = 1000 // Few large clusters (2-3 clusters)
   } else if (zoom < 9) {
-    clusterSize = 300 // More clusters
+    clusterSize = 500 // More clusters (4-6 clusters)
   } else if (zoom < 10) {
-    clusterSize = 200 // Regional clusters
+    clusterSize = 300 // Regional clusters (8-12 clusters)
   } else if (zoom < 11) {
-    clusterSize = 120 // City clusters
+    clusterSize = 200 // City clusters (15-25 clusters)
   } else if (zoom < 12) {
-    clusterSize = 80 // District clusters
+    clusterSize = 120 // District clusters (30-50 clusters)
   } else if (zoom < 13) {
-    clusterSize = 50 // Neighborhood clusters
+    clusterSize = 80 // Neighborhood clusters (50-80 clusters)
   } else if (zoom < 14) {
-    clusterSize = 35 // Small area clusters
+    clusterSize = 50 // Small area clusters (80-120 clusters)
   } else if (zoom < 15) {
-    clusterSize = 25 // Very small clusters
+    clusterSize = 30 // Very small clusters (120-200 clusters)
   } else if (zoom < 16) {
-    clusterSize = 18 // Tiny clusters
+    clusterSize = 20 // Tiny clusters (200-300 clusters)
   } else if (zoom < 17) {
-    clusterSize = 12 // Micro clusters
+    clusterSize = 12 // Micro clusters (300-500 clusters)
   } else {
-    clusterSize = 8 // Individual points or nano clusters
+    clusterSize = 6 // Individual points or nano clusters
   }
   
   const buckets = new Map()
@@ -67,10 +67,19 @@ function clusterPoints(points, zoom) {
     return [{ type: 'cluster', lat: centerLat, lng: centerLng, count: totalCount, points: points }]
   }
   
-  // Merge clusters at low zoom levels
+  // Force consistent clustering behavior
+  // At very low zoom, always return single cluster
+  if (zoom < 7) {
+    const totalCount = points.length
+    const centerLat = points.reduce((sum, p) => sum + p.lat, 0) / totalCount
+    const centerLng = points.reduce((sum, p) => sum + p.lng, 0) / totalCount
+    return [{ type: 'cluster', lat: centerLat, lng: centerLng, count: totalCount, points: points }]
+  }
+  
+  // At zoom 7-8, merge nearby clusters to ensure smooth progression
   if (zoom < 9 && clusters.length > 1) {
     const mergedClusters = []
-    const mergeThreshold = zoom < 8 ? 300 : 200 // Larger threshold for more merging
+    const mergeThreshold = zoom < 8 ? 500 : 300 // Larger threshold for more merging
     
     for (const cluster of clusters) {
       if (cluster.type === 'cluster') {
