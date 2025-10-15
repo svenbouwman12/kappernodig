@@ -17,7 +17,7 @@ function clusterPoints(points, zoom) {
   }
   
   // At high zoom, show individual points
-  if (zoom >= 18) {
+  if (zoom >= 14) {
     return points.map(point => ({ type: 'point', ...point }))
   }
   
@@ -86,7 +86,7 @@ function clusterPoints(points, zoom) {
   }
   
   // Smooth transition: if cluster has only 1-2 points and zoom is high, show as individual
-  if (zoom >= 16) {
+  if (zoom >= 12) {
     const result = []
     for (const cluster of clusters) {
       if (cluster.count <= 2) {
