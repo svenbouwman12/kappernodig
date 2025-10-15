@@ -8,6 +8,7 @@ import BarberDashboardPage from './pages/BarberDashboardPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import RegisterPage from './pages/RegisterPage.jsx'
 import MapPage from './pages/MapPage.jsx'
+import AdminDashboardPage from './pages/AdminDashboardPage.jsx'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
 
 function ProtectedRoute({ children }) {
@@ -32,6 +33,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <BarberDashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminDashboardPage />
                 </ProtectedRoute>
               }
             />

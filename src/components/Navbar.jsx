@@ -31,6 +31,7 @@ export default function Navbar() {
           {user ? (
             <>
               <Link className="btn btn-secondary px-3 py-2" to="/dashboard">Dashboard</Link>
+              <Link className="btn btn-secondary px-3 py-2" to="/admin">Admin</Link>
               <button className="btn btn-primary px-3 py-2" onClick={handleLogout}>Log uit</button>
             </>
           ) : (
