@@ -25,8 +25,10 @@ function clusterPoints(points, zoom) {
     clusterSize = 60 // Neighborhood clusters
   } else if (zoom < 13) {
     clusterSize = 40 // Small area clusters
+  } else if (zoom < 15) {
+    clusterSize = 25 // Very small clusters
   } else {
-    clusterSize = 20 // Very small clusters or individual points
+    clusterSize = 15 // Individual points or tiny clusters
   }
   
   const buckets = new Map()
@@ -40,7 +42,7 @@ function clusterPoints(points, zoom) {
   
   const clusters = []
   buckets.forEach((list) => {
-    if (list.length === 1 && zoom >= 13) {
+    if (list.length === 1 && zoom >= 15) {
       // Show individual markers only when very zoomed in
       clusters.push({ type: 'point', ...list[0] })
     } else {
@@ -351,6 +353,7 @@ export default function MapPage() {
              zoom < 11 ? ' Wijk niveau' : 
              zoom < 12 ? ' Buurt niveau' : 
              zoom < 13 ? ' Kleine clusters' : 
+             zoom < 15 ? ' Zeer kleine clusters' : 
              zoom < 17 ? ' Pin markers' : 
              zoom < 20 ? ' Labels' : ' Auto-popup'}
           </div>
