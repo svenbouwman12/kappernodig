@@ -163,9 +163,9 @@ export default function MapPage() {
               white-space: nowrap;
               cursor: pointer;
               transition: all 0.2s ease;
-              max-width: ${maxWidth};
-              overflow: hidden;
-              text-overflow: ellipsis;
+              max-width: none;
+              min-width: fit-content;
+              width: max-content;
             " onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 5px 15px rgba(255, 107, 0, 0.3)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 3px 10px rgba(255, 107, 0, 0.2)'">
               ${item.name}
             </div>
