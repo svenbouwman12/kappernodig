@@ -113,15 +113,18 @@ export default function MapPage() {
   const [userLocation, setUserLocation] = useState(null)
   const [locationPermission, setLocationPermission] = useState(null)
   const [closestBarber, setClosestBarber] = useState(null)
+  const [isRequestingLocation, setIsRequestingLocation] = useState(false)
 
   // Function to request location again
   const requestLocationAgain = () => {
     if (navigator.geolocation) {
+      setIsRequestingLocation(true)
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords
           setUserLocation({ lat: latitude, lng: longitude })
           setLocationPermission('granted')
+          setIsRequestingLocation(false)
           
           // Center map on user location
           if (map) {
@@ -131,13 +134,38 @@ export default function MapPage() {
         (error) => {
           console.log('Geolocation error:', error)
           setLocationPermission('denied')
+          setIsRequestingLocation(false)
         },
         {
           enableHighAccuracy: true,
           timeout: 10000,
-          maximumAge: 300000 // 5 minutes
+          maximumAge: 0 // Don't use cached location
         }
       )
+    }
+  }
+
+  // Function to show manual location input
+  const showManualLocationInput = () => {
+    const lat = prompt('Voer je latitude in (bijv. 52.3676):')
+    const lng = prompt('Voer je longitude in (bijv. 4.9041):')
+    
+    if (lat && lng && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng))) {
+      const latitude = parseFloat(lat)
+      const longitude = parseFloat(lng)
+      
+      // Validate coordinates (rough Netherlands bounds)
+      if (latitude >= 50.5 && latitude <= 53.7 && longitude >= 3.0 && longitude <= 7.5) {
+        setUserLocation({ lat: latitude, lng: longitude })
+        setLocationPermission('granted')
+        
+        // Center map on user location
+        if (map) {
+          map.setView([latitude, longitude], 12)
+        }
+      } else {
+        alert('Deze coördinaten liggen buiten Nederland. Probeer opnieuw.')
+      }
     }
   }
 
@@ -478,9 +506,16 @@ export default function MapPage() {
                 </div>
                 <button 
                   onClick={requestLocationAgain}
-                  className="text-sm text-primary hover:text-primary/80 underline"
+                  disabled={isRequestingLocation}
+                  className="text-sm text-primary hover:text-primary/80 underline disabled:opacity-50"
                 >
-                  Opnieuw proberen
+                  {isRequestingLocation ? 'Bezig...' : 'Opnieuw proberen'}
+                </button>
+                <button 
+                  onClick={showManualLocationInput}
+                  className="text-sm text-secondary hover:text-secondary/80 underline"
+                >
+                  Handmatig invoeren
                 </button>
               </div>
             )}
