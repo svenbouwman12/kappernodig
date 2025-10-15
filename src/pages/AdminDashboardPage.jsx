@@ -90,6 +90,9 @@ export default function AdminDashboardPage() {
   }
 
   if (loading) return <div className="p-8">Laden...</div>
+  
+  // Debug: show what we're getting
+  console.log('AdminDashboardPage - barbers:', barbers.length, 'loading:', loading)
 
   return (
     <div className="space-y-6">

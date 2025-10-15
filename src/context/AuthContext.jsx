@@ -38,6 +38,8 @@ export function AuthProvider({ children }) {
       setUser(data.session?.user ?? null)
       if (data.session?.user) {
         await loadUserProfile(data.session.user.id)
+      } else {
+        setUserProfile(null)
       }
       setLoading(false)
     })
