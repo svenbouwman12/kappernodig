@@ -97,10 +97,12 @@ export default function MapPage() {
   }, [clusters, map])
 
   return (
-    <div className="space-y-4">
-      <div className="font-semibold mb-2">Kaart</div>
-      <div id="map" style={{ height: '70vh', minHeight: '500px', width: '100%', borderRadius: 12, overflow: 'hidden', border: '1px solid #e5e7eb' }} />
-      <div className="text-sm text-secondary/70">OpenStreetMap tiles; clustering client-side.</div>
+    <div className="max-w-6xl mx-auto px-4">
+      <Card>
+        <div className="font-semibold mb-4">Kaart</div>
+        <div id="map" style={{ height: '70vh', minHeight: '500px', width: '100%', borderRadius: 12, overflow: 'hidden' }} />
+        <div className="text-sm text-secondary/70 mt-4">OpenStreetMap tiles; clustering client-side.</div>
+      </Card>
     </div>
   )
 }
