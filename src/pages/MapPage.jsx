@@ -118,7 +118,7 @@ export default function MapPage() {
         marker.addTo(layer)
       } else {
         // Show pin first, then label when zoomed in enough
-        if (zoom < 15) {
+        if (zoom < 16) {
           // Orange pin marker matching the theme
           const html = `
             <div style="
@@ -156,9 +156,9 @@ export default function MapPage() {
           marker.addTo(layer)
         } else {
           // Full label when zoomed in enough (only at very high zoom)
-          const labelSize = zoom >= 17 ? '14px' : '12px'
-          const padding = zoom >= 17 ? '10px 16px' : '8px 12px'
-          const maxWidth = zoom >= 17 ? '150px' : '120px'
+          const labelSize = zoom >= 18 ? '14px' : '12px'
+          const padding = zoom >= 18 ? '10px 16px' : '8px 12px'
+          const maxWidth = zoom >= 18 ? '150px' : '120px'
           
           const html = `
             <div style="
@@ -213,7 +213,17 @@ export default function MapPage() {
   return (
     <div className="max-w-6xl mx-auto px-4">
       <Card>
-        <div className="font-semibold mb-4">Kaart</div>
+        <div className="flex items-center justify-between mb-4">
+          <div className="font-semibold">Kaart</div>
+          <div className="text-sm text-secondary/70 bg-gray-100 px-3 py-1 rounded-full">
+            Zoom: {zoom.toFixed(1)} | 
+            {zoom < 9 ? ' Regio overzicht' : 
+             zoom < 11 ? ' Stad niveau' : 
+             zoom < 13 ? ' Wijk niveau' : 
+             zoom < 16 ? ' Pin markers' : 
+             zoom < 18 ? ' Labels' : ' Grote labels'}
+          </div>
+        </div>
         <div id="map" style={{ height: '70vh', minHeight: '500px', width: '100%', borderRadius: 12, overflow: 'hidden' }} />
         <div className="text-sm text-secondary/70 mt-4">OpenStreetMap tiles; clustering client-side.</div>
       </Card>
