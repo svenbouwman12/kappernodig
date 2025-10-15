@@ -41,9 +41,23 @@ export default function MapPage() {
 
   useEffect(() => {
     if (mapRef.current || typeof window === 'undefined') return
-    const m = L.map('map', { center: [52.1326, 5.2913], zoom: 7 })
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
+    const m = L.map('map', { 
+      center: [52.1326, 5.2913], 
+      zoom: 7,
+      zoomControl: true,
+      scrollWheelZoom: true,
+      doubleClickZoom: true,
+      boxZoom: true,
+      keyboard: true,
+      dragging: true,
+      touchZoom: true
+    })
+    
+    // Modern map style with CartoDB
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 20
     }).addTo(m)
     m.on('zoomend', () => setZoom(m.getZoom()))
     mapRef.current = m
