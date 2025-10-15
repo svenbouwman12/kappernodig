@@ -253,7 +253,11 @@ export default function MapPage() {
             
             if (distance < closestDistance) {
               closestDistance = distance
-              closest = { ...barber, distance: Math.round(distance) }
+              // Format distance: under 1000m show in meters, above show in km
+              const formattedDistance = distance < 1000 
+                ? `${Math.round(distance)}m` 
+                : `${(distance / 1000).toFixed(1)}km`
+              closest = { ...barber, distance: formattedDistance }
             }
           })
           
@@ -506,7 +510,7 @@ export default function MapPage() {
               <div>
                 <div className="font-semibold text-green-800">Dichtstbijzijnde kapper</div>
                 <div className="text-green-700">{closestBarber.name}</div>
-                <div className="text-sm text-green-600">{closestBarber.distance}m van jouw locatie</div>
+                <div className="text-sm text-green-600">{closestBarber.distance} van jouw locatie</div>
               </div>
               <Link to={`/barber/${closestBarber.id}`}>
                 <Button variant="primary" className="text-sm">
