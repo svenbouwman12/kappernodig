@@ -17,14 +17,19 @@ export function AuthProvider({ children }) {
         return
       }
       
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('users')
         .select('role, barber_id')
         .eq('id', userId)
         .single()
       
       if (mounted) {
-        setUserProfile(data)
+        if (error) {
+          console.error('Error loading user profile:', error)
+          setUserProfile({ role: 'barber', barber_id: null })
+        } else {
+          setUserProfile(data || { role: 'barber', barber_id: null })
+        }
       }
     }
 
