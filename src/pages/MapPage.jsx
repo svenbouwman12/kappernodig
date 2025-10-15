@@ -118,64 +118,65 @@ export default function MapPage() {
         marker.addTo(layer)
       } else {
         // Show pin first, then label when zoomed in enough
-        if (zoom < 12) {
-          // Simple pin marker when not zoomed in enough
+        if (zoom < 14) {
+          // Orange pin marker matching the theme
           const html = `
             <div style="
               width: 0;
               height: 0;
-              border-left: 8px solid transparent;
-              border-right: 8px solid transparent;
-              border-bottom: 16px solid #00C46A;
+              border-left: 10px solid transparent;
+              border-right: 10px solid transparent;
+              border-bottom: 20px solid #FF6B00;
               position: relative;
               cursor: pointer;
               transition: all 0.2s ease;
+              filter: drop-shadow(0 2px 4px rgba(255, 107, 0, 0.3));
             " onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">
               <div style="
                 position: absolute;
-                top: 16px;
-                left: -6px;
-                width: 12px;
-                height: 12px;
-                background: #00C46A;
+                top: 20px;
+                left: -8px;
+                width: 16px;
+                height: 16px;
+                background: #FF6B00;
                 border-radius: 50%;
-                border: 2px solid #fff;
-                box-shadow: 0 2px 6px rgba(0, 196, 106, 0.3);
+                border: 3px solid #fff;
+                box-shadow: 0 2px 8px rgba(255, 107, 0, 0.4);
               "></div>
             </div>
           `
-          const icon = L.divIcon({ html, className: 'barber-pin', iconSize: [16, 16], iconAnchor: [8, 20] })
+          const icon = L.divIcon({ html, className: 'barber-pin', iconSize: [20, 20], iconAnchor: [10, 25] })
           const marker = L.marker([item.lat, item.lng], { icon })
           marker.bindPopup(`
             <div style="min-width: 180px; padding: 10px;">
               <div style="font-weight: 700; color: #FF6B00; font-size: 15px; margin-bottom: 4px;">${item.name}</div>
-              <div style="color: #666; font-size: 12px;">Zoom in voor meer details</div>
+              <div style="color: #666; font-size: 12px;">Zoom verder in voor details</div>
             </div>
           `)
           marker.addTo(layer)
         } else {
-          // Full label when zoomed in enough
-          const labelSize = zoom >= 14 ? '14px' : '12px'
-          const padding = zoom >= 14 ? '10px 16px' : '8px 12px'
-          const maxWidth = zoom >= 14 ? '150px' : '120px'
+          // Full label when zoomed in enough (only at very high zoom)
+          const labelSize = zoom >= 16 ? '14px' : '12px'
+          const padding = zoom >= 16 ? '10px 16px' : '8px 12px'
+          const maxWidth = zoom >= 16 ? '150px' : '120px'
           
           const html = `
             <div style="
               background: #fff;
               border-radius: 20px;
               padding: ${padding};
-              border: 2px solid #00C46A;
-              box-shadow: 0 3px 10px rgba(0, 196, 106, 0.2);
+              border: 2px solid #FF6B00;
+              box-shadow: 0 3px 10px rgba(255, 107, 0, 0.2);
               font-weight: 600;
               font-size: ${labelSize};
-              color: #00C46A;
+              color: #FF6B00;
               white-space: nowrap;
               cursor: pointer;
               transition: all 0.2s ease;
               max-width: ${maxWidth};
               overflow: hidden;
               text-overflow: ellipsis;
-            " onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 5px 15px rgba(0, 196, 106, 0.3)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 3px 10px rgba(0, 196, 106, 0.2)'">
+            " onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 5px 15px rgba(255, 107, 0, 0.3)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 3px 10px rgba(255, 107, 0, 0.2)'">
               ${item.name}
             </div>
           `
@@ -190,7 +191,7 @@ export default function MapPage() {
               </div>
               <a href="/barber/${item.id}" style="
                 display: inline-block;
-                background: #00C46A;
+                background: #FF6B00;
                 color: #fff;
                 padding: 6px 12px;
                 border-radius: 6px;
