@@ -12,25 +12,25 @@ function clusterPoints(points, zoom) {
   if (zoom < 6) {
     clusterSize = 500 // One big cluster for all Netherlands
   } else if (zoom < 7) {
-    clusterSize = 350 // Few large clusters
+    clusterSize = 400 // Few large clusters
   } else if (zoom < 8) {
-    clusterSize = 250 // More clusters
+    clusterSize = 300 // More clusters
   } else if (zoom < 9) {
-    clusterSize = 180 // Regional clusters
+    clusterSize = 200 // Regional clusters
   } else if (zoom < 10) {
-    clusterSize = 120 // City clusters
+    clusterSize = 150 // City clusters - smaller than zoom 9
   } else if (zoom < 11) {
-    clusterSize = 80 // District clusters
+    clusterSize = 100 // District clusters
   } else if (zoom < 12) {
-    clusterSize = 50 // Neighborhood clusters
+    clusterSize = 70 // Neighborhood clusters
   } else if (zoom < 13) {
-    clusterSize = 35 // Small area clusters
+    clusterSize = 50 // Small area clusters
   } else if (zoom < 14) {
-    clusterSize = 25 // Very small clusters
+    clusterSize = 35 // Very small clusters
   } else if (zoom < 15) {
-    clusterSize = 18 // Tiny clusters
+    clusterSize = 25 // Tiny clusters
   } else {
-    clusterSize = 12 // Individual points or micro clusters
+    clusterSize = 15 // Individual points or micro clusters
   }
   
   const buckets = new Map()
