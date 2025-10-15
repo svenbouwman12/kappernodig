@@ -5,32 +5,35 @@ import Card from '../components/Card.jsx'
 import { supabase } from '../lib/supabase'
 import { Link } from 'react-router-dom'
 
-// Smart clustering based on zoom level and city proximity
+// Smart clustering based on zoom level - smaller clusterSize = more clusters
 function clusterPoints(points, zoom) {
   // Progressive clustering - start with one big cluster, then break down smoothly
+  // Higher zoom = smaller clusterSize = more individual clusters
   let clusterSize
   if (zoom < 6) {
-    clusterSize = 500 // One big cluster for all Netherlands
+    clusterSize = 1000 // One big cluster for all Netherlands
   } else if (zoom < 7) {
-    clusterSize = 400 // Few large clusters
+    clusterSize = 500 // Few large clusters
   } else if (zoom < 8) {
     clusterSize = 300 // More clusters
   } else if (zoom < 9) {
     clusterSize = 200 // Regional clusters
   } else if (zoom < 10) {
-    clusterSize = 150 // City clusters - smaller than zoom 9
+    clusterSize = 120 // City clusters
   } else if (zoom < 11) {
-    clusterSize = 100 // District clusters
+    clusterSize = 80 // District clusters
   } else if (zoom < 12) {
-    clusterSize = 70 // Neighborhood clusters
+    clusterSize = 50 // Neighborhood clusters
   } else if (zoom < 13) {
-    clusterSize = 50 // Small area clusters
+    clusterSize = 35 // Small area clusters
   } else if (zoom < 14) {
-    clusterSize = 35 // Very small clusters
+    clusterSize = 25 // Very small clusters
   } else if (zoom < 15) {
-    clusterSize = 25 // Tiny clusters
+    clusterSize = 18 // Tiny clusters
+  } else if (zoom < 16) {
+    clusterSize = 12 // Micro clusters
   } else {
-    clusterSize = 15 // Individual points or micro clusters
+    clusterSize = 8 // Individual points or nano clusters
   }
   
   const buckets = new Map()
@@ -44,7 +47,7 @@ function clusterPoints(points, zoom) {
   
   const clusters = []
   buckets.forEach((list) => {
-    if (list.length === 1 && zoom >= 16) {
+    if (list.length === 1 && zoom >= 17) {
       // Show individual markers only when very zoomed in
       clusters.push({ type: 'point', ...list[0] })
     } else {
@@ -358,7 +361,8 @@ export default function MapPage() {
              zoom < 14 ? ' Zeer kleine clusters' : 
              zoom < 15 ? ' Mini clusters' : 
              zoom < 16 ? ' Micro clusters' : 
-             zoom < 17 ? ' Pin markers' : 
+             zoom < 17 ? ' Nano clusters' : 
+             zoom < 18 ? ' Pin markers' : 
              zoom < 20 ? ' Labels' : ' Auto-popup'}
           </div>
         </div>
