@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import Card from '../components/Card.jsx'
+import Button from '../components/Button.jsx'
 import { supabase } from '../lib/supabase'
 import { Link } from 'react-router-dom'
 
