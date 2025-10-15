@@ -4,7 +4,7 @@ import 'leaflet/dist/leaflet.css'
 import Card from '../components/Card.jsx'
 import Button from '../components/Button.jsx'
 import { supabase } from '../lib/supabase'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 
 // Smooth progressive clustering with gradual breakdown
 function clusterPoints(points, zoom) {
@@ -106,6 +106,11 @@ function clusterPoints(points, zoom) {
 }
 
 export default function MapPage() {
+  const { search } = useLocation()
+  const params = new URLSearchParams(search)
+  const initialCity = params.get('city') || ''
+  const initialRadius = parseInt(params.get('radius')) || 5
+  
   const mapRef = useRef(null)
   const [map, setMap] = useState(null)
   const [barbers, setBarbers] = useState([])
@@ -114,9 +119,9 @@ export default function MapPage() {
   const [locationPermission, setLocationPermission] = useState(null)
   const [closestBarber, setClosestBarber] = useState(null)
   const [isRequestingLocation, setIsRequestingLocation] = useState(false)
-  const [showLocationSetup, setShowLocationSetup] = useState(true)
-  const [selectedCity, setSelectedCity] = useState('')
-  const [selectedRadius, setSelectedRadius] = useState(5)
+  const [showLocationSetup, setShowLocationSetup] = useState(!initialCity) // Only show setup if no city from URL
+  const [selectedCity, setSelectedCity] = useState(initialCity)
+  const [selectedRadius, setSelectedRadius] = useState(initialRadius)
   const [filteredBarbers, setFilteredBarbers] = useState([])
 
   // Function to request location again
@@ -288,6 +293,26 @@ export default function MapPage() {
         }
         load()
       }, [])
+
+      // Auto-filter barbers if URL parameters are provided
+      useEffect(() => {
+        if (initialCity && cities[initialCity] && barbers.length > 0) {
+          const cityCoords = cities[initialCity]
+          const radiusKm = initialRadius
+          const filtered = barbers.filter(barber => {
+            const distance = Math.sqrt(
+              Math.pow(barber.lat - cityCoords.lat, 2) + 
+              Math.pow(barber.lng - cityCoords.lng, 2)
+            ) * 111000 / 1000 // Convert to km
+            
+            return distance <= radiusKm
+          })
+          
+          setFilteredBarbers(filtered)
+          setUserLocation(cityCoords)
+          setLocationPermission('granted')
+        }
+      }, [barbers, initialCity, initialRadius])
 
       // Request user location on component mount
       useEffect(() => {
