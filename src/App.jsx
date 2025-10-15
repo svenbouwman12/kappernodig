@@ -7,6 +7,7 @@ import BarberProfilePage from './pages/BarberProfilePage.jsx'
 import BarberDashboardPage from './pages/BarberDashboardPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import RegisterPage from './pages/RegisterPage.jsx'
+import MapPage from './pages/MapPage.jsx'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
 
 function ProtectedRoute({ children }) {
@@ -25,6 +26,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/barber/:id" element={<BarberProfilePage />} />
+            <Route path="/map" element={<MapPage />} />
             <Route
               path="/dashboard"
               element={

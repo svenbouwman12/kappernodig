@@ -27,6 +27,7 @@ export default function Navbar() {
           <SearchBar value={query} onChange={setQuery} />
         </form>
         <nav className="flex items-center gap-2">
+          <Link className="btn btn-secondary px-3 py-2 hidden sm:inline-flex" to="/map">Kaart</Link>
           {user ? (
             <>
               <Link className="btn btn-secondary px-3 py-2" to="/dashboard">Dashboard</Link>
