@@ -10,27 +10,27 @@ function clusterPoints(points, zoom) {
   // Progressive clustering - start with one big cluster, then break down smoothly
   // Higher zoom = smaller clusterSize = more individual clusters
   let clusterSize
-  if (zoom < 6) {
+  if (zoom < 7) {
     clusterSize = 1000 // One big cluster for all Netherlands
-  } else if (zoom < 7) {
-    clusterSize = 500 // Few large clusters
   } else if (zoom < 8) {
-    clusterSize = 300 // More clusters
+    clusterSize = 500 // Few large clusters
   } else if (zoom < 9) {
-    clusterSize = 200 // Regional clusters
+    clusterSize = 300 // More clusters
   } else if (zoom < 10) {
-    clusterSize = 120 // City clusters
+    clusterSize = 200 // Regional clusters
   } else if (zoom < 11) {
-    clusterSize = 80 // District clusters
+    clusterSize = 120 // City clusters
   } else if (zoom < 12) {
-    clusterSize = 50 // Neighborhood clusters
+    clusterSize = 80 // District clusters
   } else if (zoom < 13) {
-    clusterSize = 35 // Small area clusters
+    clusterSize = 50 // Neighborhood clusters
   } else if (zoom < 14) {
-    clusterSize = 25 // Very small clusters
+    clusterSize = 35 // Small area clusters
   } else if (zoom < 15) {
-    clusterSize = 18 // Tiny clusters
+    clusterSize = 25 // Very small clusters
   } else if (zoom < 16) {
+    clusterSize = 18 // Tiny clusters
+  } else if (zoom < 17) {
     clusterSize = 12 // Micro clusters
   } else {
     clusterSize = 8 // Individual points or nano clusters
@@ -59,7 +59,7 @@ function clusterPoints(points, zoom) {
   })
   
   // Force single cluster at very low zoom levels
-  if (zoom < 6) {
+  if (zoom < 7) {
     // One big cluster for all Netherlands
     const totalCount = points.length
     const centerLat = points.reduce((sum, p) => sum + p.lat, 0) / totalCount
@@ -68,9 +68,9 @@ function clusterPoints(points, zoom) {
   }
   
   // Merge clusters at low zoom levels
-  if (zoom < 8 && clusters.length > 1) {
+  if (zoom < 9 && clusters.length > 1) {
     const mergedClusters = []
-    const mergeThreshold = zoom < 7 ? 300 : 200 // Larger threshold for more merging
+    const mergeThreshold = zoom < 8 ? 300 : 200 // Larger threshold for more merging
     
     for (const cluster of clusters) {
       if (cluster.type === 'cluster') {
@@ -350,19 +350,19 @@ export default function MapPage() {
           <div className="font-semibold">Kaart</div>
           <div className="text-sm text-secondary/70 bg-gray-100 px-3 py-1 rounded-full">
             Zoom: {zoom.toFixed(1)} | 
-            {zoom < 6 ? ' Heel Nederland' : 
-             zoom < 7 ? ' Grote regios' : 
-             zoom < 8 ? ' Meerdere clusters' : 
-             zoom < 9 ? ' Regio overzicht' : 
-             zoom < 10 ? ' Stad niveau' : 
-             zoom < 11 ? ' Wijk niveau' : 
-             zoom < 12 ? ' Buurt niveau' : 
-             zoom < 13 ? ' Kleine clusters' : 
-             zoom < 14 ? ' Zeer kleine clusters' : 
-             zoom < 15 ? ' Mini clusters' : 
-             zoom < 16 ? ' Micro clusters' : 
-             zoom < 17 ? ' Nano clusters' : 
-             zoom < 18 ? ' Pin markers' : 
+            {             zoom < 7 ? ' Heel Nederland' : 
+             zoom < 8 ? ' Grote regios' : 
+             zoom < 9 ? ' Meerdere clusters' : 
+             zoom < 10 ? ' Regio overzicht' : 
+             zoom < 11 ? ' Stad niveau' : 
+             zoom < 12 ? ' Wijk niveau' : 
+             zoom < 13 ? ' Buurt niveau' : 
+             zoom < 14 ? ' Kleine clusters' : 
+             zoom < 15 ? ' Zeer kleine clusters' : 
+             zoom < 16 ? ' Mini clusters' : 
+             zoom < 17 ? ' Micro clusters' : 
+             zoom < 18 ? ' Nano clusters' : 
+             zoom < 19 ? ' Pin markers' : 
              zoom < 20 ? ' Labels' : ' Auto-popup'}
           </div>
         </div>
