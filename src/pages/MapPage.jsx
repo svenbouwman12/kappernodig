@@ -5,7 +5,7 @@ import Card from '../components/Card.jsx'
 import { supabase } from '../lib/supabase'
 import { Link } from 'react-router-dom'
 
-// Ultra simple clustering - just use distance-based clustering
+// Smooth progressive clustering with gradual breakdown
 function clusterPoints(points, zoom) {
   if (points.length === 0) return []
   
@@ -17,13 +17,37 @@ function clusterPoints(points, zoom) {
   }
   
   // At high zoom, show individual points
-  if (zoom >= 17) {
+  if (zoom >= 18) {
     return points.map(point => ({ type: 'point', ...point }))
   }
   
-  // For middle zoom levels, use simple distance-based clustering
+  // Progressive distance thresholds for smooth clustering
+  let maxDistance
+  if (zoom < 8) {
+    maxDistance = 1.0 // Very large clusters
+  } else if (zoom < 9) {
+    maxDistance = 0.8 // Large clusters
+  } else if (zoom < 10) {
+    maxDistance = 0.6 // Medium-large clusters
+  } else if (zoom < 11) {
+    maxDistance = 0.4 // Medium clusters
+  } else if (zoom < 12) {
+    maxDistance = 0.3 // Small-medium clusters
+  } else if (zoom < 13) {
+    maxDistance = 0.2 // Small clusters
+  } else if (zoom < 14) {
+    maxDistance = 0.15 // Very small clusters
+  } else if (zoom < 15) {
+    maxDistance = 0.1 // Tiny clusters
+  } else if (zoom < 16) {
+    maxDistance = 0.08 // Micro clusters
+  } else if (zoom < 17) {
+    maxDistance = 0.05 // Nano clusters
+  } else {
+    maxDistance = 0.03 // Individual points
+  }
+  
   const clusters = []
-  const maxDistance = zoom < 10 ? 0.5 : zoom < 12 ? 0.2 : zoom < 15 ? 0.1 : 0.05 // degrees
   
   for (const point of points) {
     let addedToCluster = false
@@ -40,7 +64,7 @@ function clusterPoints(points, zoom) {
           // Add to existing cluster
           cluster.points.push(point)
           cluster.count++
-          // Update cluster center
+          // Update cluster center smoothly
           cluster.lat = cluster.points.reduce((sum, p) => sum + p.lat, 0) / cluster.points.length
           cluster.lng = cluster.points.reduce((sum, p) => sum + p.lng, 0) / cluster.points.length
           addedToCluster = true
@@ -59,6 +83,22 @@ function clusterPoints(points, zoom) {
         points: [point]
       })
     }
+  }
+  
+  // Smooth transition: if cluster has only 1-2 points and zoom is high, show as individual
+  if (zoom >= 16) {
+    const result = []
+    for (const cluster of clusters) {
+      if (cluster.count <= 2) {
+        // Show individual points instead of tiny clusters
+        cluster.points.forEach(point => {
+          result.push({ type: 'point', ...point })
+        })
+      } else {
+        result.push(cluster)
+      }
+    }
+    return result
   }
   
   return clusters
