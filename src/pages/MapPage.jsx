@@ -206,9 +206,13 @@ export default function MapPage() {
           
           marker.bindPopup(popupContent)
           
-          // Auto-open popup at zoom 20+
+          // Auto-open popup at zoom 20+ for the marker closest to center
           if (zoom >= 20) {
-            marker.openPopup()
+            const mapCenter = map.getCenter()
+            const markerDistance = mapCenter.distanceTo([item.lat, item.lng])
+            
+            // Store distance for comparison
+            marker._distanceToCenter = markerDistance
           }
           
           marker.addTo(layer)
@@ -217,6 +221,26 @@ export default function MapPage() {
     })
     layer.addTo(map)
     map._barberLayer = layer
+    
+    // Auto-open popup for closest marker at zoom 20+
+    if (zoom >= 20) {
+      const mapCenter = map.getCenter()
+      let closestMarker = null
+      let closestDistance = Infinity
+      
+      layer.eachLayer((marker) => {
+        if (marker._distanceToCenter !== undefined) {
+          if (marker._distanceToCenter < closestDistance) {
+            closestDistance = marker._distanceToCenter
+            closestMarker = marker
+          }
+        }
+      })
+      
+      if (closestMarker) {
+        closestMarker.openPopup()
+      }
+    }
   }, [clusters, map])
 
   return (
