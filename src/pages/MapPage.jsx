@@ -542,75 +542,124 @@ export default function MapPage() {
   // Show location setup interface
   if (showLocationSetup) {
     return (
-      <div className="max-w-4xl mx-auto px-4">
-        <Card>
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-primary mb-4">Vind je kapper</h1>
-            <p className="text-secondary/80 text-lg">Selecteer je stad en straal om kappers in jouw omgeving te vinden</p>
-          </div>
-          
-          <div className="max-w-md mx-auto space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-secondary mb-2">Selecteer je stad</label>
-              <select 
-                value={selectedCity}
-                onChange={(e) => setSelectedCity(e.target.value)}
-                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              >
-                <option value="">Kies een stad...</option>
-                {Object.keys(cities).map(city => (
-                  <option key={city} value={city}>{city}</option>
-                ))}
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-secondary mb-2">Zoekradius: {selectedRadius} km</label>
-              <input 
-                type="range"
-                min="1"
-                max="50"
-                value={selectedRadius}
-                onChange={(e) => setSelectedRadius(parseInt(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-              />
-              <div className="flex justify-between text-xs text-secondary/60 mt-1">
-                <span>1 km</span>
-                <span>25 km</span>
-                <span>50 km</span>
+      <div className="max-w-5xl mx-auto px-4 py-8">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-primary mb-4">Vind je kapper</h1>
+          <p className="text-secondary/80 text-xl max-w-2xl mx-auto">Selecteer je stad en zoekradius om kappers in jouw omgeving te vinden. Bekijk eerst de lijst en ga daarna naar de interactieve kaart.</p>
+        </div>
+        
+        <div className="grid lg:grid-cols-2 gap-8 items-start">
+          {/* Selection Form */}
+          <Card className="p-8">
+            <div className="space-y-8">
+              <div>
+                <label className="block text-lg font-semibold text-secondary mb-3">📍 Selecteer je stad</label>
+                <select 
+                  value={selectedCity}
+                  onChange={(e) => {
+                    setSelectedCity(e.target.value)
+                    // Reset filtered barbers when city changes
+                    setFilteredBarbers([])
+                  }}
+                  className="w-full bg-white border-2 border-gray-200 rounded-xl px-4 py-4 text-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-lg"
+                >
+                  <option value="">Kies een stad...</option>
+                  {Object.keys(cities).map(city => (
+                    <option key={city} value={city}>{city}</option>
+                  ))}
+                </select>
               </div>
+              
+              <div>
+                <label className="block text-lg font-semibold text-secondary mb-3">🔍 Zoekradius: {selectedRadius} km</label>
+                <input 
+                  type="range"
+                  min="1"
+                  max="50"
+                  value={selectedRadius}
+                  onChange={(e) => {
+                    setSelectedRadius(parseInt(e.target.value))
+                    // Reset filtered barbers when radius changes
+                    setFilteredBarbers([])
+                  }}
+                  className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                />
+                <div className="flex justify-between text-sm text-secondary/60 mt-2">
+                  <span>1 km (straat)</span>
+                  <span>25 km (regio)</span>
+                  <span>50 km (provincie)</span>
+                </div>
+              </div>
+              
+              <Button 
+                onClick={handleCitySelection}
+                disabled={!selectedCity}
+                className="w-full py-4 text-xl font-semibold"
+              >
+                🔍 Zoek kappers in {selectedCity || 'jouw stad'}
+              </Button>
             </div>
-            
-            <Button 
-              onClick={handleCitySelection}
-              disabled={!selectedCity}
-              className="w-full py-3 text-lg"
-            >
-              {filteredBarbers.length > 0 ? `${filteredBarbers.length} kappers gevonden - Bekijk kaart` : 'Zoek kappers'}
-            </Button>
-            
-            {filteredBarbers.length > 0 && (
-              <div className="mt-6">
-                <h3 className="font-semibold text-secondary mb-3">Kappers in {selectedCity} ({filteredBarbers.length} gevonden)</h3>
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {filteredBarbers.map(barber => (
-                    <div key={barber.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <div className="font-medium text-secondary">{barber.name}</div>
-                        <div className="text-sm text-secondary/60">{barber.price_range} • ★ {barber.rating || 'N/A'}</div>
+          </Card>
+
+          {/* Results Preview */}
+          <div>
+            {filteredBarbers.length > 0 ? (
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-2xl font-bold text-secondary">
+                    🎯 {filteredBarbers.length} kapper{filteredBarbers.length !== 1 ? 's' : ''} gevonden in {selectedCity}
+                  </h3>
+                  <Button 
+                    onClick={() => setShowLocationSetup(false)}
+                    className="px-6 py-2"
+                  >
+                    🗺️ Bekijk op kaart
+                  </Button>
+                </div>
+                
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {filteredBarbers.map((barber, index) => (
+                    <div key={barber.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-1">
+                          <span className="bg-primary text-white text-xs font-bold px-2 py-1 rounded-full">#{index + 1}</span>
+                          <div className="font-semibold text-secondary">{barber.name}</div>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-secondary/70">
+                          <span className="bg-orange-100 text-primary px-2 py-1 rounded-md font-medium">{barber.price_range || '€€'}</span>
+                          <span>★ {barber.rating || 'N/A'}</span>
+                        </div>
                       </div>
                       <Link to={`/barber/${barber.id}`}>
-                        <Button variant="secondary" className="text-sm">
+                        <Button variant="secondary" className="text-sm px-4 py-2">
                           Bekijk
                         </Button>
                       </Link>
                     </div>
                   ))}
                 </div>
-              </div>
+                
+                <div className="mt-6 p-4 bg-primary/10 rounded-lg">
+                  <p className="text-sm text-primary/80 text-center">
+                    💡 <strong>Tip:</strong> Klik op "Bekijk op kaart" om alle kappers op de interactieve kaart te zien
+                  </p>
+                </div>
+              </Card>
+            ) : selectedCity ? (
+              <Card className="p-8 text-center">
+                <div className="text-6xl mb-4">🔍</div>
+                <h3 className="text-xl font-semibold text-secondary mb-2">Klaar om te zoeken</h3>
+                <p className="text-secondary/70">Klik op "Zoek kappers" om te zien welke kappers er in {selectedCity} binnen {selectedRadius} km zijn.</p>
+              </Card>
+            ) : (
+              <Card className="p-8 text-center">
+                <div className="text-6xl mb-4">📍</div>
+                <h3 className="text-xl font-semibold text-secondary mb-2">Selecteer je stad</h3>
+                <p className="text-secondary/70">Kies eerst een stad uit de lijst om kappers in jouw omgeving te vinden.</p>
+              </Card>
             )}
           </div>
-        </Card>
+        </div>
       </div>
     )
   }
@@ -619,7 +668,16 @@ export default function MapPage() {
     <div className="max-w-6xl mx-auto px-4">
       <Card>
         <div className="flex items-center justify-between mb-4">
-          <div className="font-semibold">Kaart</div>
+          <div className="flex items-center gap-4">
+            <div className="font-semibold text-xl">🗺️ Interactieve Kaart</div>
+            <Button 
+              onClick={() => setShowLocationSetup(true)}
+              variant="secondary"
+              className="text-sm px-4 py-2"
+            >
+              📍 Wijzig locatie
+            </Button>
+          </div>
           <div className="flex items-center gap-3">
             {locationPermission === 'granted' && userLocation && (
               <div className="text-sm text-success bg-green-50 px-3 py-1 rounded-full">
