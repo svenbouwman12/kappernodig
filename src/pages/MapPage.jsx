@@ -114,6 +114,10 @@ export default function MapPage() {
   const [locationPermission, setLocationPermission] = useState(null)
   const [closestBarber, setClosestBarber] = useState(null)
   const [isRequestingLocation, setIsRequestingLocation] = useState(false)
+  const [showLocationSetup, setShowLocationSetup] = useState(true)
+  const [selectedCity, setSelectedCity] = useState('')
+  const [selectedRadius, setSelectedRadius] = useState(5)
+  const [filteredBarbers, setFilteredBarbers] = useState([])
 
   // Function to request location again
   const requestLocationAgain = () => {
@@ -165,6 +169,53 @@ export default function MapPage() {
         }
       } else {
         alert('Deze coördinaten liggen buiten Nederland. Probeer opnieuw.')
+      }
+    }
+  }
+
+  // City coordinates for major Dutch cities
+  const cities = {
+    'Amsterdam': { lat: 52.3676, lng: 4.9041 },
+    'Rotterdam': { lat: 51.9225, lng: 4.4792 },
+    'Utrecht': { lat: 52.0907, lng: 5.1214 },
+    'Den Haag': { lat: 52.0766, lng: 4.3113 },
+    'Eindhoven': { lat: 51.4416, lng: 5.4697 },
+    'Groningen': { lat: 53.2194, lng: 6.5665 },
+    'Tilburg': { lat: 51.5555, lng: 5.0913 },
+    'Almere': { lat: 52.3508, lng: 5.2647 },
+    'Breda': { lat: 51.5719, lng: 4.7683 },
+    'Nijmegen': { lat: 51.8426, lng: 5.8520 },
+    'Enschede': { lat: 52.2215, lng: 6.8937 },
+    'Haarlem': { lat: 52.3792, lng: 4.6368 },
+    'Arnhem': { lat: 51.9851, lng: 5.8987 },
+    'Zaanstad': { lat: 52.4531, lng: 4.8296 },
+    'Amersfoort': { lat: 52.1561, lng: 5.3878 }
+  }
+
+  // Function to handle city selection and filter barbers
+  const handleCitySelection = () => {
+    if (selectedCity && cities[selectedCity]) {
+      const cityCoords = cities[selectedCity]
+      setUserLocation(cityCoords)
+      setLocationPermission('granted')
+      setShowLocationSetup(false)
+      
+      // Filter barbers within radius
+      const radiusKm = selectedRadius
+      const filtered = barbers.filter(barber => {
+        const distance = Math.sqrt(
+          Math.pow(barber.lat - cityCoords.lat, 2) + 
+          Math.pow(barber.lng - cityCoords.lng, 2)
+        ) * 111000 / 1000 // Convert to km
+        
+        return distance <= radiusKm
+      })
+      
+      setFilteredBarbers(filtered)
+      
+      // Center map on selected city
+      if (map) {
+        map.setView([cityCoords.lat, cityCoords.lng], 12)
       }
     }
   }
@@ -293,7 +344,7 @@ export default function MapPage() {
         }
       }, [userLocation, barbers])
 
-  const clusters = useMemo(() => clusterPoints(barbers, zoom), [barbers, zoom])
+  const clusters = useMemo(() => clusterPoints(filteredBarbers.length > 0 ? filteredBarbers : barbers, zoom), [filteredBarbers, barbers, zoom])
 
   useEffect(() => {
     if (!map) return
@@ -488,6 +539,82 @@ export default function MapPage() {
     }
   }, [clusters, map])
 
+  // Show location setup interface
+  if (showLocationSetup) {
+    return (
+      <div className="max-w-4xl mx-auto px-4">
+        <Card>
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-primary mb-4">Vind je kapper</h1>
+            <p className="text-secondary/80 text-lg">Selecteer je stad en straal om kappers in jouw omgeving te vinden</p>
+          </div>
+          
+          <div className="max-w-md mx-auto space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-secondary mb-2">Selecteer je stad</label>
+              <select 
+                value={selectedCity}
+                onChange={(e) => setSelectedCity(e.target.value)}
+                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              >
+                <option value="">Kies een stad...</option>
+                {Object.keys(cities).map(city => (
+                  <option key={city} value={city}>{city}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-secondary mb-2">Zoekradius: {selectedRadius} km</label>
+              <input 
+                type="range"
+                min="1"
+                max="50"
+                value={selectedRadius}
+                onChange={(e) => setSelectedRadius(parseInt(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+              />
+              <div className="flex justify-between text-xs text-secondary/60 mt-1">
+                <span>1 km</span>
+                <span>25 km</span>
+                <span>50 km</span>
+              </div>
+            </div>
+            
+            <Button 
+              onClick={handleCitySelection}
+              disabled={!selectedCity}
+              className="w-full py-3 text-lg"
+            >
+              {filteredBarbers.length > 0 ? `${filteredBarbers.length} kappers gevonden - Bekijk kaart` : 'Zoek kappers'}
+            </Button>
+            
+            {filteredBarbers.length > 0 && (
+              <div className="mt-6">
+                <h3 className="font-semibold text-secondary mb-3">Kappers in {selectedCity} ({filteredBarbers.length} gevonden)</h3>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {filteredBarbers.map(barber => (
+                    <div key={barber.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <div className="font-medium text-secondary">{barber.name}</div>
+                        <div className="text-sm text-secondary/60">{barber.price_range} • ★ {barber.rating || 'N/A'}</div>
+                      </div>
+                      <Link to={`/barber/${barber.id}`}>
+                        <Button variant="secondary" className="text-sm">
+                          Bekijk
+                        </Button>
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-6xl mx-auto px-4">
       <Card>
@@ -496,7 +623,7 @@ export default function MapPage() {
           <div className="flex items-center gap-3">
             {locationPermission === 'granted' && userLocation && (
               <div className="text-sm text-success bg-green-50 px-3 py-1 rounded-full">
-                📍 Locatie gedeeld
+                📍 {selectedCity || 'Locatie gedeeld'}
               </div>
             )}
             {locationPermission === 'denied' && (
