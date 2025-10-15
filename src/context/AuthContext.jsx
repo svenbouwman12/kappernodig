@@ -26,7 +26,17 @@ export function AuthProvider({ children }) {
       if (mounted) {
         if (error) {
           console.error('Error loading user profile:', error)
-          setUserProfile({ role: 'barber', barber_id: null })
+          // If user doesn't exist in users table, create them as admin
+          const { error: insertError } = await supabase
+            .from('users')
+            .insert({ id: userId, email: '', role: 'admin', barber_id: null })
+          
+          if (insertError) {
+            console.error('Error creating user:', insertError)
+            setUserProfile({ role: 'barber', barber_id: null })
+          } else {
+            setUserProfile({ role: 'admin', barber_id: null })
+          }
         } else {
           setUserProfile(data || { role: 'barber', barber_id: null })
         }

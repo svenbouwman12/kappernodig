@@ -10,8 +10,14 @@ export default function Navbar() {
   const { user, userProfile } = useAuth()
 
   async function handleLogout() {
-    await supabase.auth.signOut()
-    navigate('/')
+    console.log('Logging out...')
+    const { error } = await supabase.auth.signOut()
+    if (error) {
+      console.error('Logout error:', error)
+    } else {
+      console.log('Logged out successfully')
+      navigate('/')
+    }
   }
 
   function onSubmit(e) {

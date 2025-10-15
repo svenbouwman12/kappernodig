@@ -19,7 +19,9 @@ export default function AdminDashboardPage() {
 
   async function loadBarbers() {
     setLoading(true)
+    console.log('Loading barbers...')
     const { data, error } = await supabase.from('barbers').select('*').order('created_at', { ascending: false })
+    console.log('Barbers data:', data, 'Error:', error)
     if (error) console.error('Error loading barbers:', error)
     setBarbers(data || [])
     
