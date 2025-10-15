@@ -113,6 +113,33 @@ export default function MapPage() {
   const [locationPermission, setLocationPermission] = useState(null)
   const [closestBarber, setClosestBarber] = useState(null)
 
+  // Function to request location again
+  const requestLocationAgain = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords
+          setUserLocation({ lat: latitude, lng: longitude })
+          setLocationPermission('granted')
+          
+          // Center map on user location
+          if (map) {
+            map.setView([latitude, longitude], 12)
+          }
+        },
+        (error) => {
+          console.log('Geolocation error:', error)
+          setLocationPermission('denied')
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000 // 5 minutes
+        }
+      )
+    }
+  }
+
   useEffect(() => {
     if (mapRef.current || typeof window === 'undefined') return
     const m = L.map('map', { 
@@ -440,8 +467,16 @@ export default function MapPage() {
               </div>
             )}
             {locationPermission === 'denied' && (
-              <div className="text-sm text-red-600 bg-red-50 px-3 py-1 rounded-full">
-                ❌ Locatie geweigerd
+              <div className="flex items-center gap-2">
+                <div className="text-sm text-red-600 bg-red-50 px-3 py-1 rounded-full">
+                  ❌ Locatie geweigerd
+                </div>
+                <button 
+                  onClick={requestLocationAgain}
+                  className="text-sm text-primary hover:text-primary/80 underline"
+                >
+                  Opnieuw proberen
+                </button>
               </div>
             )}
             <div className="text-sm text-secondary/70 bg-gray-100 px-3 py-1 rounded-full">
