@@ -5,21 +5,26 @@ import Card from '../components/Card.jsx'
 import { supabase } from '../lib/supabase'
 import { Link } from 'react-router-dom'
 
-// Simple client-side clustering using Leaflet markercluster-like logic with grid clustering per zoom level
+// Smart clustering based on zoom level and city proximity
 function clusterPoints(points, zoom) {
-  const clusterSize = 80 / (zoom / 4 + 1) // rough grid size scaling
+  // More aggressive clustering at lower zoom levels
+  const clusterSize = zoom < 8 ? 120 : zoom < 10 ? 60 : 30
   const buckets = new Map()
+  
   for (const p of points) {
     const key = `${Math.round(p.lat * clusterSize)}:${Math.round(p.lng * clusterSize)}`
     const list = buckets.get(key) || []
     list.push(p)
     buckets.set(key, list)
   }
+  
   const clusters = []
   buckets.forEach((list) => {
-    if (list.length === 1) {
+    if (list.length === 1 && zoom >= 10) {
+      // Show individual markers only when zoomed in enough
       clusters.push({ type: 'point', ...list[0] })
     } else {
+      // Always cluster when zoomed out or multiple points
       const lat = list.reduce((a,b)=>a+b.lat,0)/list.length
       const lng = list.reduce((a,b)=>a+b.lng,0)/list.length
       clusters.push({ type: 'cluster', lat, lng, count: list.length, points: list })
@@ -77,19 +82,23 @@ export default function MapPage() {
     const layer = L.layerGroup()
     clusters.forEach(item => {
       if (item.type === 'cluster') {
-        // Modern cluster design
+        // Dynamic cluster size based on count and zoom
+        const baseSize = zoom < 8 ? 50 : zoom < 10 ? 45 : 40
+        const size = Math.min(baseSize + (item.count * 2), 80)
+        const fontSize = zoom < 8 ? 16 : zoom < 10 ? 14 : 12
+        
         const html = `
           <div style="
             background: linear-gradient(135deg, #FF6B00, #FF8A3D);
             color: #fff;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: ${size}px;
+            height: ${size}px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 700;
-            font-size: 14px;
+            font-size: ${fontSize}px;
             box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
             border: 3px solid #fff;
             cursor: pointer;
@@ -98,31 +107,35 @@ export default function MapPage() {
             ${item.count}
           </div>
         `
-        const icon = L.divIcon({ html, className: 'cluster-icon', iconSize: [40,40] })
+        const icon = L.divIcon({ html, className: 'cluster-icon', iconSize: [size, size] })
         const marker = L.marker([item.lat, item.lng], { icon })
         marker.bindPopup(`
-          <div style="text-align: center; padding: 8px;">
-            <strong style="color: #FF6B00; font-size: 16px;">${item.count} kappers</strong><br/>
-            <span style="color: #666; font-size: 12px;">in deze buurt</span>
+          <div style="text-align: center; padding: 12px;">
+            <div style="color: #FF6B00; font-size: 18px; font-weight: 700; margin-bottom: 4px;">${item.count} kappers</div>
+            <div style="color: #666; font-size: 13px;">in deze regio</div>
           </div>
         `)
         marker.addTo(layer)
       } else {
-        // Clean individual barber markers
+        // Clean individual barber markers - larger when zoomed in
+        const labelSize = zoom >= 12 ? '14px' : '12px'
+        const padding = zoom >= 12 ? '10px 16px' : '8px 12px'
+        const maxWidth = zoom >= 12 ? '150px' : '120px'
+        
         const html = `
           <div style="
             background: #fff;
             border-radius: 20px;
-            padding: 8px 12px;
+            padding: ${padding};
             border: 2px solid #00C46A;
             box-shadow: 0 3px 10px rgba(0, 196, 106, 0.2);
             font-weight: 600;
-            font-size: 12px;
+            font-size: ${labelSize};
             color: #00C46A;
             white-space: nowrap;
             cursor: pointer;
             transition: all 0.2s ease;
-            max-width: 120px;
+            max-width: ${maxWidth};
             overflow: hidden;
             text-overflow: ellipsis;
           " onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 5px 15px rgba(0, 196, 106, 0.3)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 3px 10px rgba(0, 196, 106, 0.2)'">
