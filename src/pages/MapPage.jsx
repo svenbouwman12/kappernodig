@@ -119,33 +119,23 @@ export default function MapPage() {
       } else {
         // Show pin first, then label when zoomed in enough
         if (zoom < 16) {
-          // Orange pin marker matching the theme
+          // Classic location pin icon
           const html = `
             <div style="
-              width: 0;
-              height: 0;
-              border-left: 10px solid transparent;
-              border-right: 10px solid transparent;
-              border-bottom: 20px solid #FF6B00;
+              width: 24px;
+              height: 32px;
               position: relative;
               cursor: pointer;
               transition: all 0.2s ease;
-              filter: drop-shadow(0 2px 4px rgba(255, 107, 0, 0.3));
+              filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
             " onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">
-              <div style="
-                position: absolute;
-                top: 20px;
-                left: -8px;
-                width: 16px;
-                height: 16px;
-                background: #FF6B00;
-                border-radius: 50%;
-                border: 3px solid #fff;
-                box-shadow: 0 2px 8px rgba(255, 107, 0, 0.4);
-              "></div>
+              <svg width="24" height="32" viewBox="0 0 24 32" style="position: absolute; top: 0; left: 0;">
+                <path d="M12 0C5.4 0 0 5.4 0 12c0 7.2 12 20 12 20s12-12.8 12-20c0-6.6-5.4-12-12-12z" fill="#FF6B00"/>
+                <circle cx="12" cy="12" r="6" fill="#fff"/>
+              </svg>
             </div>
           `
-          const icon = L.divIcon({ html, className: 'barber-pin', iconSize: [20, 20], iconAnchor: [10, 25] })
+          const icon = L.divIcon({ html, className: 'barber-pin', iconSize: [24, 32], iconAnchor: [12, 32] })
           const marker = L.marker([item.lat, item.lng], { icon })
           marker.bindPopup(`
             <div style="min-width: 180px; padding: 10px;">
