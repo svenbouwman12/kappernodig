@@ -4,7 +4,7 @@ import Button from '../components/Button.jsx'
 import { supabase } from '../lib/supabase'
 
 export default function BarberDashboardPage() {
-  const [profile, setProfile] = useState({ name: '', description: '', location: '', price_range: '€€', image_url: '' })
+  const [profile, setProfile] = useState({ name: '', description: '', location: '', price_range: '€€', image_url: '', address: '', phone: '', website: '' })
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -32,11 +32,14 @@ export default function BarberDashboardPage() {
         <form onSubmit={saveProfile} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <input value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} placeholder="Naam" className="bg-white border border-gray-200 rounded-xl px-3 py-2" />
           <input value={profile.location} onChange={(e) => setProfile({ ...profile, location: e.target.value })} placeholder="Locatie" className="bg-white border border-gray-200 rounded-xl px-3 py-2" />
+          <input value={profile.address} onChange={(e) => setProfile({ ...profile, address: e.target.value })} placeholder="Adres" className="bg-white border border-gray-200 rounded-xl px-3 py-2 col-span-1 sm:col-span-2" />
           <select value={profile.price_range} onChange={(e) => setProfile({ ...profile, price_range: e.target.value })} className="bg-white border border-gray-200 rounded-xl px-3 py-2">
             <option>€</option>
             <option>€€</option>
             <option>€€€</option>
           </select>
+          <input value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })} placeholder="Telefoon" className="bg-white border border-gray-200 rounded-xl px-3 py-2" />
+          <input value={profile.website} onChange={(e) => setProfile({ ...profile, website: e.target.value })} placeholder="Website (https://)" className="bg-white border border-gray-200 rounded-xl px-3 py-2" />
           <input value={profile.image_url} onChange={(e) => setProfile({ ...profile, image_url: e.target.value })} placeholder="Afbeelding URL" className="bg-white border border-gray-200 rounded-xl px-3 py-2 col-span-1 sm:col-span-2" />
           <textarea value={profile.description} onChange={(e) => setProfile({ ...profile, description: e.target.value })} placeholder="Beschrijving" className="bg-white border border-gray-200 rounded-xl px-3 py-2 col-span-1 sm:col-span-2" rows={4} />
           <div className="col-span-1 sm:col-span-2 flex justify-end">
