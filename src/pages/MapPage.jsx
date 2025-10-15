@@ -50,6 +50,50 @@ function clusterPoints(points, zoom) {
       clusters.push({ type: 'cluster', lat, lng, count: list.length, points: list })
     }
   })
+  
+  // If we have too many small clusters at low zoom, merge them
+  if (zoom < 8 && clusters.length > 10) {
+    const mergedClusters = []
+    const mergeThreshold = zoom < 6 ? 200 : zoom < 7 ? 150 : 100
+    
+    for (const cluster of clusters) {
+      if (cluster.type === 'cluster') {
+        // Find nearby clusters to merge
+        let merged = false
+        for (const mergedCluster of mergedClusters) {
+          if (mergedCluster.type === 'cluster') {
+            const distance = Math.sqrt(
+              Math.pow(cluster.lat - mergedCluster.lat, 2) + 
+              Math.pow(cluster.lng - mergedCluster.lng, 2)
+            ) * 111000 // Rough conversion to meters
+            
+            if (distance < mergeThreshold) {
+              // Merge clusters
+              const totalCount = cluster.count + mergedCluster.count
+              const newLat = (cluster.lat * cluster.count + mergedCluster.lat * mergedCluster.count) / totalCount
+              const newLng = (cluster.lng * cluster.count + mergedCluster.lng * mergedCluster.count) / totalCount
+              
+              mergedCluster.lat = newLat
+              mergedCluster.lng = newLng
+              mergedCluster.count = totalCount
+              mergedCluster.points = [...mergedCluster.points, ...cluster.points]
+              merged = true
+              break
+            }
+          }
+        }
+        
+        if (!merged) {
+          mergedClusters.push(cluster)
+        }
+      } else {
+        mergedClusters.push(cluster)
+      }
+    }
+    
+    return mergedClusters
+  }
+  
   return clusters
 }
 
