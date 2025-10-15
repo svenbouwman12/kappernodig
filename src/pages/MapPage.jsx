@@ -117,54 +117,92 @@ export default function MapPage() {
         `)
         marker.addTo(layer)
       } else {
-        // Clean individual barber markers - larger when zoomed in
-        const labelSize = zoom >= 12 ? '14px' : '12px'
-        const padding = zoom >= 12 ? '10px 16px' : '8px 12px'
-        const maxWidth = zoom >= 12 ? '150px' : '120px'
-        
-        const html = `
-          <div style="
-            background: #fff;
-            border-radius: 20px;
-            padding: ${padding};
-            border: 2px solid #00C46A;
-            box-shadow: 0 3px 10px rgba(0, 196, 106, 0.2);
-            font-weight: 600;
-            font-size: ${labelSize};
-            color: #00C46A;
-            white-space: nowrap;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            max-width: ${maxWidth};
-            overflow: hidden;
-            text-overflow: ellipsis;
-          " onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 5px 15px rgba(0, 196, 106, 0.3)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 3px 10px rgba(0, 196, 106, 0.2)'">
-            ${item.name}
-          </div>
-        `
-        const icon = L.divIcon({ html, className: 'barber-icon' })
-        const marker = L.marker([item.lat, item.lng], { icon })
-        marker.bindPopup(`
-          <div style="min-width: 220px; padding: 12px;">
-            <div style="font-weight: 700; color: #FF6B00; font-size: 16px; margin-bottom: 6px;">${item.name}</div>
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-              <span style="background: #FF6B00; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">${item.price_range || '€€'}</span>
-              <span style="color: #666; font-size: 12px;">★ ${item.rating || 'N/A'}</span>
+        // Show pin first, then label when zoomed in enough
+        if (zoom < 12) {
+          // Simple pin marker when not zoomed in enough
+          const html = `
+            <div style="
+              width: 0;
+              height: 0;
+              border-left: 8px solid transparent;
+              border-right: 8px solid transparent;
+              border-bottom: 16px solid #00C46A;
+              position: relative;
+              cursor: pointer;
+              transition: all 0.2s ease;
+            " onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">
+              <div style="
+                position: absolute;
+                top: 16px;
+                left: -6px;
+                width: 12px;
+                height: 12px;
+                background: #00C46A;
+                border-radius: 50%;
+                border: 2px solid #fff;
+                box-shadow: 0 2px 6px rgba(0, 196, 106, 0.3);
+              "></div>
             </div>
-            <a href="/barber/${item.id}" style="
-              display: inline-block;
-              background: #00C46A;
-              color: #fff;
-              padding: 6px 12px;
-              border-radius: 6px;
-              text-decoration: none;
-              font-size: 12px;
+          `
+          const icon = L.divIcon({ html, className: 'barber-pin', iconSize: [16, 16], iconAnchor: [8, 20] })
+          const marker = L.marker([item.lat, item.lng], { icon })
+          marker.bindPopup(`
+            <div style="min-width: 180px; padding: 10px;">
+              <div style="font-weight: 700; color: #FF6B00; font-size: 15px; margin-bottom: 4px;">${item.name}</div>
+              <div style="color: #666; font-size: 12px;">Zoom in voor meer details</div>
+            </div>
+          `)
+          marker.addTo(layer)
+        } else {
+          // Full label when zoomed in enough
+          const labelSize = zoom >= 14 ? '14px' : '12px'
+          const padding = zoom >= 14 ? '10px 16px' : '8px 12px'
+          const maxWidth = zoom >= 14 ? '150px' : '120px'
+          
+          const html = `
+            <div style="
+              background: #fff;
+              border-radius: 20px;
+              padding: ${padding};
+              border: 2px solid #00C46A;
+              box-shadow: 0 3px 10px rgba(0, 196, 106, 0.2);
               font-weight: 600;
-              margin-top: 4px;
-            ">Bekijk profiel</a>
-          </div>
-        `)
-        marker.addTo(layer)
+              font-size: ${labelSize};
+              color: #00C46A;
+              white-space: nowrap;
+              cursor: pointer;
+              transition: all 0.2s ease;
+              max-width: ${maxWidth};
+              overflow: hidden;
+              text-overflow: ellipsis;
+            " onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 5px 15px rgba(0, 196, 106, 0.3)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 3px 10px rgba(0, 196, 106, 0.2)'">
+              ${item.name}
+            </div>
+          `
+          const icon = L.divIcon({ html, className: 'barber-label' })
+          const marker = L.marker([item.lat, item.lng], { icon })
+          marker.bindPopup(`
+            <div style="min-width: 220px; padding: 12px;">
+              <div style="font-weight: 700; color: #FF6B00; font-size: 16px; margin-bottom: 6px;">${item.name}</div>
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <span style="background: #FF6B00; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">${item.price_range || '€€'}</span>
+                <span style="color: #666; font-size: 12px;">★ ${item.rating || 'N/A'}</span>
+              </div>
+              <a href="/barber/${item.id}" style="
+                display: inline-block;
+                background: #00C46A;
+                color: #fff;
+                padding: 6px 12px;
+                border-radius: 6px;
+                text-decoration: none;
+                font-size: 12px;
+                font-weight: 600;
+                margin-top: 4px;
+              ">Bekijk profiel</a>
+            </div>
+          `)
+          marker.addTo(layer)
+        }
       }
     })
     layer.addTo(map)
