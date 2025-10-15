@@ -327,8 +327,8 @@ export default function MapPage() {
               marker.addTo(layer)
             }
           }
-      }
-    })
+        }
+      })
     layer.addTo(map)
     map._barberLayer = layer
     
