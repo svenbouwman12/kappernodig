@@ -95,11 +95,12 @@ export default function MapPage() {
     <div className="space-y-4">
       <Card>
         <div className="font-semibold mb-2">Kaart</div>
-        <div id="map" style={{ height: 520, width: '100%', borderRadius: 12, overflow: 'hidden' }} />
+        <div id="map" style={{ height: '70vh', minHeight: '400px', width: '100%', borderRadius: 12, overflow: 'hidden' }} />
       </Card>
       <div className="text-sm text-secondary/70">OpenStreetMap tiles; clustering client-side.</div>
     </div>
   )
 }
+
 
 
