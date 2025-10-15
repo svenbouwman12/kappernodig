@@ -59,6 +59,26 @@ export default function MapPage() {
       subdomains: 'abcd',
       maxZoom: 20
     }).addTo(m)
+    
+    // Hide Leaflet attribution and other elements
+    setTimeout(() => {
+      const attribution = document.querySelector('.leaflet-control-attribution')
+      if (attribution) {
+        attribution.style.display = 'none'
+      }
+      
+      // Hide any other Leaflet controls that might show flags or unwanted elements
+      const controls = document.querySelectorAll('.leaflet-control')
+      controls.forEach(control => {
+        if (control.classList.contains('leaflet-control-attribution') || 
+            control.classList.contains('leaflet-control-zoom')) {
+          // Keep zoom controls, hide attribution
+          if (control.classList.contains('leaflet-control-attribution')) {
+            control.style.display = 'none'
+          }
+        }
+      })
+    }, 100)
     m.on('zoomend', () => setZoom(m.getZoom()))
     mapRef.current = m
     setMap(m)
