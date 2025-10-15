@@ -12,15 +12,21 @@ export default function Navbar() {
   async function handleLogout() {
     console.log('Logging out...')
     try {
+      // Clear local storage first
+      localStorage.clear()
+      sessionStorage.clear()
+      
       const { error } = await supabase.auth.signOut()
+      console.log('Supabase signOut result:', { error })
+      
       if (error) {
         console.error('Logout error:', error)
-        alert('Fout bij uitloggen: ' + error.message)
-      } else {
-        console.log('Logged out successfully')
-        // Force page reload to clear all state
-        window.location.href = '/'
       }
+      
+      // Always force redirect regardless of error
+      console.log('Forcing redirect to homepage...')
+      window.location.href = '/'
+      
     } catch (err) {
       console.error('Logout exception:', err)
       // Force logout by clearing everything
