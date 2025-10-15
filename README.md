@@ -26,6 +26,18 @@ Maak `.env` op basis van `.env.example`:
 - Zet env (zie boven)
 - Run: `npm run geocode`
 
+## Vercel serverless geocoding
+Vars bij Vercel (Project → Settings → Environment Variables):
+- `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`, `OPENCAGE_API_KEY` (server-only)
+- `GEOCODE_JOB_TOKEN` (random secret)
+
+Aanroepen (handmatig):
+```
+curl -H "Authorization: Bearer <GEOCODE_JOB_TOKEN>" https://<your-app>.vercel.app/api/geocode
+```
+Cron (vercel.json): draait dagelijks 02:00.
+
 ## Structuur
 - `src/components` UI componenten
 - `src/pages` pagina's en routing

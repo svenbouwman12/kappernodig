@@ -1,6 +1,9 @@
 {
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "crons": [
+    { "path": "/api/geocode", "schedule": "0 2 * * *" }
   ]
 }
 
