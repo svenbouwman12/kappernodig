@@ -109,6 +109,9 @@ export default function MapPage() {
   const [map, setMap] = useState(null)
   const [barbers, setBarbers] = useState([])
   const [zoom, setZoom] = useState(6)
+  const [userLocation, setUserLocation] = useState(null)
+  const [locationPermission, setLocationPermission] = useState(null)
+  const [closestBarber, setClosestBarber] = useState(null)
 
   useEffect(() => {
     if (mapRef.current || typeof window === 'undefined') return
@@ -179,6 +182,57 @@ export default function MapPage() {
         load()
       }, [])
 
+      // Request user location on component mount
+      useEffect(() => {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const { latitude, longitude } = position.coords
+              setUserLocation({ lat: latitude, lng: longitude })
+              setLocationPermission('granted')
+              
+              // Center map on user location
+              if (map) {
+                map.setView([latitude, longitude], 12)
+              }
+            },
+            (error) => {
+              console.log('Geolocation error:', error)
+              setLocationPermission('denied')
+            },
+            {
+              enableHighAccuracy: true,
+              timeout: 10000,
+              maximumAge: 300000 // 5 minutes
+            }
+          )
+        } else {
+          setLocationPermission('not-supported')
+        }
+      }, [map])
+
+      // Calculate closest barber when user location is available
+      useEffect(() => {
+        if (userLocation && barbers.length > 0) {
+          let closest = null
+          let closestDistance = Infinity
+          
+          barbers.forEach(barber => {
+            const distance = Math.sqrt(
+              Math.pow(barber.lat - userLocation.lat, 2) + 
+              Math.pow(barber.lng - userLocation.lng, 2)
+            ) * 111000 // Convert to meters (rough approximation)
+            
+            if (distance < closestDistance) {
+              closestDistance = distance
+              closest = { ...barber, distance: Math.round(distance) }
+            }
+          })
+          
+          setClosestBarber(closest)
+        }
+      }, [userLocation, barbers])
+
   const clusters = useMemo(() => clusterPoints(barbers, zoom), [barbers, zoom])
 
   useEffect(() => {
@@ -188,7 +242,38 @@ export default function MapPage() {
       map.removeLayer(map._barberLayer)
     }
     const layer = L.layerGroup()
-    clusters.forEach(item => {
+        // Add user location marker if available
+        if (userLocation) {
+          const userIcon = L.divIcon({
+            html: `
+              <div style="
+                background: #00C46A;
+                color: #fff;
+                border-radius: 50%;
+                width: 20px;
+                height: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 700;
+                font-size: 12px;
+                box-shadow: 0 2px 8px rgba(0, 196, 106, 0.4);
+                border: 3px solid #fff;
+              ">📍</div>
+            `,
+            className: 'user-location-marker',
+            iconSize: [20, 20]
+          })
+          L.marker([userLocation.lat, userLocation.lng], { icon: userIcon })
+            .bindPopup(`
+              <div style="text-align: center; padding: 8px;">
+                <div style="color: #00C46A; font-weight: 700; font-size: 14px;">Jouw locatie</div>
+              </div>
+            `)
+            .addTo(layer)
+        }
+
+        clusters.forEach(item => {
           // Validate coordinates before creating markers
           if (isNaN(item.lat) || isNaN(item.lng) || !isFinite(item.lat) || !isFinite(item.lng)) {
             console.warn('Invalid coordinates for item:', item)
@@ -348,24 +433,54 @@ export default function MapPage() {
       <Card>
         <div className="flex items-center justify-between mb-4">
           <div className="font-semibold">Kaart</div>
-          <div className="text-sm text-secondary/70 bg-gray-100 px-3 py-1 rounded-full">
-            Zoom: {zoom.toFixed(1)} | 
-            {             zoom < 7 ? ' Heel Nederland' : 
-             zoom < 8 ? ' Grote regios' : 
-             zoom < 9 ? ' Meerdere clusters' : 
-             zoom < 10 ? ' Regio overzicht' : 
-             zoom < 11 ? ' Stad niveau' : 
-             zoom < 12 ? ' Wijk niveau' : 
-             zoom < 13 ? ' Buurt niveau' : 
-             zoom < 14 ? ' Kleine clusters' : 
-             zoom < 15 ? ' Zeer kleine clusters' : 
-             zoom < 16 ? ' Mini clusters' : 
-             zoom < 17 ? ' Micro clusters' : 
-             zoom < 18 ? ' Nano clusters' : 
-             zoom < 19 ? ' Pin markers' : 
-             zoom < 20 ? ' Labels' : ' Auto-popup'}
+          <div className="flex items-center gap-3">
+            {locationPermission === 'granted' && userLocation && (
+              <div className="text-sm text-success bg-green-50 px-3 py-1 rounded-full">
+                📍 Locatie gedeeld
+              </div>
+            )}
+            {locationPermission === 'denied' && (
+              <div className="text-sm text-red-600 bg-red-50 px-3 py-1 rounded-full">
+                ❌ Locatie geweigerd
+              </div>
+            )}
+            <div className="text-sm text-secondary/70 bg-gray-100 px-3 py-1 rounded-full">
+              Zoom: {zoom.toFixed(1)} | 
+              {             zoom < 7 ? ' Heel Nederland' : 
+               zoom < 8 ? ' Grote regios' : 
+               zoom < 9 ? ' Meerdere clusters' : 
+               zoom < 10 ? ' Regio overzicht' : 
+               zoom < 11 ? ' Stad niveau' : 
+               zoom < 12 ? ' Wijk niveau' : 
+               zoom < 13 ? ' Buurt niveau' : 
+               zoom < 14 ? ' Kleine clusters' : 
+               zoom < 15 ? ' Zeer kleine clusters' : 
+               zoom < 16 ? ' Mini clusters' : 
+               zoom < 17 ? ' Micro clusters' : 
+               zoom < 18 ? ' Nano clusters' : 
+               zoom < 19 ? ' Pin markers' : 
+               zoom < 20 ? ' Labels' : ' Auto-popup'}
+            </div>
           </div>
         </div>
+        
+        {closestBarber && (
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-semibold text-green-800">Dichtstbijzijnde kapper</div>
+                <div className="text-green-700">{closestBarber.name}</div>
+                <div className="text-sm text-green-600">{closestBarber.distance}m van jouw locatie</div>
+              </div>
+              <Link to={`/barber/${closestBarber.id}`}>
+                <Button variant="primary" className="text-sm">
+                  Bekijk profiel
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
+        
         <div id="map" style={{ height: '70vh', minHeight: '500px', width: '100%', borderRadius: 12, overflow: 'hidden' }} />
       </Card>
     </div>
