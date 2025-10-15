@@ -1,7 +1,9 @@
 export default async function handler(_req, res) {
   try {
     const token = process.env.GEOCODE_JOB_TOKEN
-    const base = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : ''
+    const base = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : (typeof _req !== 'undefined' && _req.headers?.host ? `https://${_req.headers.host}` : '')
     if (!token || !base) {
       return res.status(500).json({ error: 'env-missing' })
     }
