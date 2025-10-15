@@ -118,7 +118,7 @@ export default function MapPage() {
         marker.addTo(layer)
       } else {
         // Show pin first, then label when zoomed in enough
-        if (zoom < 16) {
+        if (zoom < 17) {
           // Classic location pin icon
           const html = `
             <div style="
@@ -210,7 +210,7 @@ export default function MapPage() {
             {zoom < 9 ? ' Regio overzicht' : 
              zoom < 11 ? ' Stad niveau' : 
              zoom < 13 ? ' Wijk niveau' : 
-             zoom < 16 ? ' Pin markers' : 
+             zoom < 17 ? ' Pin markers' : 
              zoom < 18 ? ' Labels' : ' Grote labels'}
           </div>
         </div>
