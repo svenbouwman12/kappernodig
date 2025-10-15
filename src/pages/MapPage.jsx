@@ -51,10 +51,19 @@ function clusterPoints(points, zoom) {
     }
   })
   
-  // If we have too many small clusters at low zoom, merge them
-  if (zoom < 8 && clusters.length > 10) {
+  // Force single cluster at very low zoom levels
+  if (zoom < 6) {
+    // One big cluster for all Netherlands
+    const totalCount = points.length
+    const centerLat = points.reduce((sum, p) => sum + p.lat, 0) / totalCount
+    const centerLng = points.reduce((sum, p) => sum + p.lng, 0) / totalCount
+    return [{ type: 'cluster', lat: centerLat, lng: centerLng, count: totalCount, points: points }]
+  }
+  
+  // Merge clusters at low zoom levels
+  if (zoom < 8 && clusters.length > 1) {
     const mergedClusters = []
-    const mergeThreshold = zoom < 6 ? 200 : zoom < 7 ? 150 : 100
+    const mergeThreshold = zoom < 7 ? 300 : 200 // Larger threshold for more merging
     
     for (const cluster of clusters) {
       if (cluster.type === 'cluster') {
