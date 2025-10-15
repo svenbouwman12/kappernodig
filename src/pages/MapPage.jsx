@@ -7,28 +7,30 @@ import { Link } from 'react-router-dom'
 
 // Smart clustering based on zoom level and city proximity
 function clusterPoints(points, zoom) {
-  // Progressive clustering - start with one big cluster, then break down
+  // Progressive clustering - start with one big cluster, then break down smoothly
   let clusterSize
   if (zoom < 6) {
     clusterSize = 500 // One big cluster for all Netherlands
   } else if (zoom < 7) {
-    clusterSize = 300 // Few large clusters
+    clusterSize = 350 // Few large clusters
   } else if (zoom < 8) {
-    clusterSize = 200 // More clusters
+    clusterSize = 250 // More clusters
   } else if (zoom < 9) {
-    clusterSize = 150 // Regional clusters
+    clusterSize = 180 // Regional clusters
   } else if (zoom < 10) {
-    clusterSize = 100 // City clusters
+    clusterSize = 120 // City clusters
   } else if (zoom < 11) {
     clusterSize = 80 // District clusters
   } else if (zoom < 12) {
-    clusterSize = 60 // Neighborhood clusters
+    clusterSize = 50 // Neighborhood clusters
   } else if (zoom < 13) {
-    clusterSize = 40 // Small area clusters
-  } else if (zoom < 15) {
+    clusterSize = 35 // Small area clusters
+  } else if (zoom < 14) {
     clusterSize = 25 // Very small clusters
+  } else if (zoom < 15) {
+    clusterSize = 18 // Tiny clusters
   } else {
-    clusterSize = 15 // Individual points or tiny clusters
+    clusterSize = 12 // Individual points or micro clusters
   }
   
   const buckets = new Map()
@@ -42,7 +44,7 @@ function clusterPoints(points, zoom) {
   
   const clusters = []
   buckets.forEach((list) => {
-    if (list.length === 1 && zoom >= 15) {
+    if (list.length === 1 && zoom >= 16) {
       // Show individual markers only when very zoomed in
       clusters.push({ type: 'point', ...list[0] })
     } else {
@@ -353,7 +355,9 @@ export default function MapPage() {
              zoom < 11 ? ' Wijk niveau' : 
              zoom < 12 ? ' Buurt niveau' : 
              zoom < 13 ? ' Kleine clusters' : 
-             zoom < 15 ? ' Zeer kleine clusters' : 
+             zoom < 14 ? ' Zeer kleine clusters' : 
+             zoom < 15 ? ' Mini clusters' : 
+             zoom < 16 ? ' Micro clusters' : 
              zoom < 17 ? ' Pin markers' : 
              zoom < 20 ? ' Labels' : ' Auto-popup'}
           </div>
