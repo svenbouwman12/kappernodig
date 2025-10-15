@@ -77,18 +77,80 @@ export default function MapPage() {
     const layer = L.layerGroup()
     clusters.forEach(item => {
       if (item.type === 'cluster') {
-        const html = `<div style="background:#FF6B00;color:#fff;border-radius:9999px;padding:6px 10px;font-weight:600;box-shadow:0 2px 10px rgba(0,0,0,.15);">${item.count}</div>`
-        const icon = L.divIcon({ html, className: 'cluster-icon', iconSize: [30,30] })
-        L.marker([item.lat, item.lng], { icon }).addTo(layer)
+        // Modern cluster design
+        const html = `
+          <div style="
+            background: linear-gradient(135deg, #FF6B00, #FF8A3D);
+            color: #fff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
+            border: 3px solid #fff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+          " onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+            ${item.count}
+          </div>
+        `
+        const icon = L.divIcon({ html, className: 'cluster-icon', iconSize: [40,40] })
+        const marker = L.marker([item.lat, item.lng], { icon })
+        marker.bindPopup(`
+          <div style="text-align: center; padding: 8px;">
+            <strong style="color: #FF6B00; font-size: 16px;">${item.count} kappers</strong><br/>
+            <span style="color: #666; font-size: 12px;">in deze buurt</span>
+          </div>
+        `)
+        marker.addTo(layer)
       } else {
-        const html = `<div style="background:#fff;border-radius:12px;padding:6px 10px;border:1px solid #eee;box-shadow:0 2px 8px rgba(0,0,0,.08);">${item.name}</div>`
+        // Clean individual barber markers
+        const html = `
+          <div style="
+            background: #fff;
+            border-radius: 20px;
+            padding: 8px 12px;
+            border: 2px solid #00C46A;
+            box-shadow: 0 3px 10px rgba(0, 196, 106, 0.2);
+            font-weight: 600;
+            font-size: 12px;
+            color: #00C46A;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          " onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 5px 15px rgba(0, 196, 106, 0.3)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 3px 10px rgba(0, 196, 106, 0.2)'">
+            ${item.name}
+          </div>
+        `
         const icon = L.divIcon({ html, className: 'barber-icon' })
         const marker = L.marker([item.lat, item.lng], { icon })
-        marker.bindPopup(`<div style='min-width:180px'>
-          <strong>${item.name}</strong><br/>
-          ${item.price_range || ''} ${item.rating ? `• ★ ${item.rating}` : ''}<br/>
-          <a href="/barber/${item.id}">Bekijk profiel</a>
-        </div>`)
+        marker.bindPopup(`
+          <div style="min-width: 220px; padding: 12px;">
+            <div style="font-weight: 700; color: #FF6B00; font-size: 16px; margin-bottom: 6px;">${item.name}</div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+              <span style="background: #FF6B00; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">${item.price_range || '€€'}</span>
+              <span style="color: #666; font-size: 12px;">★ ${item.rating || 'N/A'}</span>
+            </div>
+            <a href="/barber/${item.id}" style="
+              display: inline-block;
+              background: #00C46A;
+              color: #fff;
+              padding: 6px 12px;
+              border-radius: 6px;
+              text-decoration: none;
+              font-size: 12px;
+              font-weight: 600;
+              margin-top: 4px;
+            ">Bekijk profiel</a>
+          </div>
+        `)
         marker.addTo(layer)
       }
     })
