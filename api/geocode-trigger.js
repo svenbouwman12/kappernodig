@@ -1,4 +1,5 @@
 export default async function handler(_req, res) {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8')
   try {
     const token = process.env.GEOCODE_JOB_TOKEN
     const base = process.env.VERCEL_URL

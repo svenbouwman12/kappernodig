@@ -2,6 +2,7 @@ import fetch from 'node-fetch'
 import { createClient } from '@supabase/supabase-js'
 
 export default async function handler(req, res) {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8')
   try {
     const auth = req.headers.authorization || ''
     const token = auth.startsWith('Bearer ') ? auth.slice(7) : ''
