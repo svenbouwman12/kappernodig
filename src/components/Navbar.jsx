@@ -11,12 +11,20 @@ export default function Navbar() {
 
   async function handleLogout() {
     console.log('Logging out...')
-    const { error } = await supabase.auth.signOut()
-    if (error) {
-      console.error('Logout error:', error)
-    } else {
-      console.log('Logged out successfully')
-      navigate('/')
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        console.error('Logout error:', error)
+        alert('Fout bij uitloggen: ' + error.message)
+      } else {
+        console.log('Logged out successfully')
+        // Force page reload to clear all state
+        window.location.href = '/'
+      }
+    } catch (err) {
+      console.error('Logout exception:', err)
+      // Force logout by clearing everything
+      window.location.href = '/'
     }
   }
 
