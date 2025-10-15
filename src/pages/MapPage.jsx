@@ -169,21 +169,24 @@ export default function MapPage() {
     }, 100)
   }, [])
 
-  useEffect(() => {
-    async function load() {
-      const { data } = await supabase.from('barbers').select('id,name,latitude,longitude,price_range,rating')
-      const withCoords = (data || []).filter(b => b.latitude && b.longitude).map(b => ({
-        id: b.id,
-        name: b.name,
-        lat: Number(b.latitude),
-        lng: Number(b.longitude),
-        price_range: b.price_range,
-        rating: b.rating,
-      }))
-      setBarbers(withCoords)
-    }
-    load()
-  }, [])
+      useEffect(() => {
+        async function load() {
+          const { data } = await supabase.from('barbers').select('id,name,latitude,longitude,price_range,rating')
+          const withCoords = (data || [])
+            .filter(b => b.latitude && b.longitude && !isNaN(Number(b.latitude)) && !isNaN(Number(b.longitude)))
+            .map(b => ({
+              id: b.id,
+              name: b.name,
+              lat: Number(b.latitude),
+              lng: Number(b.longitude),
+              price_range: b.price_range,
+              rating: b.rating,
+            }))
+            .filter(b => !isNaN(b.lat) && !isNaN(b.lng) && isFinite(b.lat) && isFinite(b.lng))
+          setBarbers(withCoords)
+        }
+        load()
+      }, [])
 
   const clusters = useMemo(() => clusterPoints(barbers, zoom), [barbers, zoom])
 
@@ -194,129 +197,136 @@ export default function MapPage() {
       map.removeLayer(map._barberLayer)
     }
     const layer = L.layerGroup()
-    clusters.forEach(item => {
-      if (item.type === 'cluster') {
-        // Dynamic cluster size based on count and zoom
-        const baseSize = zoom < 8 ? 50 : zoom < 10 ? 45 : 40
-        const size = Math.min(baseSize + (item.count * 2), 80)
-        const fontSize = zoom < 8 ? 16 : zoom < 10 ? 14 : 12
-        
-        const html = `
-          <div style="
-            background: linear-gradient(135deg, #FF6B00, #FF8A3D);
-            color: #fff;
-            border-radius: 50%;
-            width: ${size}px;
-            height: ${size}px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: ${fontSize}px;
-            box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
-            border: 3px solid #fff;
-            cursor: pointer;
-            transition: all 0.2s ease;
-          " onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
-            ${item.count}
-          </div>
-        `
-        const icon = L.divIcon({ html, className: 'cluster-icon', iconSize: [size, size] })
-        const marker = L.marker([item.lat, item.lng], { icon })
-        marker.bindPopup(`
-          <div style="text-align: center; padding: 12px;">
-            <div style="color: #FF6B00; font-size: 18px; font-weight: 700; margin-bottom: 4px;">${item.count} kappers</div>
-            <div style="color: #666; font-size: 13px;">in deze regio</div>
-          </div>
-        `)
-        marker.addTo(layer)
-      } else {
-        // Show pin first, then label when zoomed in enough
-        if (zoom < 17) {
-          // Classic location pin icon
-          const html = `
-            <div style="
-              width: 24px;
-              height: 32px;
-              position: relative;
-              cursor: pointer;
-              transition: all 0.2s ease;
-              filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-            " onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">
-              <svg width="24" height="32" viewBox="0 0 24 32" style="position: absolute; top: 0; left: 0;">
-                <path d="M12 0C5.4 0 0 5.4 0 12c0 7.2 12 20 12 20s12-12.8 12-20c0-6.6-5.4-12-12-12z" fill="#FF6B00"/>
-                <circle cx="12" cy="12" r="6" fill="#fff"/>
-              </svg>
-            </div>
-          `
-          const icon = L.divIcon({ html, className: 'barber-pin', iconSize: [24, 32], iconAnchor: [12, 32] })
-          const marker = L.marker([item.lat, item.lng], { icon })
-          marker.bindPopup(`
-            <div style="min-width: 180px; padding: 10px;">
-              <div style="font-weight: 700; color: #FF6B00; font-size: 15px; margin-bottom: 4px;">${item.name}</div>
-              <div style="color: #666; font-size: 12px;">Zoom verder in voor details</div>
-            </div>
-          `)
-          marker.addTo(layer)
-        } else {
-          // Show labels at zoom 17-19, auto-open popup at zoom 20+
-          const html = `
-            <div style="
-              background: #fff;
-              border-radius: 20px;
-              padding: 8px 12px;
-              border: 2px solid #FF6B00;
-              box-shadow: 0 3px 10px rgba(255, 107, 0, 0.2);
-              font-weight: 600;
-              font-size: 12px;
-              color: #FF6B00;
-              white-space: nowrap;
-              cursor: pointer;
-              transition: all 0.2s ease;
-              max-width: none;
-              min-width: fit-content;
-              width: max-content;
-            " onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 5px 15px rgba(255, 107, 0, 0.3)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 3px 10px rgba(255, 107, 0, 0.2)'">
-              ${item.name}
-            </div>
-          `
-          const icon = L.divIcon({ html, className: 'barber-label' })
-          const marker = L.marker([item.lat, item.lng], { icon })
-          
-          const popupContent = `
-            <div style="min-width: 220px; padding: 12px;">
-              <div style="font-weight: 700; color: #FF6B00; font-size: 16px; margin-bottom: 6px;">${item.name}</div>
-              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                <span style="background: #FF6B00; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">${item.price_range || '€€'}</span>
-                <span style="color: #666; font-size: 12px;">★ ${item.rating || 'N/A'}</span>
-              </div>
-              <a href="/barber/${item.id}" style="
-                display: inline-block;
-                background: #FF6B00;
-                color: #fff;
-                padding: 6px 12px;
-                border-radius: 6px;
-                text-decoration: none;
-                font-size: 12px;
-                font-weight: 600;
-                margin-top: 4px;
-              ">Bekijk profiel</a>
-            </div>
-          `
-          
-          marker.bindPopup(popupContent)
-          
-          // Auto-open popup at zoom 20+ for the marker closest to center
-          if (zoom >= 20) {
-            const mapCenter = map.getCenter()
-            const markerDistance = mapCenter.distanceTo([item.lat, item.lng])
-            
-            // Store distance for comparison
-            marker._distanceToCenter = markerDistance
+        clusters.forEach(item => {
+          // Validate coordinates before creating markers
+          if (isNaN(item.lat) || isNaN(item.lng) || !isFinite(item.lat) || !isFinite(item.lng)) {
+            console.warn('Invalid coordinates for item:', item)
+            return
           }
           
-          marker.addTo(layer)
-        }
+          if (item.type === 'cluster') {
+            // Dynamic cluster size based on count and zoom
+            const baseSize = zoom < 8 ? 50 : zoom < 10 ? 45 : 40
+            const size = Math.min(baseSize + (item.count * 2), 80)
+            const fontSize = zoom < 8 ? 16 : zoom < 10 ? 14 : 12
+            
+            const html = `
+              <div style="
+                background: linear-gradient(135deg, #FF6B00, #FF8A3D);
+                color: #fff;
+                border-radius: 50%;
+                width: ${size}px;
+                height: ${size}px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 700;
+                font-size: ${fontSize}px;
+                box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
+                border: 3px solid #fff;
+                cursor: pointer;
+                transition: all 0.2s ease;
+              " onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                ${item.count}
+              </div>
+            `
+            const icon = L.divIcon({ html, className: 'cluster-icon', iconSize: [size, size] })
+            const marker = L.marker([item.lat, item.lng], { icon })
+            marker.bindPopup(`
+              <div style="text-align: center; padding: 12px;">
+                <div style="color: #FF6B00; font-size: 18px; font-weight: 700; margin-bottom: 4px;">${item.count} kappers</div>
+                <div style="color: #666; font-size: 13px;">in deze regio</div>
+              </div>
+            `)
+            marker.addTo(layer)
+          } else {
+            // Show pin first, then label when zoomed in enough
+            if (zoom < 17) {
+              // Classic location pin icon
+              const html = `
+                <div style="
+                  width: 24px;
+                  height: 32px;
+                  position: relative;
+                  cursor: pointer;
+                  transition: all 0.2s ease;
+                  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+                " onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">
+                  <svg width="24" height="32" viewBox="0 0 24 32" style="position: absolute; top: 0; left: 0;">
+                    <path d="M12 0C5.4 0 0 5.4 0 12c0 7.2 12 20 12 20s12-12.8 12-20c0-6.6-5.4-12-12-12z" fill="#FF6B00"/>
+                    <circle cx="12" cy="12" r="6" fill="#fff"/>
+                  </svg>
+                </div>
+              `
+              const icon = L.divIcon({ html, className: 'barber-pin', iconSize: [24, 32], iconAnchor: [12, 32] })
+              const marker = L.marker([item.lat, item.lng], { icon })
+              marker.bindPopup(`
+                <div style="min-width: 180px; padding: 10px;">
+                  <div style="font-weight: 700; color: #FF6B00; font-size: 15px; margin-bottom: 4px;">${item.name}</div>
+                  <div style="color: #666; font-size: 12px;">Zoom verder in voor details</div>
+                </div>
+              `)
+              marker.addTo(layer)
+            } else {
+              // Show labels at zoom 17-19, auto-open popup at zoom 20+
+              const html = `
+                <div style="
+                  background: #fff;
+                  border-radius: 20px;
+                  padding: 8px 12px;
+                  border: 2px solid #FF6B00;
+                  box-shadow: 0 3px 10px rgba(255, 107, 0, 0.2);
+                  font-weight: 600;
+                  font-size: 12px;
+                  color: #FF6B00;
+                  white-space: nowrap;
+                  cursor: pointer;
+                  transition: all 0.2s ease;
+                  max-width: none;
+                  min-width: fit-content;
+                  width: max-content;
+                " onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 5px 15px rgba(255, 107, 0, 0.3)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 3px 10px rgba(255, 107, 0, 0.2)'">
+                  ${item.name}
+                </div>
+              `
+              const icon = L.divIcon({ html, className: 'barber-label' })
+              const marker = L.marker([item.lat, item.lng], { icon })
+              
+              const popupContent = `
+                <div style="min-width: 220px; padding: 12px;">
+                  <div style="font-weight: 700; color: #FF6B00; font-size: 16px; margin-bottom: 6px;">${item.name}</div>
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <span style="background: #FF6B00; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">${item.price_range || '€€'}</span>
+                    <span style="color: #666; font-size: 12px;">★ ${item.rating || 'N/A'}</span>
+                  </div>
+                  <a href="/barber/${item.id}" style="
+                    display: inline-block;
+                    background: #FF6B00;
+                    color: #fff;
+                    padding: 6px 12px;
+                    border-radius: 6px;
+                    text-decoration: none;
+                    font-size: 12px;
+                    font-weight: 600;
+                    margin-top: 4px;
+                  ">Bekijk profiel</a>
+                </div>
+              `
+              
+              marker.bindPopup(popupContent)
+              
+              // Auto-open popup at zoom 20+ for the marker closest to center
+              if (zoom >= 20) {
+                const mapCenter = map.getCenter()
+                const markerDistance = mapCenter.distanceTo([item.lat, item.lng])
+                
+                // Store distance for comparison
+                marker._distanceToCenter = markerDistance
+              }
+              
+              marker.addTo(layer)
+            }
+          }
       }
     })
     layer.addTo(map)
