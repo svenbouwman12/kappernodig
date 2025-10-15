@@ -159,20 +159,16 @@ export default function MapPage() {
           `)
           marker.addTo(layer)
         } else {
-          // Full label when zoomed in enough (only at very high zoom)
-          const labelSize = zoom >= 18 ? '14px' : '12px'
-          const padding = zoom >= 18 ? '10px 16px' : '8px 12px'
-          const maxWidth = zoom >= 18 ? '150px' : '120px'
-          
+          // Show labels at zoom 17-19, auto-open popup at zoom 20+
           const html = `
             <div style="
               background: #fff;
               border-radius: 20px;
-              padding: ${padding};
+              padding: 8px 12px;
               border: 2px solid #FF6B00;
               box-shadow: 0 3px 10px rgba(255, 107, 0, 0.2);
               font-weight: 600;
-              font-size: ${labelSize};
+              font-size: 12px;
               color: #FF6B00;
               white-space: nowrap;
               cursor: pointer;
@@ -186,7 +182,8 @@ export default function MapPage() {
           `
           const icon = L.divIcon({ html, className: 'barber-label' })
           const marker = L.marker([item.lat, item.lng], { icon })
-          marker.bindPopup(`
+          
+          const popupContent = `
             <div style="min-width: 220px; padding: 12px;">
               <div style="font-weight: 700; color: #FF6B00; font-size: 16px; margin-bottom: 6px;">${item.name}</div>
               <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
@@ -205,7 +202,15 @@ export default function MapPage() {
                 margin-top: 4px;
               ">Bekijk profiel</a>
             </div>
-          `)
+          `
+          
+          marker.bindPopup(popupContent)
+          
+          // Auto-open popup at zoom 20+
+          if (zoom >= 20) {
+            marker.openPopup()
+          }
+          
           marker.addTo(layer)
         }
       }
@@ -225,7 +230,7 @@ export default function MapPage() {
              zoom < 11 ? ' Stad niveau' : 
              zoom < 13 ? ' Wijk niveau' : 
              zoom < 17 ? ' Pin markers' : 
-             zoom < 18 ? ' Labels' : ' Grote labels'}
+             zoom < 20 ? ' Labels' : ' Auto-popup'}
           </div>
         </div>
         <div id="map" style={{ height: '70vh', minHeight: '500px', width: '100%', borderRadius: 12, overflow: 'hidden' }} />
