@@ -55,7 +55,7 @@ export default function MapPage() {
     
     // Modern map style with CartoDB
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      attribution: '',
       subdomains: 'abcd',
       maxZoom: 20
     }).addTo(m)
@@ -258,7 +258,6 @@ export default function MapPage() {
           </div>
         </div>
         <div id="map" style={{ height: '70vh', minHeight: '500px', width: '100%', borderRadius: 12, overflow: 'hidden' }} />
-        <div className="text-sm text-secondary/70 mt-4">OpenStreetMap tiles; clustering client-side.</div>
       </Card>
     </div>
   )
