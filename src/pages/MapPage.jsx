@@ -5,70 +5,9 @@ import Card from '../components/Card.jsx'
 import { supabase } from '../lib/supabase'
 import { Link } from 'react-router-dom'
 
-// Smart clustering based on zoom level - consistent progressive breakdown
+// Improved clustering with stable positions and consistent behavior
 function clusterPoints(points, zoom) {
-  // Progressive clustering with consistent breakdown
-  // Each zoom level should have fewer clusters than the previous
-  let clusterSize
-  if (zoom < 7) {
-    clusterSize = 2000 // One big cluster for all Netherlands
-  } else if (zoom < 8) {
-    clusterSize = 1000 // Few large clusters (2-3 clusters)
-  } else if (zoom < 9) {
-    clusterSize = 500 // More clusters (4-6 clusters)
-  } else if (zoom < 10) {
-    clusterSize = 300 // Regional clusters (8-12 clusters)
-  } else if (zoom < 11) {
-    clusterSize = 200 // City clusters (15-25 clusters)
-  } else if (zoom < 12) {
-    clusterSize = 120 // District clusters (30-50 clusters)
-  } else if (zoom < 13) {
-    clusterSize = 80 // Neighborhood clusters (50-80 clusters)
-  } else if (zoom < 14) {
-    clusterSize = 50 // Small area clusters (80-120 clusters)
-  } else if (zoom < 15) {
-    clusterSize = 30 // Very small clusters (120-200 clusters)
-  } else if (zoom < 16) {
-    clusterSize = 20 // Tiny clusters (200-300 clusters)
-  } else if (zoom < 17) {
-    clusterSize = 12 // Micro clusters (300-500 clusters)
-  } else {
-    clusterSize = 6 // Individual points or nano clusters
-  }
-  
-  const buckets = new Map()
-  
-  for (const p of points) {
-    const key = `${Math.round(p.lat * clusterSize)}:${Math.round(p.lng * clusterSize)}`
-    const list = buckets.get(key) || []
-    list.push(p)
-    buckets.set(key, list)
-  }
-  
-  const clusters = []
-  buckets.forEach((list) => {
-    if (list.length === 1 && zoom >= 17) {
-      // Show individual markers only when very zoomed in
-      clusters.push({ type: 'point', ...list[0] })
-    } else {
-      // Always cluster when zoomed out or multiple points
-      const lat = list.reduce((a,b)=>a+b.lat,0)/list.length
-      const lng = list.reduce((a,b)=>a+b.lng,0)/list.length
-      clusters.push({ type: 'cluster', lat, lng, count: list.length, points: list })
-    }
-  })
-  
-  // Force single cluster at very low zoom levels
-  if (zoom < 7) {
-    // One big cluster for all Netherlands
-    const totalCount = points.length
-    const centerLat = points.reduce((sum, p) => sum + p.lat, 0) / totalCount
-    const centerLng = points.reduce((sum, p) => sum + p.lng, 0) / totalCount
-    return [{ type: 'cluster', lat: centerLat, lng: centerLng, count: totalCount, points: points }]
-  }
-  
-  // Force consistent clustering behavior
-  // At very low zoom, always return single cluster
+  // Force single cluster at very low zoom
   if (zoom < 7) {
     const totalCount = points.length
     const centerLat = points.reduce((sum, p) => sum + p.lat, 0) / totalCount
@@ -76,50 +15,85 @@ function clusterPoints(points, zoom) {
     return [{ type: 'cluster', lat: centerLat, lng: centerLng, count: totalCount, points: points }]
   }
   
-  // At zoom 7-8, merge nearby clusters to ensure smooth progression
-  if (zoom < 9 && clusters.length > 1) {
-    const mergedClusters = []
-    const mergeThreshold = zoom < 8 ? 500 : 300 // Larger threshold for more merging
+  // Calculate cluster size based on zoom level
+  // Use a more stable approach with fixed grid cells
+  const gridSize = Math.pow(2, Math.max(0, 18 - zoom)) // More stable grid
+  const clusters = new Map()
+  
+  // Group points into stable grid cells
+  for (const point of points) {
+    const gridLat = Math.floor(point.lat * gridSize) / gridSize
+    const gridLng = Math.floor(point.lng * gridSize) / gridSize
+    const key = `${gridLat},${gridLng}`
     
-    for (const cluster of clusters) {
+    if (!clusters.has(key)) {
+      clusters.set(key, [])
+    }
+    clusters.get(key).push(point)
+  }
+  
+  const result = []
+  
+  // Convert clusters to result format
+  for (const [key, pointsInCluster] of clusters) {
+    if (pointsInCluster.length === 1 && zoom >= 17) {
+      // Show individual markers only when very zoomed in
+      result.push({ type: 'point', ...pointsInCluster[0] })
+    } else {
+      // Calculate center of cluster (weighted average)
+      const lat = pointsInCluster.reduce((sum, p) => sum + p.lat, 0) / pointsInCluster.length
+      const lng = pointsInCluster.reduce((sum, p) => sum + p.lng, 0) / pointsInCluster.length
+      result.push({ 
+        type: 'cluster', 
+        lat, 
+        lng, 
+        count: pointsInCluster.length, 
+        points: pointsInCluster 
+      })
+    }
+  }
+  
+  // Merge nearby clusters at low zoom levels for smoother progression
+  if (zoom < 10 && result.length > 1) {
+    const merged = []
+    const mergeDistance = zoom < 8 ? 0.5 : zoom < 9 ? 0.3 : 0.2 // Degrees
+    
+    for (const cluster of result) {
       if (cluster.type === 'cluster') {
-        // Find nearby clusters to merge
-        let merged = false
-        for (const mergedCluster of mergedClusters) {
+        let foundMerge = false
+        
+        for (const mergedCluster of merged) {
           if (mergedCluster.type === 'cluster') {
             const distance = Math.sqrt(
               Math.pow(cluster.lat - mergedCluster.lat, 2) + 
               Math.pow(cluster.lng - mergedCluster.lng, 2)
-            ) * 111000 // Rough conversion to meters
+            )
             
-            if (distance < mergeThreshold) {
+            if (distance < mergeDistance) {
               // Merge clusters
               const totalCount = cluster.count + mergedCluster.count
-              const newLat = (cluster.lat * cluster.count + mergedCluster.lat * mergedCluster.count) / totalCount
-              const newLng = (cluster.lng * cluster.count + mergedCluster.lng * mergedCluster.count) / totalCount
-              
-              mergedCluster.lat = newLat
-              mergedCluster.lng = newLng
+              mergedCluster.lat = (cluster.lat * cluster.count + mergedCluster.lat * mergedCluster.count) / totalCount
+              mergedCluster.lng = (cluster.lng * cluster.count + mergedCluster.lng * mergedCluster.count) / totalCount
               mergedCluster.count = totalCount
               mergedCluster.points = [...mergedCluster.points, ...cluster.points]
-              merged = true
+              foundMerge = true
               break
             }
           }
         }
         
-        if (!merged) {
-          mergedClusters.push(cluster)
+        if (!foundMerge) {
+          merged.push(cluster)
         }
       } else {
-        mergedClusters.push(cluster)
+        merged.push(cluster)
       }
     }
     
-    return mergedClusters
+    return merged
   }
   
-  return clusters
+  return result
 }
 
 export default function MapPage() {
