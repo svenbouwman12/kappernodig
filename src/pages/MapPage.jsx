@@ -7,8 +7,28 @@ import { Link } from 'react-router-dom'
 
 // Smart clustering based on zoom level and city proximity
 function clusterPoints(points, zoom) {
-  // Much more aggressive clustering - keep numbers longer
-  const clusterSize = zoom < 9 ? 150 : zoom < 11 ? 100 : zoom < 13 ? 60 : 30
+  // Progressive clustering - start with one big cluster, then break down
+  let clusterSize
+  if (zoom < 6) {
+    clusterSize = 500 // One big cluster for all Netherlands
+  } else if (zoom < 7) {
+    clusterSize = 300 // Few large clusters
+  } else if (zoom < 8) {
+    clusterSize = 200 // More clusters
+  } else if (zoom < 9) {
+    clusterSize = 150 // Regional clusters
+  } else if (zoom < 10) {
+    clusterSize = 100 // City clusters
+  } else if (zoom < 11) {
+    clusterSize = 80 // District clusters
+  } else if (zoom < 12) {
+    clusterSize = 60 // Neighborhood clusters
+  } else if (zoom < 13) {
+    clusterSize = 40 // Small area clusters
+  } else {
+    clusterSize = 20 // Very small clusters or individual points
+  }
+  
   const buckets = new Map()
   
   for (const p of points) {
@@ -270,9 +290,14 @@ export default function MapPage() {
           <div className="font-semibold">Kaart</div>
           <div className="text-sm text-secondary/70 bg-gray-100 px-3 py-1 rounded-full">
             Zoom: {zoom.toFixed(1)} | 
-            {zoom < 9 ? ' Regio overzicht' : 
-             zoom < 11 ? ' Stad niveau' : 
-             zoom < 13 ? ' Wijk niveau' : 
+            {zoom < 6 ? ' Heel Nederland' : 
+             zoom < 7 ? ' Grote regios' : 
+             zoom < 8 ? ' Meerdere clusters' : 
+             zoom < 9 ? ' Regio overzicht' : 
+             zoom < 10 ? ' Stad niveau' : 
+             zoom < 11 ? ' Wijk niveau' : 
+             zoom < 12 ? ' Buurt niveau' : 
+             zoom < 13 ? ' Kleine clusters' : 
              zoom < 17 ? ' Pin markers' : 
              zoom < 20 ? ' Labels' : ' Auto-popup'}
           </div>
