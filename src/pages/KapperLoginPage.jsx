@@ -29,14 +29,24 @@ export default function KapperLoginPage() {
         return
       }
       
-      // Test Supabase connection first
-      console.log('Testing Supabase connection...')
-      const { data: testData, error: testError } = await supabase.from('users').select('count').limit(1)
-      console.log('Supabase connection test:', { testData, testError })
+      // Try a simple test first
+      console.log('Testing basic Supabase functionality...')
+      try {
+        const { data: sessionData } = await supabase.auth.getSession()
+        console.log('Current session:', sessionData)
+      } catch (sessionError) {
+        console.log('Session check error:', sessionError)
+      }
       
-      // Try direct login without timeout first
+      // Now try the login
       console.log('Calling supabase.auth.signInWithPassword...')
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      
+      const authPromise = supabase.auth.signInWithPassword({ email, password })
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Auth call timeout')), 15000)
+      )
+      
+      const { data, error } = await Promise.race([authPromise, timeoutPromise])
       console.log('Supabase auth call completed')
       
       console.log('Login response received:', { data, error })
