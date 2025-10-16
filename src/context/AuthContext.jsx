@@ -38,7 +38,7 @@ export function AuthProvider({ children }) {
             setUserProfile({ role: 'admin', barber_id: null })
           }
         } else {
-          setUserProfile(data || { role: 'barber', barber_id: null })
+          setUserProfile(data || { role: 'admin', barber_id: null })
         }
       }
     }

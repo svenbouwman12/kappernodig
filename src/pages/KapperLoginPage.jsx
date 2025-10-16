@@ -1,9 +1,11 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Button from '../components/Button.jsx'
 import Card from '../components/Card.jsx'
 import { supabase } from '../lib/supabase'
 
 export default function KapperLoginPage() {
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -45,6 +47,10 @@ export default function KapperLoginPage() {
           setLoading(false)
           return
         }
+
+        // Redirect to kapper dashboard after successful login
+        navigate('/kapper/dashboard', { replace: true })
+        return
       }
       
     } catch (err) {
