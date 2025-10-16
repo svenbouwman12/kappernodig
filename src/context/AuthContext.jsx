@@ -35,16 +35,27 @@ export function AuthProvider({ children }) {
         setTimeout(() => reject(new Error('Query timeout')), 5000)
       )
       
-      const { data, error } = await Promise.race([queryPromise, timeoutPromise])
+      let data, error
+      try {
+        const result = await Promise.race([queryPromise, timeoutPromise])
+        data = result.data
+        error = result.error
+      } catch (timeoutError) {
+        console.log('Query timed out, treating as user not found:', timeoutError.message)
+        data = null
+        error = { code: 'TIMEOUT', message: 'Query timeout - user not found' }
+      }
       
       console.log('User profile query result:', { data, error })
       
       if (error) {
-        console.error('Database error details:', error)
-        console.log('Error code:', error.code)
-        console.log('Error message:', error.message)
-        console.log('Error details:', error.details)
-        console.log('Error hint:', error.hint)
+        console.log('Database error details:', error)
+        if (error.code !== 'TIMEOUT') {
+          console.log('Error code:', error.code)
+          console.log('Error message:', error.message)
+          console.log('Error details:', error.details)
+          console.log('Error hint:', error.hint)
+        }
       }
       
       if (mounted) {

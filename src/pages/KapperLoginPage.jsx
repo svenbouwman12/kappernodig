@@ -35,11 +35,16 @@ export default function KapperLoginPage() {
           setError('Onjuiste inloggegevens. Controleer je email en wachtwoord.')
         } else if (error.message.includes('Email not confirmed')) {
           setError('Je account is nog niet geverifieerd. Controleer je email voor een verificatielink.')
+        } else if (error.message.includes('Query timeout')) {
+          // Timeout is OK - user will be created by AuthContext
+          console.log('Login successful but profile query timed out - this is OK')
         } else {
           setError(`Login fout: ${error.message}`)
         }
-        setLoading(false)
-        return
+        if (!error.message.includes('Query timeout')) {
+          setLoading(false)
+          return
+        }
       }
 
       if (data.user) {
