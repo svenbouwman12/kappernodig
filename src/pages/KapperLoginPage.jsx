@@ -80,10 +80,15 @@ export default function KapperLoginPage() {
 
         console.log('Login successful! Redirecting to dashboard...')
         
-        // Force a page reload to ensure auth state is properly set
+        // IMMEDIATE redirect - no delays, no complex logic
+        console.log('Executing window.location.replace...')
+        window.location.replace('/kapper/dashboard')
+        
+        // Backup redirect after 1 second if the first one fails
         setTimeout(() => {
+          console.log('Backup redirect executing...')
           window.location.href = '/kapper/dashboard'
-        }, 100)
+        }, 1000)
         
         setLoading(false)
         return
