@@ -111,13 +111,38 @@ export default function KapperDashboardPage() {
         longitude: coordinates.lng
       }
 
-      const { error } = await supabase
+      const { data: barberResult, error } = await supabase
         .from('barbers')
         .upsert(dataWithOwner)
+        .select()
 
       if (error) {
         alert('Fout bij opslaan: ' + error.message)
         return
+      }
+
+      // Save local services if any
+      if (localServices.length > 0) {
+        const barberId = barberResult[0]?.id
+        if (barberId) {
+          const servicesToSave = localServices.map(service => ({
+            barber_id: barberId,
+            name: service.name,
+            price: service.price
+          }))
+
+          const { error: servicesError } = await supabase
+            .from('services')
+            .insert(servicesToSave)
+
+          if (servicesError) {
+            console.error('Error saving services:', servicesError)
+            alert('Kapperszaak opgeslagen, maar er was een fout bij het opslaan van de diensten.')
+          } else {
+            // Clear local services after successful save
+            setLocalServices([])
+          }
+        }
       }
 
       setShowAddForm(false)
@@ -278,6 +303,7 @@ export default function KapperDashboardPage() {
             onCancel={() => {
               setShowAddForm(false)
               setEditingBarber(null)
+              clearLocalServices()
             }}
           />
         )}
@@ -398,6 +424,7 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
   const [services, setServices] = useState([])
   const [saving, setSaving] = useState(false)
   const [newService, setNewService] = useState({ name: '', price: '' })
+  const [localServices, setLocalServices] = useState([]) // Services die nog niet opgeslagen zijn
 
   // Load services when barber changes
   useEffect(() => {
@@ -426,30 +453,33 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
     }
   }
 
-  async function addService(barberId) {
-    if (!newService.name.trim() || !newService.price || !barberId) return
+  function addService() {
+    if (!newService.name.trim() || !newService.price) return
     
-    try {
-      const { data, error } = await supabase
-        .from('services')
-        .insert({
-          barber_id: barberId,
-          name: newService.name.trim(),
-          price: parseFloat(newService.price)
-        })
-        .select()
-
-      if (error) {
-        console.error('Error adding service:', error)
-        alert('Fout bij toevoegen van dienst: ' + error.message)
-      } else {
-        setServices(prev => [...prev, data[0]])
-        setNewService({ name: '', price: '' })
-      }
-    } catch (err) {
-      console.error('Error adding service:', err)
-      alert('Er is een fout opgetreden bij het toevoegen van de dienst.')
+    // Add service to local list
+    const service = {
+      id: `temp-${Date.now()}`, // Temporary ID
+      name: newService.name.trim(),
+      price: parseFloat(newService.price),
+      isLocal: true // Flag to indicate it's not saved yet
     }
+    
+    setLocalServices(prev => [...prev, service])
+    setNewService({ name: '', price: '' })
+  }
+
+  function updateLocalService(serviceId, updates) {
+    setLocalServices(prev => prev.map(service => 
+      service.id === serviceId ? { ...service, ...updates } : service
+    ))
+  }
+
+  function removeLocalService(serviceId) {
+    setLocalServices(prev => prev.filter(service => service.id !== serviceId))
+  }
+
+  function clearLocalServices() {
+    setLocalServices([])
   }
 
   async function updateService(serviceId, updates) {
@@ -649,8 +679,8 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
               />
               <button
                 type="button"
-                onClick={() => addService(barber?.id)}
-                disabled={!newService.name.trim() || !newService.price || !barber?.id}
+                onClick={addService}
+                disabled={!newService.name.trim() || !newService.price}
                 className="px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Toevoegen
@@ -660,6 +690,7 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
 
           {/* Existing services */}
           <div className="space-y-2">
+            {/* Saved services */}
             {services.map((service) => (
               <ServiceItem 
                 key={service.id}
@@ -669,7 +700,18 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
               />
             ))}
             
-            {services.length === 0 && (
+            {/* Local services (not yet saved) */}
+            {localServices.map((service) => (
+              <ServiceItem 
+                key={service.id}
+                service={service}
+                onUpdate={updateLocalService}
+                onDelete={removeLocalService}
+                isLocal={true}
+              />
+            ))}
+            
+            {services.length === 0 && localServices.length === 0 && (
               <div className="text-center py-8 text-gray-500">
                 <p>Nog geen diensten toegevoegd</p>
                 <p className="text-sm">Voeg je eerste dienst toe hierboven</p>
@@ -722,7 +764,7 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
 }
 
 // ServiceItem component for editing individual services
-function ServiceItem({ service, onUpdate, onDelete }) {
+function ServiceItem({ service, onUpdate, onDelete, isLocal = false }) {
   const [isEditing, setIsEditing] = useState(false)
   const [editData, setEditData] = useState({
     name: service.name,
@@ -778,9 +820,20 @@ function ServiceItem({ service, onUpdate, onDelete }) {
   }
 
   return (
-    <div className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl">
+    <div className={`flex items-center justify-between p-3 rounded-xl ${
+      isLocal 
+        ? 'bg-yellow-50 border border-yellow-200' 
+        : 'bg-white border border-gray-200'
+    }`}>
       <div className="flex-1">
-        <span className="font-medium">{service.name}</span>
+        <div className="flex items-center gap-2">
+          <span className="font-medium">{service.name}</span>
+          {isLocal && (
+            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+              Nieuw
+            </span>
+          )}
+        </div>
       </div>
       <div className="flex items-center gap-3">
         <span className="font-medium text-primary">€{service.price.toFixed(2)}</span>
