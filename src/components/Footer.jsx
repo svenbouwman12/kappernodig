@@ -66,22 +66,14 @@ export default function Footer() {
             <h3 className="font-semibold text-secondary mb-3">Kapper Login</h3>
             {user ? (
               <div className="space-y-3">
-                {userProfile?.role === 'barber' && (
-                  <Link 
-                    to="/kapper/dashboard" 
-                    className="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
-                  >
-                    📊 Dashboard
-                  </Link>
-                )}
-                {userProfile?.role === 'admin' && (
-                  <Link 
-                    to="/admin" 
-                    className="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
-                  >
-                    ⚙️ Admin Dashboard
-                  </Link>
-                )}
+                {/* Always show Dashboard link for logged in users */}
+                <Link 
+                  to={userProfile?.role === 'admin' ? "/admin" : "/kapper/dashboard"} 
+                  className="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
+                >
+                  {userProfile?.role === 'admin' ? '⚙️ Admin Dashboard' : '📊 Dashboard'}
+                </Link>
+                
                 <div className="pt-2">
                   <button 
                     onClick={handleLogout}
