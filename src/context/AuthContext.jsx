@@ -14,8 +14,8 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     let mounted = true
     
-    async function loadUserProfile(userId) {
-      console.log('loadUserProfile called with userId:', userId)
+    async function loadUserProfile(userId, userEmail = '') {
+      console.log('loadUserProfile called with userId:', userId, 'email:', userEmail)
       if (!userId) {
         console.log('No userId provided, setting userProfile to null')
         setUserProfile(null)
@@ -25,31 +25,47 @@ export function AuthProvider({ children }) {
       console.log('Loading user profile from database for user:', userId)
       const { data, error } = await supabase
         .from('users')
-        .select('role, barber_id')
+        .select('*')
         .eq('id', userId)
         .single()
       
       console.log('User profile query result:', { data, error })
       
+      if (error) {
+        console.error('Database error details:', error)
+        console.log('Error code:', error.code)
+        console.log('Error message:', error.message)
+        console.log('Error details:', error.details)
+        console.log('Error hint:', error.hint)
+      }
+      
       if (mounted) {
         if (error) {
           console.error('Error loading user profile:', error)
-          // If user doesn't exist in users table, create them as admin
-          console.log('Creating new user as admin...')
-          const { error: insertError } = await supabase
+          // If user doesn't exist in users table, create them as barber (since they logged in via kapper login)
+          console.log('Creating new user as barber...')
+          const { data: insertData, error: insertError } = await supabase
             .from('users')
-            .insert({ id: userId, email: '', role: 'admin', barber_id: null })
+            .insert({ 
+              id: userId, 
+              email: userEmail, 
+              role: 'barber', 
+              barber_id: null 
+            })
+            .select()
+            .single()
           
           if (insertError) {
             console.error('Error creating user:', insertError)
+            console.log('Falling back to default barber profile')
             setUserProfile({ role: 'barber', barber_id: null })
           } else {
-            console.log('User created successfully as admin')
-            setUserProfile({ role: 'admin', barber_id: null })
+            console.log('User created successfully as barber:', insertData)
+            setUserProfile(insertData)
           }
         } else {
           console.log('User profile loaded successfully:', data)
-          setUserProfile(data || { role: 'admin', barber_id: null })
+          setUserProfile(data || { role: 'barber', barber_id: null })
         }
       }
     }
@@ -62,7 +78,7 @@ export function AuthProvider({ children }) {
       console.log('User set from session:', data.session?.user)
       if (data.session?.user) {
         console.log('User found, loading profile...')
-        await loadUserProfile(data.session.user.id)
+        await loadUserProfile(data.session.user.id, data.session.user.email)
       } else {
         console.log('No user in session, setting userProfile to null')
         setUserProfile(null)
@@ -76,7 +92,7 @@ export function AuthProvider({ children }) {
       setUser(session?.user ?? null)
       if (session?.user) {
         console.log('Auth state change - user found, loading profile...')
-        await loadUserProfile(session.user.id)
+        await loadUserProfile(session.user.id, session.user.email)
       } else {
         console.log('Auth state change - no user, setting userProfile to null')
         setUserProfile(null)
