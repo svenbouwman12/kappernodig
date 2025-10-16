@@ -18,7 +18,26 @@ export default function KapperLoginPage() {
     
     try {
       console.log('Attempting login for:', email)
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      console.log('Supabase client:', supabase)
+      console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL)
+      console.log('Supabase Key exists:', !!import.meta.env.VITE_SUPABASE_ANON_KEY)
+      
+      // Check if Supabase is properly configured
+      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        setError('Supabase is niet correct geconfigureerd. Controleer de environment variabelen.')
+        setLoading(false)
+        return
+      }
+      
+      // Add timeout to prevent hanging
+      const loginPromise = supabase.auth.signInWithPassword({ email, password })
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Login timeout')), 10000)
+      )
+      
+      const { data, error } = await Promise.race([loginPromise, timeoutPromise])
+      
+      console.log('Login response received:', { data, error })
       
       if (error) {
         console.error('Login error:', error)
