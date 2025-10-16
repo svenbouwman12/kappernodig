@@ -29,13 +29,15 @@ export default function KapperLoginPage() {
         return
       }
       
-      // Add timeout to prevent hanging
-      const loginPromise = supabase.auth.signInWithPassword({ email, password })
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Login timeout')), 10000)
-      )
+      // Test Supabase connection first
+      console.log('Testing Supabase connection...')
+      const { data: testData, error: testError } = await supabase.from('users').select('count').limit(1)
+      console.log('Supabase connection test:', { testData, testError })
       
-      const { data, error } = await Promise.race([loginPromise, timeoutPromise])
+      // Try direct login without timeout first
+      console.log('Calling supabase.auth.signInWithPassword...')
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      console.log('Supabase auth call completed')
       
       console.log('Login response received:', { data, error })
       
