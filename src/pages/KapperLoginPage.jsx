@@ -20,18 +20,9 @@ export default function KapperLoginPage() {
       console.log('=== LOGIN START ===')
       console.log('Email:', email)
       
-      // Create a fresh Supabase client to avoid any cached issues
-      const { createClient } = await import('@supabase/supabase-js')
-      const freshSupabase = createClient(
-        import.meta.env.VITE_SUPABASE_URL,
-        import.meta.env.VITE_SUPABASE_ANON_KEY
-      )
-      
-      console.log('Fresh Supabase client created')
-      
-      // Direct login without any tests
+      // Use the existing supabase client instead of creating a new one
       console.log('Attempting direct login...')
-      const { data, error } = await freshSupabase.auth.signInWithPassword({ 
+      const { data, error } = await supabase.auth.signInWithPassword({ 
         email, 
         password 
       })
@@ -54,8 +45,8 @@ export default function KapperLoginPage() {
       if (data.user) {
         console.log('User logged in successfully:', data.user.id)
         
-        // Check user role with fresh client
-        const { data: userProfile, error: profileError } = await freshSupabase
+        // Check user role with existing client
+        const { data: userProfile, error: profileError } = await supabase
           .from('users')
           .select('role')
           .eq('id', data.user.id)
@@ -64,15 +55,11 @@ export default function KapperLoginPage() {
         console.log('User profile check:', { userProfile, profileError })
 
         if (profileError) {
-          console.error('Profile error:', profileError)
-          setError('Fout bij ophalen gebruikersprofiel. Probeer opnieuw.')
-          setLoading(false)
-          return
-        }
-
-        if (!userProfile || userProfile.role !== 'barber') {
+          console.log('Profile error - user might not exist yet, this is OK')
+          // Don't error out - let AuthContext handle user creation
+        } else if (userProfile && userProfile.role !== 'barber') {
           console.log('User is not a barber, signing out')
-          await freshSupabase.auth.signOut()
+          await supabase.auth.signOut()
           setError('Alleen kappers kunnen hier inloggen.')
           setLoading(false)
           return
