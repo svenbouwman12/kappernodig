@@ -10,26 +10,18 @@ export default function Navbar() {
   const { user, userProfile } = useAuth()
 
   async function handleLogout() {
-    console.log('Logging out...')
     try {
-      // Clear local storage first
+      // Clear all local data
       localStorage.clear()
       sessionStorage.clear()
       
-      const { error } = await supabase.auth.signOut()
-      console.log('Supabase signOut result:', { error })
-      
-      if (error) {
-        console.error('Logout error:', error)
-      }
-      
-      // Always force redirect regardless of error
-      console.log('Forcing redirect to homepage...')
-      window.location.href = '/'
+      // Sign out from Supabase
+      await supabase.auth.signOut()
       
     } catch (err) {
-      console.error('Logout exception:', err)
-      // Force logout by clearing everything
+      console.error('Logout error:', err)
+    } finally {
+      // Always redirect to home
       window.location.href = '/'
     }
   }
@@ -48,7 +40,7 @@ export default function Navbar() {
         </form>
         <nav className="flex items-center gap-2">
           <Link className="btn btn-secondary px-3 py-2 hidden sm:inline-flex" to="/map">Kaart</Link>
-          {user ? (
+          {user && (
             <>
               {userProfile?.role === 'barber' && (
                 <Link className="btn btn-secondary px-3 py-2" to="/dashboard">Dashboard</Link>
@@ -57,11 +49,6 @@ export default function Navbar() {
                 <Link className="btn btn-secondary px-3 py-2" to="/admin">Admin</Link>
               )}
               <button className="btn btn-primary px-3 py-2" onClick={handleLogout}>Log uit</button>
-            </>
-          ) : (
-            <>
-              <Link className="btn btn-secondary px-3 py-2" to="/login">Inloggen</Link>
-              <Link className="btn btn-primary px-3 py-2" to="/register">Registreren</Link>
             </>
           )}
         </nav>

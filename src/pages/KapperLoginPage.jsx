@@ -3,7 +3,7 @@ import Button from '../components/Button.jsx'
 import Card from '../components/Card.jsx'
 import { supabase } from '../lib/supabase'
 
-export default function LoginPage() {
+export default function KapperLoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -18,23 +18,30 @@ export default function LoginPage() {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password })
       
       if (error) {
-        setError('Onjuiste inloggegevens. Controleer je email en wachtwoord.')
+        console.error('Login error:', error)
+        if (error.message.includes('Invalid login credentials')) {
+          setError('Onjuiste inloggegevens. Controleer je email en wachtwoord.')
+        } else if (error.message.includes('Email not confirmed')) {
+          setError('Je account is nog niet geverifieerd. Controleer je email voor een verificatielink.')
+        } else {
+          setError('Er is een fout opgetreden bij het inloggen. Probeer het opnieuw.')
+        }
         setLoading(false)
         return
       }
 
       if (data.user) {
-        // Check if user has admin role
+        // Check if user has barber role
         const { data: userProfile } = await supabase
           .from('users')
           .select('role')
           .eq('id', data.user.id)
           .single()
 
-        if (!userProfile || userProfile.role !== 'admin') {
-          // User is not an admin, sign them out
+        if (!userProfile || userProfile.role !== 'barber') {
+          // User is not a barber, sign them out
           await supabase.auth.signOut()
-          setError('Alleen admins kunnen hier inloggen. Gebruik de kapper login voor kappers.')
+          setError('Alleen kappers kunnen hier inloggen. Gebruik de admin login voor beheerders.')
           setLoading(false)
           return
         }
@@ -51,10 +58,7 @@ export default function LoginPage() {
   return (
     <div className="max-w-md mx-auto">
       <Card>
-        <h1 className="text-xl font-semibold mb-4">Admin Inloggen</h1>
-        <p className="text-sm text-secondary/70 mb-4">
-          Alleen admins kunnen hier inloggen. Voor kapper toegang gebruik de kapper login.
-        </p>
+        <h1 className="text-xl font-semibold mb-4">Kapper Inloggen</h1>
         <form onSubmit={handleLogin} className="space-y-3">
           <input 
             value={email} 
@@ -74,12 +78,10 @@ export default function LoginPage() {
           />
           {error && <div className="text-red-600 text-sm">{error}</div>}
           <Button className="w-full" disabled={loading}>
-            {loading ? 'Bezig...' : 'Inloggen als Admin'}
+            {loading ? 'Bezig...' : 'Inloggen als Kapper'}
           </Button>
         </form>
       </Card>
     </div>
   )
 }
-
-

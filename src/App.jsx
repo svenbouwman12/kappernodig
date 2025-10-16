@@ -6,6 +6,8 @@ import HomePage from './pages/HomePage.jsx'
 import BarberProfilePage from './pages/BarberProfilePage.jsx'
 import BarberDashboardPage from './pages/BarberDashboardPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
+import KapperLoginPage from './pages/KapperLoginPage.jsx'
+import KapperRegisterPage from './pages/KapperRegisterPage.jsx'
 import RegisterPage from './pages/RegisterPage.jsx'
 import MapPage from './pages/MapPage.jsx'
 import AdminDashboardPage from './pages/AdminDashboardPage.jsx'
@@ -61,6 +63,8 @@ function AppContent() {
             }
           />
           <Route path="/login" element={<div className="container-max"><LoginPage /></div>} />
+          <Route path="/kapper/login" element={<div className="container-max"><KapperLoginPage /></div>} />
+          <Route path="/kapper/register" element={<div className="container-max"><KapperRegisterPage /></div>} />
           <Route path="/register" element={<div className="container-max"><RegisterPage /></div>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

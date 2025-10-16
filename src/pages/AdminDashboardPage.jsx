@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { Edit, Trash2, Plus, MapPin, Phone, Globe, UserPlus, Users } from 'lucide-react'
 
 export default function AdminDashboardPage() {
+  const { user } = useAuth()
   const [barbers, setBarbers] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
@@ -20,9 +21,7 @@ export default function AdminDashboardPage() {
 
   async function loadBarbers() {
     setLoading(true)
-    console.log('Loading barbers...')
     const { data, error } = await supabase.from('barbers').select('*').order('created_at', { ascending: false })
-    console.log('Barbers data:', data, 'Error:', error)
     if (error) console.error('Error loading barbers:', error)
     setBarbers(data || [])
     
@@ -54,7 +53,6 @@ export default function AdminDashboardPage() {
   }
 
   async function saveBarber(barberData) {
-    const { user } = useAuth()
     const dataWithOwner = {
       ...barberData,
       owner_id: user?.id
@@ -98,9 +96,6 @@ export default function AdminDashboardPage() {
   }
 
   if (loading) return <div className="p-8">Laden...</div>
-  
-  // Debug: show what we're getting
-  console.log('AdminDashboardPage - barbers:', barbers.length, 'loading:', loading)
 
   return (
     <div className="space-y-6">
