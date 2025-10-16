@@ -14,6 +14,14 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     let mounted = true
     
+    // Fallback: if everything fails, set a default barber profile after 10 seconds
+    const fallbackTimeout = setTimeout(() => {
+      if (mounted && !userProfile) {
+        console.log('Fallback: Setting default barber profile after timeout')
+        setUserProfile({ role: 'barber', barber_id: null })
+      }
+    }, 10000)
+    
     async function loadUserProfile(userId, userEmail = '') {
       console.log('loadUserProfile called with userId:', userId, 'email:', userEmail)
       if (!userId) {
@@ -63,29 +71,40 @@ export function AuthProvider({ children }) {
           console.error('Error loading user profile:', error)
           // If user doesn't exist in users table, create them as barber (since they logged in via kapper login)
           console.log('Creating new user as barber...')
-          const { data: insertData, error: insertError } = await supabase
-            .from('users')
-            .insert({ 
-              id: userId, 
-              email: userEmail, 
-              role: 'barber', 
-              barber_id: null 
-            })
-            .select()
-            .single()
           
-          if (insertError) {
-            console.error('Error creating user:', insertError)
-            console.log('Falling back to default barber profile')
+          try {
+            const { data: insertData, error: insertError } = await supabase
+              .from('users')
+              .insert({ 
+                id: userId, 
+                email: userEmail, 
+                role: 'barber', 
+                barber_id: null 
+              })
+              .select()
+              .single()
+            
+            console.log('User creation result:', { insertData, insertError })
+            
+            if (insertError) {
+              console.error('Error creating user:', insertError)
+              console.log('Falling back to default barber profile')
+              setUserProfile({ role: 'barber', barber_id: null })
+            } else {
+              console.log('User created successfully as barber:', insertData)
+              setUserProfile(insertData)
+            }
+          } catch (createError) {
+            console.error('Exception during user creation:', createError)
+            console.log('Falling back to default barber profile due to exception')
             setUserProfile({ role: 'barber', barber_id: null })
-          } else {
-            console.log('User created successfully as barber:', insertData)
-            setUserProfile(insertData)
           }
         } else {
           console.log('User profile loaded successfully:', data)
           setUserProfile(data || { role: 'barber', barber_id: null })
         }
+      } else {
+        console.log('Component unmounted, skipping user profile update')
       }
     }
 
@@ -120,6 +139,7 @@ export function AuthProvider({ children }) {
 
     return () => {
       mounted = false
+      clearTimeout(fallbackTimeout)
       listener.subscription.unsubscribe()
     }
   }, [])
