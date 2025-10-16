@@ -80,8 +80,8 @@ export default function KapperRegisterPage() {
               return
             }
             
-            // If login successful, redirect to dashboard
-            window.location.href = '/dashboard'
+            // If login successful, redirect to kapper dashboard
+            window.location.href = '/kapper/dashboard'
           } catch (loginErr) {
             console.log('Auto-login failed, user needs to verify email first')
             setSuccess(true)

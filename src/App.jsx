@@ -5,6 +5,7 @@ import Footer from './components/Footer.jsx'
 import HomePage from './pages/HomePage.jsx'
 import BarberProfilePage from './pages/BarberProfilePage.jsx'
 import BarberDashboardPage from './pages/BarberDashboardPage.jsx'
+import KapperDashboardPage from './pages/KapperDashboardPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import KapperLoginPage from './pages/KapperLoginPage.jsx'
 import KapperRegisterPage from './pages/KapperRegisterPage.jsx'
@@ -32,7 +33,7 @@ function AppContent() {
         if (userProfile.role === 'admin') {
           navigate('/admin', { replace: true })
         } else if (userProfile.role === 'barber') {
-          navigate('/dashboard', { replace: true })
+          navigate('/kapper/dashboard', { replace: true })
         }
       }
     }
@@ -51,6 +52,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <div className="container-max"><BarberDashboardPage /></div>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/kapper/dashboard"
+            element={
+              <ProtectedRoute>
+                <KapperDashboardPage />
               </ProtectedRoute>
             }
           />

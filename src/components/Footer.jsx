@@ -42,7 +42,7 @@ export default function Footer() {
               <Link to="/" className="block text-sm text-secondary/70 hover:text-primary transition-colors">Home</Link>
               <Link to="/map" className="block text-sm text-secondary/70 hover:text-primary transition-colors">Kaart</Link>
               {user && userProfile?.role === 'barber' && (
-                <Link to="/dashboard" className="block text-sm text-secondary/70 hover:text-primary transition-colors">Dashboard</Link>
+                <Link to="/kapper/dashboard" className="block text-sm text-secondary/70 hover:text-primary transition-colors">Dashboard</Link>
               )}
               {user && userProfile?.role === 'admin' && (
                 <Link to="/admin" className="block text-sm text-secondary/70 hover:text-primary transition-colors">Admin</Link>

@@ -43,7 +43,7 @@ export default function Navbar() {
           {user && (
             <>
               {userProfile?.role === 'barber' && (
-                <Link className="btn btn-secondary px-3 py-2" to="/dashboard">Dashboard</Link>
+                <Link className="btn btn-secondary px-3 py-2" to="/kapper/dashboard">Dashboard</Link>
               )}
               {userProfile?.role === 'admin' && (
                 <Link className="btn btn-secondary px-3 py-2" to="/admin">Admin</Link>
