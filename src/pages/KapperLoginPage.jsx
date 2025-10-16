@@ -17,6 +17,7 @@ export default function KapperLoginPage() {
     setError('')
     
     try {
+      console.log('Attempting login for:', email)
       const { data, error } = await supabase.auth.signInWithPassword({ email, password })
       
       if (error) {
@@ -33,32 +34,44 @@ export default function KapperLoginPage() {
       }
 
       if (data.user) {
+        console.log('User logged in, checking role for:', data.user.id)
         // Check if user has barber role
-        const { data: userProfile } = await supabase
+        const { data: userProfile, error: profileError } = await supabase
           .from('users')
           .select('role')
           .eq('id', data.user.id)
           .single()
 
+        console.log('User profile:', userProfile, 'Error:', profileError)
+
+        if (profileError) {
+          console.error('Error fetching user profile:', profileError)
+          setError('Er is een fout opgetreden bij het ophalen van je profiel.')
+          setLoading(false)
+          return
+        }
+
         if (!userProfile || userProfile.role !== 'barber') {
           // User is not a barber, sign them out
+          console.log('User is not a barber, signing out')
           await supabase.auth.signOut()
           setError('Alleen kappers kunnen hier inloggen. Gebruik de admin login voor beheerders.')
           setLoading(false)
           return
         }
 
+        console.log('Login successful, redirecting to dashboard')
         // Redirect to kapper dashboard after successful login
         navigate('/kapper/dashboard', { replace: true })
+        setLoading(false)
         return
       }
       
     } catch (err) {
-      setError('Er is een fout opgetreden bij het inloggen.')
       console.error('Login error:', err)
+      setError('Er is een fout opgetreden bij het inloggen.')
+      setLoading(false)
     }
-    
-    setLoading(false)
   }
 
   return (
