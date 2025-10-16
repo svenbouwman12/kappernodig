@@ -789,11 +789,12 @@ function ServiceItem({ service, onUpdate, onDelete, isLocal = false }) {
 
   if (isEditing) {
     return (
-      <div className="flex items-center gap-3 p-3 bg-white border border-gray-300 rounded-xl">
+      <div className="flex items-center gap-4 p-4 bg-white border border-gray-300 rounded-xl shadow-sm">
         <input
           value={editData.name}
           onChange={(e) => setEditData({...editData, name: e.target.value})}
-          className="flex-1 bg-transparent border-none focus:outline-none"
+          className="flex-1 bg-transparent border-none focus:outline-none font-medium text-gray-900"
+          placeholder="Dienst naam"
         />
         <input
           value={editData.price}
@@ -801,17 +802,18 @@ function ServiceItem({ service, onUpdate, onDelete, isLocal = false }) {
           type="number"
           step="0.01"
           min="0"
-          className="w-20 bg-transparent border-none focus:outline-none text-right"
+          className="w-24 bg-transparent border-none focus:outline-none text-right font-semibold text-primary"
+          placeholder="0.00"
         />
         <button
           onClick={handleSave}
-          className="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600"
+          className="px-4 py-2 bg-primary text-white text-sm rounded-xl hover:bg-primary/90 transition-colors font-medium"
         >
           Opslaan
         </button>
         <button
           onClick={handleCancel}
-          className="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600"
+          className="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-xl hover:bg-gray-200 transition-colors font-medium"
         >
           Annuleren
         </button>
@@ -820,32 +822,32 @@ function ServiceItem({ service, onUpdate, onDelete, isLocal = false }) {
   }
 
   return (
-    <div className={`flex items-center justify-between p-3 rounded-xl ${
+    <div className={`flex items-center justify-between p-4 rounded-xl border ${
       isLocal 
-        ? 'bg-yellow-50 border border-yellow-200' 
-        : 'bg-white border border-gray-200'
+        ? 'bg-blue-50 border-blue-200 shadow-sm' 
+        : 'bg-white border-gray-200 shadow-sm hover:shadow-md transition-shadow'
     }`}>
       <div className="flex-1">
-        <div className="flex items-center gap-2">
-          <span className="font-medium">{service.name}</span>
+        <div className="flex items-center gap-3">
+          <span className="font-medium text-gray-900">{service.name}</span>
           {isLocal && (
-            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-lg font-medium">
               Nieuw
             </span>
           )}
         </div>
       </div>
-      <div className="flex items-center gap-3">
-        <span className="font-medium text-primary">€{service.price.toFixed(2)}</span>
+      <div className="flex items-center gap-4">
+        <span className="font-semibold text-primary text-lg">€{service.price.toFixed(2)}</span>
         <button
           onClick={() => setIsEditing(true)}
-          className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
+          className="px-4 py-2 bg-primary/10 text-primary rounded-xl hover:bg-primary/20 transition-colors font-medium text-sm"
         >
           Bewerken
         </button>
         <button
           onClick={() => onDelete(service.id)}
-          className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600"
+          className="px-4 py-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors font-medium text-sm"
         >
           Verwijderen
         </button>
