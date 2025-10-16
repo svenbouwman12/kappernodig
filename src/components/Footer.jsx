@@ -66,7 +66,12 @@ export default function Footer() {
             <h3 className="font-semibold text-secondary mb-3">Kapper Login</h3>
             {user ? (
               <div className="space-y-2">
-                <p className="text-sm text-secondary/70">Ingelogd als {userProfile?.role === 'admin' ? 'Admin' : 'Kapper'}</p>
+                {userProfile?.role === 'barber' && (
+                  <Link to="/kapper/dashboard" className="block text-sm text-secondary/70 hover:text-primary transition-colors">Dashboard</Link>
+                )}
+                {userProfile?.role === 'admin' && (
+                  <Link to="/admin" className="block text-sm text-secondary/70 hover:text-primary transition-colors">Admin Dashboard</Link>
+                )}
                 <button 
                   onClick={handleLogout}
                   className="text-sm text-red-600 hover:text-red-700 transition-colors"
