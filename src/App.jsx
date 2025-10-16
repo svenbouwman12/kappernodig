@@ -32,11 +32,8 @@ function AppContent() {
       
       // Don't redirect if we're already on a dashboard or admin page
       if (currentPath === '/' || currentPath === '/login' || currentPath === '/register') {
-        if (userProfile.role === 'admin') {
-          navigate('/admin', { replace: true })
-        } else if (userProfile.role === 'barber') {
-          navigate('/kapper/dashboard', { replace: true })
-        }
+        // ALWAYS redirect to kapper dashboard since we set all users as barber
+        navigate('/kapper/dashboard', { replace: true })
       }
     } else if (!loading && !user) {
       // If user is logged out, make sure we're not on protected pages

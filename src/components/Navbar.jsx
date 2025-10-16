@@ -11,8 +11,8 @@ export default function Navbar() {
 
   async function handleLogout() {
     try {
-      // IMMEDIATE redirect to home - no waiting
-      window.location.href = '/'
+      // IMMEDIATE redirect to home - no waiting at all
+      window.location.replace('/')
       
       // Clear all local data in background
       localStorage.clear()
