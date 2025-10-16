@@ -28,8 +28,24 @@ export default function KapperDashboardPage() {
   const [geocoding, setGeocoding] = useState(false)
 
   useEffect(() => {
-    loadBarbers()
-  }, [])
+    // Only load barbers when user is available
+    if (user?.id) {
+      console.log('User available, loading barbers for:', user.id)
+      loadBarbers()
+    } else {
+      console.log('User not available yet, waiting...')
+      
+      // Fallback: if user is not available after 5 seconds, try to reload
+      const timeout = setTimeout(() => {
+        if (!user?.id) {
+          console.log('User still not available after 5 seconds, reloading page...')
+          window.location.reload()
+        }
+      }, 5000)
+      
+      return () => clearTimeout(timeout)
+    }
+  }, [user])
 
   async function loadBarbers() {
     setLoading(true)
@@ -168,7 +184,9 @@ export default function KapperDashboardPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-secondary/70">Laden...</p>
+          <p className="text-secondary/70">
+            {!user ? 'Wachten op gebruikersgegevens...' : 'Kappers laden...'}
+          </p>
         </div>
       </div>
     )
