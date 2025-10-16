@@ -27,9 +27,9 @@ function AppContent() {
 
   useEffect(() => {
     if (!loading && user && userProfile) {
-      // Only redirect if we're on the homepage
+      // Only redirect if we're on the homepage or login pages
       const currentPath = window.location.pathname
-      if (currentPath === '/' || currentPath === '/login' || currentPath === '/register') {
+      if (currentPath === '/' || currentPath === '/login' || currentPath === '/register' || currentPath === '/kapper/login') {
         if (userProfile.role === 'admin') {
           navigate('/admin', { replace: true })
         } else if (userProfile.role === 'barber') {

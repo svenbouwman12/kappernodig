@@ -79,7 +79,12 @@ export default function KapperLoginPage() {
         }
 
         console.log('Login successful! Redirecting to dashboard...')
-        navigate('/kapper/dashboard', { replace: true })
+        
+        // Force a page reload to ensure auth state is properly set
+        setTimeout(() => {
+          window.location.href = '/kapper/dashboard'
+        }, 100)
+        
         setLoading(false)
         return
       }
