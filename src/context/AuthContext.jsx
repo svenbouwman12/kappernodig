@@ -14,98 +14,16 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     let mounted = true
     
-    // Fallback: if everything fails, set a default barber profile after 10 seconds
-    const fallbackTimeout = setTimeout(() => {
-      if (mounted && !userProfile) {
-        console.log('Fallback: Setting default barber profile after timeout')
-        setUserProfile({ role: 'barber', barber_id: null })
-      }
-    }, 10000)
-    
     async function loadUserProfile(userId, userEmail = '') {
       console.log('loadUserProfile called with userId:', userId, 'email:', userEmail)
       if (!userId) {
-        console.log('No userId provided, setting userProfile to null')
         setUserProfile(null)
         return
       }
       
-      console.log('Loading user profile from database for user:', userId)
-      
-      // Add timeout to prevent hanging
-      const queryPromise = supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single()
-      
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Query timeout')), 5000)
-      )
-      
-      let data, error
-      try {
-        const result = await Promise.race([queryPromise, timeoutPromise])
-        data = result.data
-        error = result.error
-      } catch (timeoutError) {
-        console.log('Query timed out, treating as user not found:', timeoutError.message)
-        data = null
-        error = { code: 'TIMEOUT', message: 'Query timeout - user not found' }
-      }
-      
-      console.log('User profile query result:', { data, error })
-      
-      if (error) {
-        console.log('Database error details:', error)
-        if (error.code !== 'TIMEOUT') {
-          console.log('Error code:', error.code)
-          console.log('Error message:', error.message)
-          console.log('Error details:', error.details)
-          console.log('Error hint:', error.hint)
-        }
-      }
-      
-      if (mounted) {
-        if (error) {
-          console.error('Error loading user profile:', error)
-          // If user doesn't exist in users table, create them as barber (since they logged in via kapper login)
-          console.log('Creating new user as barber...')
-          
-          try {
-            const { data: insertData, error: insertError } = await supabase
-              .from('users')
-              .insert({ 
-                id: userId, 
-                email: userEmail, 
-                role: 'barber', 
-                barber_id: null 
-              })
-              .select()
-              .single()
-            
-            console.log('User creation result:', { insertData, insertError })
-            
-            if (insertError) {
-              console.error('Error creating user:', insertError)
-              console.log('Falling back to default barber profile')
-              setUserProfile({ role: 'barber', barber_id: null })
-            } else {
-              console.log('User created successfully as barber:', insertData)
-              setUserProfile(insertData)
-            }
-          } catch (createError) {
-            console.error('Exception during user creation:', createError)
-            console.log('Falling back to default barber profile due to exception')
-            setUserProfile({ role: 'barber', barber_id: null })
-          }
-        } else {
-          console.log('User profile loaded successfully:', data)
-          setUserProfile(data || { role: 'barber', barber_id: null })
-        }
-      } else {
-        console.log('Component unmounted, skipping user profile update')
-      }
+      // SIMPLE SOLUTION: Just set user as barber immediately
+      console.log('Setting user as barber immediately')
+      setUserProfile({ role: 'barber', barber_id: null })
     }
 
     console.log('Getting initial session...')
@@ -139,7 +57,6 @@ export function AuthProvider({ children }) {
 
     return () => {
       mounted = false
-      clearTimeout(fallbackTimeout)
       listener.subscription.unsubscribe()
     }
   }, [])
