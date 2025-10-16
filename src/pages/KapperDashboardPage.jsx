@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import Card from '../components/Card.jsx'
 import Button from '../components/Button.jsx'
@@ -26,18 +26,20 @@ export default function KapperDashboardPage() {
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingBarber, setEditingBarber] = useState(null)
   const [geocoding, setGeocoding] = useState(false)
+  const hasLoadedRef = useRef(false)
 
   // Debug logging removed to prevent excessive re-renders
 
   useEffect(() => {
-    // Only load barbers when both user and userProfile are available
-    if (user?.id && userProfile) {
+    // Only load barbers when both user and userProfile are available AND we haven't loaded yet
+    if (user?.id && userProfile && !hasLoadedRef.current) {
+      hasLoadedRef.current = true
       loadBarbers()
-    } else {
+    } else if (!user?.id || !userProfile) {
       // Keep loading state true while waiting for user and userProfile
       setLoading(true)
     }
-  }, [user?.id]) // Only depend on user.id, not the entire user object or userProfile
+  }, []) // No dependencies - only run once on mount
 
   async function loadBarbers() {
     setLoading(true)
@@ -431,7 +433,7 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
     if (barber?.id) {
       loadServices(barber.id)
     }
-  }, [barber?.id])
+  }, []) // No dependencies - only run once
 
   async function loadServices(barberId) {
     if (!barberId) return

@@ -34,18 +34,8 @@ export function AuthProvider({ children }) {
       setLoading(false)
     })
 
-    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        await loadUserProfile(session.user.id, session.user.email)
-      } else {
-        setUserProfile(null)
-      }
-    })
-
     return () => {
       mounted = false
-      listener.subscription.unsubscribe()
     }
   }, [])
 
