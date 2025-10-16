@@ -29,12 +29,20 @@ function AppContent() {
     if (!loading && user && userProfile) {
       // Only redirect if we're on the homepage or admin login pages (NOT kapper login)
       const currentPath = window.location.pathname
+      
+      // Don't redirect if we're already on a dashboard or admin page
       if (currentPath === '/' || currentPath === '/login' || currentPath === '/register') {
         if (userProfile.role === 'admin') {
           navigate('/admin', { replace: true })
         } else if (userProfile.role === 'barber') {
           navigate('/kapper/dashboard', { replace: true })
         }
+      }
+    } else if (!loading && !user) {
+      // If user is logged out, make sure we're not on protected pages
+      const currentPath = window.location.pathname
+      if (currentPath.startsWith('/kapper/dashboard') || currentPath.startsWith('/admin')) {
+        navigate('/', { replace: true })
       }
     }
   }, [user, userProfile, loading, navigate])
