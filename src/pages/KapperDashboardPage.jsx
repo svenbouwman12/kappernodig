@@ -27,36 +27,26 @@ export default function KapperDashboardPage() {
   const [editingBarber, setEditingBarber] = useState(null)
   const [geocoding, setGeocoding] = useState(false)
 
-  // Debug logging
-  console.log('KapperDashboardPage render - user:', user, 'userProfile:', userProfile, 'loading:', loading)
+  // Debug logging removed to prevent excessive re-renders
 
   useEffect(() => {
-    console.log('KapperDashboardPage useEffect - user:', user, 'userProfile:', userProfile)
-    
     // Only load barbers when both user and userProfile are available
     if (user?.id && userProfile) {
-      console.log('User and userProfile available, loading barbers for:', user.id)
       loadBarbers()
     } else {
-      console.log('User or userProfile not available yet, waiting...')
-      console.log('User available:', !!user?.id)
-      console.log('UserProfile available:', !!userProfile)
       // Keep loading state true while waiting for user and userProfile
       setLoading(true)
     }
-  }, [user, userProfile])
+  }, [user?.id]) // Only depend on user.id, not the entire user object or userProfile
 
   async function loadBarbers() {
     setLoading(true)
     try {
-      console.log('Loading barbers for user:', user?.id)
       const { data, error } = await supabase
         .from('barbers')
         .select('*')
         .eq('owner_id', user?.id)
         .order('created_at', { ascending: false })
-
-      console.log('Barbers query result:', { data, error })
 
       if (error) {
         console.error('Error loading barbers:', error)
@@ -65,7 +55,6 @@ export default function KapperDashboardPage() {
       }
 
       setBarbers(data || [])
-      console.log('Barbers loaded successfully:', data?.length || 0, 'items')
     } catch (err) {
       console.error('Error loading barbers:', err)
     } finally {

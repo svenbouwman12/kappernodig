@@ -8,8 +8,7 @@ export function AuthProvider({ children }) {
   const [userProfile, setUserProfile] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  // Debug logging
-  console.log('AuthProvider render - user:', user, 'userProfile:', userProfile, 'loading:', loading)
+  // Debug logging removed to prevent excessive re-renders
 
   useEffect(() => {
     let mounted = true
