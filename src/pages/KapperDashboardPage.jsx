@@ -402,18 +402,18 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
   // Load services when barber changes
   useEffect(() => {
     if (barber?.id) {
-      loadServices()
+      loadServices(barber.id)
     }
   }, [barber?.id])
 
-  async function loadServices() {
-    if (!barber?.id) return
+  async function loadServices(barberId) {
+    if (!barberId) return
     
     try {
       const { data, error } = await supabase
         .from('services')
         .select('*')
-        .eq('barber_id', barber.id)
+        .eq('barber_id', barberId)
         .order('name')
 
       if (error) {
@@ -426,14 +426,14 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
     }
   }
 
-  async function addService() {
-    if (!newService.name.trim() || !newService.price) return
+  async function addService(barberId) {
+    if (!newService.name.trim() || !newService.price || !barberId) return
     
     try {
       const { data, error } = await supabase
         .from('services')
         .insert({
-          barber_id: barber.id,
+          barber_id: barberId,
           name: newService.name.trim(),
           price: parseFloat(newService.price)
         })
@@ -649,8 +649,8 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
               />
               <button
                 type="button"
-                onClick={addService}
-                disabled={!newService.name.trim() || !newService.price}
+                onClick={() => addService(barber?.id)}
+                disabled={!newService.name.trim() || !newService.price || !barber?.id}
                 className="px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Toevoegen
