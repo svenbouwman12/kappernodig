@@ -11,18 +11,19 @@ export default function Navbar() {
 
   async function handleLogout() {
     try {
-      // Clear all local data
+      // IMMEDIATE redirect to home - no waiting
+      window.location.href = '/'
+      
+      // Clear all local data in background
       localStorage.clear()
       sessionStorage.clear()
       
-      // Sign out from Supabase
+      // Sign out from Supabase in background
       await supabase.auth.signOut()
       
     } catch (err) {
       console.error('Logout error:', err)
-    } finally {
-      // Always redirect to home
-      window.location.href = '/'
+      // Even if error, we're already redirected
     }
   }
 
