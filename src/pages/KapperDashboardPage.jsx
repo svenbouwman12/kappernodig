@@ -31,26 +31,20 @@ export default function KapperDashboardPage() {
   console.log('KapperDashboardPage render - user:', user, 'userProfile:', userProfile, 'loading:', loading)
 
   useEffect(() => {
-    // Only load barbers when user is available
-    if (user?.id) {
-      console.log('User available, loading barbers for:', user.id)
+    console.log('KapperDashboardPage useEffect - user:', user, 'userProfile:', userProfile)
+    
+    // Only load barbers when both user and userProfile are available
+    if (user?.id && userProfile) {
+      console.log('User and userProfile available, loading barbers for:', user.id)
       loadBarbers()
     } else {
-      console.log('User not available yet, waiting...')
-      // Keep loading state true while waiting for user
+      console.log('User or userProfile not available yet, waiting...')
+      console.log('User available:', !!user?.id)
+      console.log('UserProfile available:', !!userProfile)
+      // Keep loading state true while waiting for user and userProfile
       setLoading(true)
-      
-      // Fallback: if user is not available after 5 seconds, try to reload
-      const timeout = setTimeout(() => {
-        if (!user?.id) {
-          console.log('User still not available after 5 seconds, reloading page...')
-          window.location.reload()
-        }
-      }, 5000)
-      
-      return () => clearTimeout(timeout)
     }
-  }, [user])
+  }, [user, userProfile])
 
   async function loadBarbers() {
     setLoading(true)
@@ -195,8 +189,12 @@ export default function KapperDashboardPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-secondary/70">
-            {!user ? 'Wachten op gebruikersgegevens...' : 'Kappers laden...'}
+            {!user ? 'Wachten op gebruikersgegevens...' : !userProfile ? 'Wachten op gebruikersprofiel...' : 'Kappers laden...'}
           </p>
+          <div className="mt-4 text-xs text-gray-500">
+            <div>User: {user ? '✅' : '❌'}</div>
+            <div>UserProfile: {userProfile ? '✅' : '❌'}</div>
+          </div>
         </div>
       </div>
     )

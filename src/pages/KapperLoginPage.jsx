@@ -80,15 +80,9 @@ export default function KapperLoginPage() {
 
         console.log('Login successful! Redirecting to dashboard...')
         
-        // IMMEDIATE redirect - no delays, no complex logic
-        console.log('Executing window.location.replace...')
-        window.location.replace('/kapper/dashboard')
-        
-        // Backup redirect after 1 second if the first one fails
-        setTimeout(() => {
-          console.log('Backup redirect executing...')
-          window.location.href = '/kapper/dashboard'
-        }, 1000)
+        // Use React Router navigation instead of window.location
+        console.log('Navigating to dashboard with React Router...')
+        navigate('/kapper/dashboard', { replace: true })
         
         setLoading(false)
         return
