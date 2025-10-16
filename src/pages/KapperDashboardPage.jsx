@@ -25,6 +25,7 @@ export default function KapperDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingBarber, setEditingBarber] = useState(null)
+  const [geocoding, setGeocoding] = useState(false)
 
   useEffect(() => {
     loadBarbers()
@@ -54,9 +55,51 @@ export default function KapperDashboardPage() {
 
   async function saveBarber(barberData) {
     try {
+      // Geocode address to get coordinates
+      let coordinates = { lat: null, lng: null }
+      
+      if (barberData.address && barberData.location) {
+        setGeocoding(true)
+        try {
+          const fullAddress = `${barberData.address}, ${barberData.location}`
+          console.log('Geocoding address:', fullAddress)
+          
+          // Use a simple geocoding service that doesn't require API key
+          const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}&countrycodes=nl&limit=1`)
+          const data = await response.json()
+          
+          if (data && data.length > 0) {
+            const result = data[0]
+            coordinates = {
+              lat: parseFloat(result.lat),
+              lng: parseFloat(result.lon)
+            }
+            console.log('Geocoding successful:', coordinates)
+          } else {
+            console.log('Geocoding failed, using fallback coordinates')
+            // Fallback to city center coordinates
+            const cityCoords = getCityCoordinates(barberData.location)
+            if (cityCoords) {
+              coordinates = cityCoords
+            }
+          }
+        } catch (geocodeError) {
+          console.error('Geocoding error:', geocodeError)
+          // Fallback to city center coordinates
+          const cityCoords = getCityCoordinates(barberData.location)
+          if (cityCoords) {
+            coordinates = cityCoords
+          }
+        } finally {
+          setGeocoding(false)
+        }
+      }
+
       const dataWithOwner = {
         ...barberData,
-        owner_id: user?.id
+        owner_id: user?.id,
+        latitude: coordinates.lat,
+        longitude: coordinates.lng
       }
 
       const { error } = await supabase
@@ -75,6 +118,28 @@ export default function KapperDashboardPage() {
       console.error('Error saving barber:', err)
       alert('Er is een fout opgetreden bij het opslaan.')
     }
+  }
+
+  // Helper function to get city coordinates as fallback
+  function getCityCoordinates(city) {
+    const cities = {
+      'Amsterdam': { lat: 52.3676, lng: 4.9041 },
+      'Rotterdam': { lat: 51.9225, lng: 4.4792 },
+      'Utrecht': { lat: 52.0907, lng: 5.1214 },
+      'Den Haag': { lat: 52.0766, lng: 4.3113 },
+      'Eindhoven': { lat: 51.4416, lng: 5.4697 },
+      'Groningen': { lat: 53.2194, lng: 6.5665 },
+      'Tilburg': { lat: 51.5555, lng: 5.0913 },
+      'Almere': { lat: 52.3508, lng: 5.2647 },
+      'Breda': { lat: 51.5719, lng: 4.7683 },
+      'Nijmegen': { lat: 51.8426, lng: 5.8520 },
+      'Enschede': { lat: 52.2215, lng: 6.8937 },
+      'Haarlem': { lat: 52.3792, lng: 4.6368 },
+      'Arnhem': { lat: 51.9851, lng: 5.8987 },
+      'Zaanstad': { lat: 52.4531, lng: 4.8296 },
+      'Amersfoort': { lat: 52.1561, lng: 5.3878 }
+    }
+    return cities[city] || null
   }
 
   async function deleteBarber(id) {
@@ -194,6 +259,7 @@ export default function KapperDashboardPage() {
           <BarberForm
             barber={editingBarber}
             onSave={saveBarber}
+            geocoding={geocoding}
             onCancel={() => {
               setShowAddForm(false)
               setEditingBarber(null)
@@ -298,7 +364,7 @@ export default function KapperDashboardPage() {
   )
 }
 
-function BarberForm({ barber, onSave, onCancel }) {
+function BarberForm({ barber, onSave, onCancel, geocoding }) {
   const [formData, setFormData] = useState({
     name: barber?.name || '',
     description: barber?.description || '',
@@ -490,6 +556,17 @@ function BarberForm({ barber, onSave, onCancel }) {
           />
         </div>
 
+        {geocoding && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+            <div className="flex items-center">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-3"></div>
+              <span className="text-sm text-blue-700">
+                Locatie wordt automatisch opgezocht op basis van adres en stad...
+              </span>
+            </div>
+          </div>
+        )}
+
         <div className="flex justify-end space-x-4">
           <Button
             type="button"
@@ -500,10 +577,10 @@ function BarberForm({ barber, onSave, onCancel }) {
           </Button>
           <Button
             type="submit"
-            disabled={saving}
+            disabled={saving || geocoding}
             className="px-6 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 disabled:opacity-50"
           >
-            {saving ? 'Opslaan...' : 'Opslaan'}
+            {geocoding ? 'Locatie zoeken...' : saving ? 'Opslaan...' : 'Opslaan'}
           </Button>
         </div>
       </form>
