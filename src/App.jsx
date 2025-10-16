@@ -38,7 +38,7 @@ function AppContent() {
     } else if (!loading && !user) {
       // If user is logged out, make sure we're not on protected pages
       const currentPath = window.location.pathname
-      if (currentPath.startsWith('/kapper/dashboard') || currentPath.startsWith('/admin')) {
+      if (currentPath.startsWith('/kapper/dashboard')) {
         navigate('/', { replace: true })
       }
     }
@@ -68,14 +68,7 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute>
-                <div className="container-max"><AdminDashboardPage /></div>
-              </ProtectedRoute>
-            }
-          />
+          {/* Admin route removed - all users go to kapper dashboard */}
           <Route path="/login" element={<div className="container-max"><LoginPage /></div>} />
           <Route path="/kapper/login" element={<div className="container-max"><KapperLoginPage /></div>} />
           <Route path="/kapper/register" element={<div className="container-max"><KapperRegisterPage /></div>} />

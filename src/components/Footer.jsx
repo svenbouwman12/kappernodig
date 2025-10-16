@@ -69,10 +69,10 @@ export default function Footer() {
               <div className="space-y-3">
                 {/* Always show Dashboard link for logged in users */}
                 <Link 
-                  to={userProfile?.role === 'admin' ? "/admin" : "/kapper/dashboard"} 
+                  to="/kapper/dashboard"
                   className="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
                 >
-                  {userProfile?.role === 'admin' ? '⚙️ Admin Dashboard' : '📊 Dashboard'}
+                  📊 Dashboard
                 </Link>
                 
                 <div className="pt-2">
