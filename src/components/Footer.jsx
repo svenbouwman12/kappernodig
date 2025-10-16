@@ -65,19 +65,31 @@ export default function Footer() {
           <div>
             <h3 className="font-semibold text-secondary mb-3">Kapper Login</h3>
             {user ? (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {userProfile?.role === 'barber' && (
-                  <Link to="/kapper/dashboard" className="block text-sm text-secondary/70 hover:text-primary transition-colors">Dashboard</Link>
+                  <Link 
+                    to="/kapper/dashboard" 
+                    className="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
+                  >
+                    📊 Dashboard
+                  </Link>
                 )}
                 {userProfile?.role === 'admin' && (
-                  <Link to="/admin" className="block text-sm text-secondary/70 hover:text-primary transition-colors">Admin Dashboard</Link>
+                  <Link 
+                    to="/admin" 
+                    className="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
+                  >
+                    ⚙️ Admin Dashboard
+                  </Link>
                 )}
-                <button 
-                  onClick={handleLogout}
-                  className="text-sm text-red-600 hover:text-red-700 transition-colors"
-                >
-                  Uitloggen
-                </button>
+                <div className="pt-2">
+                  <button 
+                    onClick={handleLogout}
+                    className="text-sm text-red-600 hover:text-red-700 transition-colors"
+                  >
+                    Uitloggen
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="space-y-2">

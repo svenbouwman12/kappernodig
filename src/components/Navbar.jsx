@@ -48,7 +48,7 @@ export default function Navbar() {
               {userProfile?.role === 'admin' && (
                 <Link className="btn btn-secondary px-3 py-2" to="/admin">Admin</Link>
               )}
-              <button className="btn btn-primary px-3 py-2" onClick={handleLogout}>Log uit</button>
+              <button className="btn btn-secondary px-3 py-2" onClick={handleLogout}>Log uit</button>
             </>
           )}
         </nav>
