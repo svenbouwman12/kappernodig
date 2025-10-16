@@ -403,12 +403,108 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
     image_url: barber?.image_url || '',
     latitude: barber?.latitude || '',
     longitude: barber?.longitude || '',
-    gender_served: barber?.gender_served || 'both',
-    services_offered: barber?.services_offered || []
+    gender_served: barber?.gender_served || 'both'
   })
+  
+  const [services, setServices] = useState([])
   const [saving, setSaving] = useState(false)
+  const [newService, setNewService] = useState({ name: '', price: '' })
 
-  const services = {
+  // Load services when barber changes
+  useEffect(() => {
+    if (barber?.id) {
+      loadServices()
+    }
+  }, [barber?.id])
+
+  async function loadServices() {
+    if (!barber?.id) return
+    
+    try {
+      const { data, error } = await supabase
+        .from('services')
+        .select('*')
+        .eq('barber_id', barber.id)
+        .order('name')
+
+      if (error) {
+        console.error('Error loading services:', error)
+      } else {
+        setServices(data || [])
+      }
+    } catch (err) {
+      console.error('Error loading services:', err)
+    }
+  }
+
+  async function addService() {
+    if (!newService.name.trim() || !newService.price) return
+    
+    try {
+      const { data, error } = await supabase
+        .from('services')
+        .insert({
+          barber_id: barber.id,
+          name: newService.name.trim(),
+          price: parseFloat(newService.price)
+        })
+        .select()
+
+      if (error) {
+        console.error('Error adding service:', error)
+        alert('Fout bij toevoegen van dienst: ' + error.message)
+      } else {
+        setServices(prev => [...prev, data[0]])
+        setNewService({ name: '', price: '' })
+      }
+    } catch (err) {
+      console.error('Error adding service:', err)
+      alert('Er is een fout opgetreden bij het toevoegen van de dienst.')
+    }
+  }
+
+  async function updateService(serviceId, updates) {
+    try {
+      const { data, error } = await supabase
+        .from('services')
+        .update(updates)
+        .eq('id', serviceId)
+        .select()
+
+      if (error) {
+        console.error('Error updating service:', error)
+        alert('Fout bij bijwerken van dienst: ' + error.message)
+      } else {
+        setServices(prev => prev.map(s => s.id === serviceId ? data[0] : s))
+      }
+    } catch (err) {
+      console.error('Error updating service:', err)
+      alert('Er is een fout opgetreden bij het bijwerken van de dienst.')
+    }
+  }
+
+  async function deleteService(serviceId) {
+    if (!confirm('Weet je zeker dat je deze dienst wilt verwijderen?')) return
+    
+    try {
+      const { error } = await supabase
+        .from('services')
+        .delete()
+        .eq('id', serviceId)
+
+      if (error) {
+        console.error('Error deleting service:', error)
+        alert('Fout bij verwijderen van dienst: ' + error.message)
+      } else {
+        setServices(prev => prev.filter(s => s.id !== serviceId))
+      }
+    } catch (err) {
+      console.error('Error deleting service:', err)
+      alert('Er is een fout opgetreden bij het verwijderen van de dienst.')
+    }
+  }
+
+  const serviceTypes = {
     'knippen': { name: 'Knippen', icon: '✂️' },
     'baard': { name: 'Baard trimmen', icon: '🧔' },
     'kleuren': { name: 'Haar kleuren', icon: '🎨' },
@@ -437,14 +533,6 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
     setSaving(false)
   }
 
-  function handleServiceToggle(serviceKey) {
-    const currentServices = formData.services_offered || []
-    const newServices = currentServices.includes(serviceKey)
-      ? currentServices.filter(s => s !== serviceKey)
-      : [...currentServices, serviceKey]
-    
-    setFormData({ ...formData, services_offered: newServices })
-  }
 
   return (
     <Card className="p-8 mb-8">
@@ -547,27 +635,57 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
           </div>
         </div>
 
+        {/* Services Management */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">Diensten</label>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-            {Object.entries(services).map(([key, service]) => (
-              <label
-                key={key}
-                className={`flex items-center p-3 border-2 rounded-xl cursor-pointer transition-colors ${
-                  formData.services_offered?.includes(key)
-                    ? 'border-primary bg-primary/10'
-                    : 'border-gray-200 hover:border-primary'
-                }`}
+          <label className="block text-sm font-medium text-gray-700 mb-3">Diensten & Prijzen</label>
+          
+          {/* Add new service */}
+          <div className="bg-gray-50 p-4 rounded-xl mb-4">
+            <h4 className="text-sm font-medium text-gray-700 mb-3">Nieuwe dienst toevoegen</h4>
+            <div className="flex gap-3">
+              <input
+                value={newService.name}
+                onChange={(e) => setNewService({...newService, name: e.target.value})}
+                placeholder="Dienst naam (bijv. Knippen)"
+                className="flex-1 bg-white border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+              <input
+                value={newService.price}
+                onChange={(e) => setNewService({...newService, price: e.target.value})}
+                placeholder="Prijs (€)"
+                type="number"
+                step="0.01"
+                min="0"
+                className="w-24 bg-white border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+              <button
+                type="button"
+                onClick={addService}
+                disabled={!newService.name.trim() || !newService.price}
+                className="px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <input
-                  type="checkbox"
-                  checked={formData.services_offered?.includes(key) || false}
-                  onChange={() => handleServiceToggle(key)}
-                  className="form-checkbox h-4 w-4 text-primary focus:ring-primary mr-2"
-                />
-                <span className="text-sm font-medium">{service.icon} {service.name}</span>
-              </label>
+                Toevoegen
+              </button>
+            </div>
+          </div>
+
+          {/* Existing services */}
+          <div className="space-y-2">
+            {services.map((service) => (
+              <ServiceItem 
+                key={service.id}
+                service={service}
+                onUpdate={updateService}
+                onDelete={deleteService}
+              />
             ))}
+            
+            {services.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                <p>Nog geen diensten toegevoegd</p>
+                <p className="text-sm">Voeg je eerste dienst toe hierboven</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -611,5 +729,85 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
         </div>
       </form>
     </Card>
+  )
+}
+
+// ServiceItem component for editing individual services
+function ServiceItem({ service, onUpdate, onDelete }) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [editData, setEditData] = useState({
+    name: service.name,
+    price: service.price.toString()
+  })
+
+  function handleSave() {
+    onUpdate(service.id, {
+      name: editData.name.trim(),
+      price: parseFloat(editData.price)
+    })
+    setIsEditing(false)
+  }
+
+  function handleCancel() {
+    setEditData({
+      name: service.name,
+      price: service.price.toString()
+    })
+    setIsEditing(false)
+  }
+
+  if (isEditing) {
+    return (
+      <div className="flex items-center gap-3 p-3 bg-white border border-gray-300 rounded-xl">
+        <input
+          value={editData.name}
+          onChange={(e) => setEditData({...editData, name: e.target.value})}
+          className="flex-1 bg-transparent border-none focus:outline-none"
+        />
+        <input
+          value={editData.price}
+          onChange={(e) => setEditData({...editData, price: e.target.value})}
+          type="number"
+          step="0.01"
+          min="0"
+          className="w-20 bg-transparent border-none focus:outline-none text-right"
+        />
+        <button
+          onClick={handleSave}
+          className="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600"
+        >
+          Opslaan
+        </button>
+        <button
+          onClick={handleCancel}
+          className="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600"
+        >
+          Annuleren
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl">
+      <div className="flex-1">
+        <span className="font-medium">{service.name}</span>
+      </div>
+      <div className="flex items-center gap-3">
+        <span className="font-medium text-primary">€{service.price.toFixed(2)}</span>
+        <button
+          onClick={() => setIsEditing(true)}
+          className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
+        >
+          Bewerken
+        </button>
+        <button
+          onClick={() => onDelete(service.id)}
+          className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600"
+        >
+          Verwijderen
+        </button>
+      </div>
+    </div>
   )
 }
