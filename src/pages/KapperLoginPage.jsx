@@ -17,39 +17,26 @@ export default function KapperLoginPage() {
     setError('')
     
     try {
-      console.log('Attempting login for:', email)
-      console.log('Supabase client:', supabase)
-      console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL)
-      console.log('Supabase Key exists:', !!import.meta.env.VITE_SUPABASE_ANON_KEY)
+      console.log('=== LOGIN START ===')
+      console.log('Email:', email)
       
-      // Check if Supabase is properly configured
-      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-        setError('Supabase is niet correct geconfigureerd. Controleer de environment variabelen.')
-        setLoading(false)
-        return
-      }
-      
-      // Try a simple test first
-      console.log('Testing basic Supabase functionality...')
-      try {
-        const { data: sessionData } = await supabase.auth.getSession()
-        console.log('Current session:', sessionData)
-      } catch (sessionError) {
-        console.log('Session check error:', sessionError)
-      }
-      
-      // Now try the login
-      console.log('Calling supabase.auth.signInWithPassword...')
-      
-      const authPromise = supabase.auth.signInWithPassword({ email, password })
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Auth call timeout')), 15000)
+      // Create a fresh Supabase client to avoid any cached issues
+      const { createClient } = await import('@supabase/supabase-js')
+      const freshSupabase = createClient(
+        import.meta.env.VITE_SUPABASE_URL,
+        import.meta.env.VITE_SUPABASE_ANON_KEY
       )
       
-      const { data, error } = await Promise.race([authPromise, timeoutPromise])
-      console.log('Supabase auth call completed')
+      console.log('Fresh Supabase client created')
       
-      console.log('Login response received:', { data, error })
+      // Direct login without any tests
+      console.log('Attempting direct login...')
+      const { data, error } = await freshSupabase.auth.signInWithPassword({ 
+        email, 
+        password 
+      })
+      
+      console.log('Login result:', { data, error })
       
       if (error) {
         console.error('Login error:', error)
@@ -58,49 +45,48 @@ export default function KapperLoginPage() {
         } else if (error.message.includes('Email not confirmed')) {
           setError('Je account is nog niet geverifieerd. Controleer je email voor een verificatielink.')
         } else {
-          setError('Er is een fout opgetreden bij het inloggen. Probeer het opnieuw.')
+          setError(`Login fout: ${error.message}`)
         }
         setLoading(false)
         return
       }
 
       if (data.user) {
-        console.log('User logged in, checking role for:', data.user.id)
-        // Check if user has barber role
-        const { data: userProfile, error: profileError } = await supabase
+        console.log('User logged in successfully:', data.user.id)
+        
+        // Check user role with fresh client
+        const { data: userProfile, error: profileError } = await freshSupabase
           .from('users')
           .select('role')
           .eq('id', data.user.id)
           .single()
 
-        console.log('User profile:', userProfile, 'Error:', profileError)
+        console.log('User profile check:', { userProfile, profileError })
 
         if (profileError) {
-          console.error('Error fetching user profile:', profileError)
-          setError('Er is een fout opgetreden bij het ophalen van je profiel.')
+          console.error('Profile error:', profileError)
+          setError('Fout bij ophalen gebruikersprofiel. Probeer opnieuw.')
           setLoading(false)
           return
         }
 
         if (!userProfile || userProfile.role !== 'barber') {
-          // User is not a barber, sign them out
           console.log('User is not a barber, signing out')
-          await supabase.auth.signOut()
-          setError('Alleen kappers kunnen hier inloggen. Gebruik de admin login voor beheerders.')
+          await freshSupabase.auth.signOut()
+          setError('Alleen kappers kunnen hier inloggen.')
           setLoading(false)
           return
         }
 
-        console.log('Login successful, redirecting to dashboard')
-        // Redirect to kapper dashboard after successful login
+        console.log('Login successful! Redirecting to dashboard...')
         navigate('/kapper/dashboard', { replace: true })
         setLoading(false)
         return
       }
       
     } catch (err) {
-      console.error('Login error:', err)
-      setError('Er is een fout opgetreden bij het inloggen.')
+      console.error('=== LOGIN ERROR ===', err)
+      setError(`Er is een fout opgetreden: ${err.message}`)
       setLoading(false)
     }
   }
