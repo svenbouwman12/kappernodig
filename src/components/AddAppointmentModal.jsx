@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import Button from './Button.jsx'
 import Card from './Card.jsx'
 
-export default function AddAppointmentModal({ isOpen, onClose, salonId, onAppointmentAdded, editingAppointment = null }) {
+export default function AddAppointmentModal({ isOpen, onClose, salonId, onAppointmentAdded, editingAppointment = null, preSelectedClient = null }) {
   const [formData, setFormData] = useState({
     klant_id: '',
     dienst: '',
@@ -53,7 +53,7 @@ export default function AddAppointmentModal({ isOpen, onClose, salonId, onAppoin
         const today = new Date()
         setSelectedDate(today.toISOString().split('T')[0])
         setFormData({
-          klant_id: '',
+          klant_id: preSelectedClient ? preSelectedClient.id : '',
           dienst: '',
           start_tijd: '',
           eind_tijd: '',

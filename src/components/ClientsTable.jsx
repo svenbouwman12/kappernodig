@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react'
-import { Search, Filter, Edit, Phone, Mail, Calendar, User } from 'lucide-react'
+import { Search, Filter, Edit, Phone, Mail, Calendar, User, Eye } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import ClientDetailModal from './ClientDetailModal.jsx'
 
 export default function ClientsTable({ salonId, onEditClient }) {
   const [clients, setClients] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterBy, setFilterBy] = useState('all') // all, recent, frequent
+  const [selectedClient, setSelectedClient] = useState(null)
+  const [showClientDetail, setShowClientDetail] = useState(false)
 
   useEffect(() => {
     if (salonId) {
@@ -90,6 +93,19 @@ export default function ClientsTable({ salonId, onEditClient }) {
       month: 'short',
       day: 'numeric'
     })
+  }
+
+  const handleClientClick = (client) => {
+    setSelectedClient(client)
+    setShowClientDetail(true)
+  }
+
+  const handleClientUpdated = () => {
+    loadClients()
+  }
+
+  const handleAppointmentAdded = () => {
+    loadClients()
   }
 
   if (!salonId) {
@@ -187,7 +203,7 @@ export default function ClientsTable({ salonId, onEditClient }) {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredClients.map((client) => (
-                <tr key={client.id} className="hover:bg-gray-50">
+                <tr key={client.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleClientClick(client)}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -230,13 +246,30 @@ export default function ClientsTable({ salonId, onEditClient }) {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => onEditClient(client)}
-                      className="text-primary hover:text-primary/80 flex items-center space-x-1"
-                    >
-                      <Edit className="h-4 w-4" />
-                      <span>Bewerken</span>
-                    </button>
+                    <div className="flex items-center justify-end space-x-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleClientClick(client)
+                        }}
+                        className="text-primary hover:text-primary/80 flex items-center space-x-1"
+                        title="Bekijk details"
+                      >
+                        <Eye className="h-4 w-4" />
+                        <span>Bekijk</span>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onEditClient(client)
+                        }}
+                        className="text-gray-600 hover:text-gray-800 flex items-center space-x-1"
+                        title="Bewerken"
+                      >
+                        <Edit className="h-4 w-4" />
+                        <span>Bewerken</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -244,6 +277,21 @@ export default function ClientsTable({ salonId, onEditClient }) {
           </table>
         )}
       </div>
+
+      {/* Client Detail Modal */}
+      {selectedClient && (
+        <ClientDetailModal
+          client={selectedClient}
+          isOpen={showClientDetail}
+          onClose={() => {
+            setShowClientDetail(false)
+            setSelectedClient(null)
+          }}
+          salonId={salonId}
+          onClientUpdated={handleClientUpdated}
+          onAppointmentAdded={handleAppointmentAdded}
+        />
+      )}
     </div>
   )
 }
