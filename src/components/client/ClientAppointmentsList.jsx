@@ -4,25 +4,41 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext.jsx'
 
 export default function ClientAppointmentsList() {
-  const { user } = useAuth()
+  const { user, userProfile } = useAuth()
   const [appointments, setAppointments] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadingTimeout, setLoadingTimeout] = useState(false)
   const [selectedAppointment, setSelectedAppointment] = useState(null)
   const [showBookAppointment, setShowBookAppointment] = useState(false)
   const [bookmarks, setBookmarks] = useState([])
   const [loadingBookmarks, setLoadingBookmarks] = useState(false)
 
   useEffect(() => {
-    if (user) {
+    if (user && userProfile) {
       loadAppointments()
     }
-  }, [user])
+  }, [user, userProfile])
+
+  // Set timeout for loading state
+  useEffect(() => {
+    if (loading) {
+      const timeoutId = setTimeout(() => {
+        setLoadingTimeout(true)
+      }, 3000) // 3 second timeout
+      
+      return () => clearTimeout(timeoutId)
+    } else {
+      setLoadingTimeout(false)
+    }
+  }, [loading])
 
   async function loadBookmarks() {
-    if (!user) return
+    if (!user || !userProfile) return
 
     setLoadingBookmarks(true)
     try {
+      console.log('Loading bookmarks for user:', user.id)
+      
       const { data, error } = await supabase
         .from('bookmarks')
         .select(`
@@ -46,6 +62,7 @@ export default function ClientAppointmentsList() {
         console.error('Error loading bookmarks:', error)
         setBookmarks([])
       } else {
+        console.log('Loaded bookmarks:', data?.length || 0)
         setBookmarks(data || [])
       }
     } catch (err) {
@@ -57,11 +74,14 @@ export default function ClientAppointmentsList() {
   }
 
   async function loadAppointments() {
-    if (!user) return
+    if (!user || !userProfile) return
 
     setLoading(true)
     try {
-      const { data, error } = await supabase
+      console.log('Loading appointments for user:', user.id, 'profile:', userProfile)
+      
+      // First try to get appointments by client_profile_id (new system)
+      let { data, error } = await supabase
         .from('appointments')
         .select(`
           *,
@@ -77,10 +97,46 @@ export default function ClientAppointmentsList() {
         .eq('client_profile_id', user.id)
         .order('start_tijd', { ascending: true })
 
+      // If no appointments found with client_profile_id, try the old system
+      if (!data || data.length === 0) {
+        console.log('No appointments found with client_profile_id, trying old system...')
+        
+        // Get client records for this user
+        const { data: clients, error: clientError } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('email', user.email)
+        
+        if (clients && clients.length > 0) {
+          const clientIds = clients.map(c => c.id)
+          const { data: oldAppointments, error: oldError } = await supabase
+            .from('appointments')
+            .select(`
+              *,
+              barbers!inner(
+                id,
+                name,
+                location,
+                address,
+                phone,
+                website
+              )
+            `)
+            .in('klant_id', clientIds)
+            .order('start_tijd', { ascending: true })
+          
+          if (!oldError && oldAppointments) {
+            data = oldAppointments
+            error = null
+          }
+        }
+      }
+
       if (error) {
         console.error('Error loading appointments:', error)
         setAppointments([])
       } else {
+        console.log('Loaded appointments:', data?.length || 0)
         setAppointments(data || [])
       }
     } catch (err) {
@@ -134,11 +190,41 @@ export default function ClientAppointmentsList() {
     return colors[service] || 'bg-gray-100 text-gray-800'
   }
 
-  if (loading) {
+  if (loading && !loadingTimeout) {
     return (
       <div className="text-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
         <p className="mt-2 text-gray-500">Afspraken laden...</p>
+      </div>
+    )
+  }
+
+  if (loading && loadingTimeout) {
+    return (
+      <div className="text-center py-12">
+        <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
+          <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Laden duurt langer dan verwacht
+          </h3>
+          <p className="text-gray-600 mb-4">
+            Er lijkt een probleem te zijn met het laden van je afspraken.
+          </p>
+          <button
+            onClick={() => {
+              setLoading(false)
+              setLoadingTimeout(false)
+              loadAppointments()
+            }}
+            className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            Opnieuw proberen
+          </button>
+        </div>
       </div>
     )
   }
