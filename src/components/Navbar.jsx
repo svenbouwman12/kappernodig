@@ -2,30 +2,12 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import SearchBar from './SearchBar'
 import { useAuth } from '../context/AuthContext.jsx'
-import { supabase } from '../lib/supabase'
 
 export default function Navbar() {
   const [query, setQuery] = useState('')
   const navigate = useNavigate()
   const { user, userProfile } = useAuth()
 
-  async function handleLogout() {
-    try {
-      // IMMEDIATE redirect to home - no waiting at all
-      window.location.replace('/')
-      
-      // Clear all local data in background
-      localStorage.clear()
-      sessionStorage.clear()
-      
-      // Sign out from Supabase in background
-      await supabase.auth.signOut()
-      
-    } catch (err) {
-      console.error('Logout error:', err)
-      // Even if error, we're already redirected
-    }
-  }
 
   function onSubmit(e) {
     e.preventDefault()
@@ -53,7 +35,6 @@ export default function Navbar() {
               {userProfile?.role === 'admin' && (
                 <Link className="btn btn-secondary px-3 py-2" to="/admin">Admin Dashboard</Link>
               )}
-              <button className="btn btn-secondary px-3 py-2" onClick={handleLogout}>Log uit</button>
             </>
           )}
         </nav>
