@@ -57,9 +57,26 @@ export function AuthProvider({ children }) {
       }
     }
 
-    // Get initial session and restore auth state
+    // Single function to handle auth state
+    const handleAuthState = async (session) => {
+      if (!mounted) return
+      
+      console.log('Handling auth state:', session?.user?.id)
+      
+      if (session?.user) {
+        setUser(session.user)
+        await loadUserProfile(session.user.id, session.user.email)
+      } else {
+        setUser(null)
+        setUserProfile(null)
+      }
+      setLoading(false)
+    }
+
+    // Initialize auth state
     const initializeAuth = async () => {
       try {
+        console.log('Initializing auth...')
         const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) {
@@ -68,16 +85,7 @@ export function AuthProvider({ children }) {
           return
         }
 
-        if (!mounted) return
-        
-        if (session?.user) {
-          setUser(session.user)
-          await loadUserProfile(session.user.id, session.user.email)
-        } else {
-          setUser(null)
-          setUserProfile(null)
-        }
-        setLoading(false)
+        await handleAuthState(session)
       } catch (err) {
         console.error('Error initializing auth:', err)
         setError(err.message)
@@ -85,31 +93,30 @@ export function AuthProvider({ children }) {
       }
     }
 
-    // Initialize auth state first
+    // Initialize auth state
     initializeAuth()
 
-    // Listen for auth state changes (but only after initial load)
+    // Set a timeout to ensure loading doesn't hang forever
+    const timeoutId = setTimeout(() => {
+      if (mounted && loading) {
+        console.log('Auth timeout - setting loading to false')
+        setLoading(false)
+      }
+    }, 5000) // 5 second timeout
+
+    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return
       
-      // Skip the initial session event to avoid double loading
-      if (event === 'INITIAL_SESSION') {
-        return
-      }
-      
       console.log('Auth state change:', event, session?.user?.id)
       
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        await loadUserProfile(session.user.id, session.user.email)
-      } else {
-        setUserProfile(null)
-      }
-      setLoading(false)
+      // Handle all auth state changes
+      await handleAuthState(session)
     })
 
     return () => {
       mounted = false
+      clearTimeout(timeoutId)
       subscription.unsubscribe()
     }
   }, [])

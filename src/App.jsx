@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import Navbar from './components/Navbar.jsx'
 import Footer from './components/Footer.jsx'
@@ -28,6 +28,20 @@ function ProtectedRoute({ children }) {
 function AppContent() {
   const { user, userProfile, loading, error } = useAuth()
   const navigate = useNavigate()
+  const [loadingTimeout, setLoadingTimeout] = useState(false)
+
+  // Set timeout for loading state
+  useEffect(() => {
+    if (loading) {
+      const timeoutId = setTimeout(() => {
+        setLoadingTimeout(true)
+      }, 3000) // 3 second timeout
+      
+      return () => clearTimeout(timeoutId)
+    } else {
+      setLoadingTimeout(false)
+    }
+  }, [loading])
 
   useEffect(() => {
     if (!loading && user && userProfile) {
@@ -72,6 +86,45 @@ function AppContent() {
             className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
           >
             Opnieuw proberen
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Show loading state with timeout
+  if (loading && !loadingTimeout) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Laden...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show timeout message if loading takes too long
+  if (loading && loadingTimeout) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6 text-center">
+          <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h1 className="text-xl font-semibold text-gray-900 mb-2">
+            Laden duurt langer dan verwacht
+          </h1>
+          <p className="text-gray-600 mb-4">
+            Er lijkt een probleem te zijn met het laden van je account. Probeer de pagina te vernieuwen.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            Pagina vernieuwen
           </button>
         </div>
       </div>
