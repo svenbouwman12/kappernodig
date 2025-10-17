@@ -17,11 +17,10 @@ export async function lookupAddress(postcode, houseNumber) {
       throw new Error('Huisnummer is verplicht')
     }
 
-    // Use a reliable CORS-enabled API
+    // Use our own API route to avoid CORS issues
     const response = await fetch(
-      `https://api.postcode.eu/nl/v1/postcode/${cleanPostcode}/${houseNumber}`,
+      `/api/postcode?postcode=${cleanPostcode}&huisnummer=${houseNumber}`,
       {
-        mode: 'cors',
         headers: {
           'Accept': 'application/json'
         }
@@ -38,22 +37,8 @@ export async function lookupAddress(postcode, houseNumber) {
       throw new Error('Geen adres gevonden voor postcode ' + cleanPostcode + ' nummer ' + houseNumber)
     }
 
-    // Format postcode with space (1234 AB)
-    const formattedPostcode = `${cleanPostcode.slice(0, 4)} ${cleanPostcode.slice(4)}`
-    
-    return {
-      street: data.street || '',
-      houseNumber: houseNumber,
-      houseNumberAddition: data.houseNumberAddition || '',
-      postcode: formattedPostcode,
-      city: data.city || '',
-      province: data.province || '',
-      fullAddress: `${data.street || ''} ${houseNumber}${data.houseNumberAddition || ''}, ${formattedPostcode} ${data.city || ''}`.trim(),
-      coordinates: {
-        lat: data.latitude || null,
-        lng: data.longitude || null
-      }
-    }
+    // Return the data directly from our API
+    return data
   } catch (error) {
     console.error('Postcode lookup error:', error)
     throw error
