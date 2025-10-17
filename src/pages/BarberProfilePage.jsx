@@ -287,7 +287,7 @@ export default function BarberProfilePage() {
 
       {/* Login Modal */}
       {showLoginModal && (
-        <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 min-h-screen">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl border border-gray-200 max-w-md w-full mx-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
