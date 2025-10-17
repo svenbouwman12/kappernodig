@@ -54,51 +54,42 @@ export default function Footer() {
           {/* Customer Section */}
           <div>
             <h3 className="font-semibold text-secondary mb-3">Klant Login</h3>
-            <div className="space-y-2">
-              <Link to="/client/login" className="block text-sm text-secondary/70 hover:text-primary transition-colors">Klant Inloggen</Link>
-              <Link to="/client/register" className="block text-sm text-secondary/70 hover:text-primary transition-colors">Klant Registreren</Link>
-              {user && userProfile?.role === 'client' && (
-                <>
-                  <Link to="/client/dashboard" className="block text-sm text-secondary/70 hover:text-primary transition-colors">Mijn Afspraken</Link>
-                  <Link to="/client/dashboard" className="block text-sm text-secondary/70 hover:text-primary transition-colors">Favoriete Kappers</Link>
-                </>
-              )}
-            </div>
+            {user && userProfile?.role === 'client' ? (
+              <div className="space-y-3">
+                <Link 
+                  to="/client/dashboard"
+                  className="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
+                >
+                  👤 Klant Dashboard
+                </Link>
+                <div className="pt-2">
+                  <button 
+                    onClick={handleLogout}
+                    className="text-sm text-red-600 hover:text-red-700 transition-colors"
+                  >
+                    Uitloggen
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Link to="/client/login" className="block text-sm text-secondary/70 hover:text-primary transition-colors">Klant Inloggen</Link>
+                <Link to="/client/register" className="block text-sm text-secondary/70 hover:text-primary transition-colors">Klant Registreren</Link>
+              </div>
+            )}
           </div>
 
-          {/* Auth Section */}
+          {/* Kapper Section */}
           <div>
-            <h3 className="font-semibold text-secondary mb-3">
-              {user ? 'Account' : 'Kapper Login'}
-            </h3>
-            {user ? (
+            <h3 className="font-semibold text-secondary mb-3">Kapper Login</h3>
+            {user && userProfile?.role === 'kapper' ? (
               <div className="space-y-3">
-                {/* Show appropriate dashboard based on user role */}
-                {userProfile?.role === 'kapper' && (
-                  <Link 
-                    to="/kapper/dashboard"
-                    className="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
-                  >
-                    📊 Kapper Dashboard
-                  </Link>
-                )}
-                {userProfile?.role === 'client' && (
-                  <Link 
-                    to="/client/dashboard"
-                    className="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
-                  >
-                    👤 Klant Dashboard
-                  </Link>
-                )}
-                {userProfile?.role === 'admin' && (
-                  <Link 
-                    to="/admin"
-                    className="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
-                  >
-                    ⚙️ Admin Dashboard
-                  </Link>
-                )}
-                
+                <Link 
+                  to="/kapper/dashboard"
+                  className="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
+                >
+                  📊 Kapper Dashboard
+                </Link>
                 <div className="pt-2">
                   <button 
                     onClick={handleLogout}
