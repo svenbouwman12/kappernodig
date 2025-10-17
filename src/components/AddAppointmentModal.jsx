@@ -159,7 +159,7 @@ export default function AddAppointmentModal({ isOpen, onClose, salonId, onAppoin
 
   // Calculate end time based on selected time and duration
   useEffect(() => {
-    if (selectedTime && selectedDuration) {
+    if (selectedTime && selectedDuration && selectedDate) {
       const [hours, minutes] = selectedTime.split(':').map(Number)
       const startMinutes = hours * 60 + minutes
       const endMinutes = startMinutes + selectedDuration
@@ -167,10 +167,14 @@ export default function AddAppointmentModal({ isOpen, onClose, salonId, onAppoin
       const endMins = endMinutes % 60
       const endTime = `${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')}`
       
+      // Create proper Date objects to handle timezone correctly
+      const startDateTime = new Date(`${selectedDate}T${selectedTime}:00`)
+      const endDateTime = new Date(`${selectedDate}T${endTime}:00`)
+      
       setFormData(prev => ({
         ...prev,
-        start_tijd: selectedDate ? `${selectedDate}T${selectedTime}:00` : '',
-        eind_tijd: selectedDate ? `${selectedDate}T${endTime}:00` : ''
+        start_tijd: startDateTime.toISOString(),
+        eind_tijd: endDateTime.toISOString()
       }))
     }
   }, [selectedTime, selectedDuration, selectedDate])
