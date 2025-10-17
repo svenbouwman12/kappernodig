@@ -87,7 +87,7 @@ export default function ClientAppointmentsList() {
           .from('appointments')
           .select(`
             *,
-            barbers(
+            barbers!salon_id(
               id,
               name,
               location,
@@ -108,7 +108,7 @@ export default function ClientAppointmentsList() {
             .from('appointments')
             .select(`
               *,
-              barbers(
+              barbers!salon_id(
                 id,
                 name,
                 location,
@@ -138,7 +138,7 @@ export default function ClientAppointmentsList() {
               .from('appointments')
               .select(`
                 *,
-                barbers(
+                barbers!salon_id(
                   id,
                   name,
                   location,
