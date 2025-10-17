@@ -1,11 +1,12 @@
 -- Fix booking system for both logged in and anonymous users
 -- This migration adds client info fields to appointments and fixes RLS policies
 
--- 1. Add client info fields to appointments table
+-- 1. Add client info fields and notes to appointments table
 ALTER TABLE public.appointments 
 ADD COLUMN IF NOT EXISTS client_name TEXT,
 ADD COLUMN IF NOT EXISTS client_email TEXT,
-ADD COLUMN IF NOT EXISTS client_phone TEXT;
+ADD COLUMN IF NOT EXISTS client_phone TEXT,
+ADD COLUMN IF NOT EXISTS opmerkingen TEXT;
 
 -- 2. Update existing appointments to have client info if klant_id exists
 UPDATE public.appointments 
