@@ -250,6 +250,7 @@ export default function BookingPage() {
         client_email: clientEmail,
         client_phone: clientPhone || null,
         service_id: booking.serviceId,
+        dienst: selectedService.name, // Add service name to dienst column
         start_tijd: appointmentDate.toISOString(),
         eind_tijd: endTime.toISOString(),
         status: 'confirmed',

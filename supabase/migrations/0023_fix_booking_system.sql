@@ -12,6 +12,10 @@ ADD COLUMN IF NOT EXISTS opmerkingen TEXT;
 ALTER TABLE public.appointments 
 ALTER COLUMN klant_id DROP NOT NULL;
 
+-- 3. Make dienst column nullable to support service_id based bookings
+ALTER TABLE public.appointments 
+ALTER COLUMN dienst DROP NOT NULL;
+
 -- 2. Update existing appointments to have client info if klant_id exists
 UPDATE public.appointments 
 SET 
