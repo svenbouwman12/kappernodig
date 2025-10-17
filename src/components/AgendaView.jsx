@@ -227,6 +227,10 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
     return Math.max(0, Math.min(1, positionInSlot))
   }
 
+  const handleAppointmentClick = (appointment) => {
+    setSelectedAppointment(appointment)
+  }
+
   // Get exact time position in pixels from top of agenda
   const getExactTimePosition = () => {
     if (!isCurrentWeek()) return 0
@@ -245,10 +249,6 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
     const pixelsFromTop = (totalMinutesFrom8AM / 15) * 32
     
     return Math.max(0, pixelsFromTop)
-  }
-
-  const handleAppointmentClick = (appointment) => {
-    setSelectedAppointment(appointment)
   }
 
   const handleAppointmentAdded = (newAppointment) => {
