@@ -89,25 +89,21 @@ export default function BarberProfilePage() {
     if (!user || !barber) return
 
     try {
+      // Use a different approach - get all bookmarks and filter client-side
       const { data, error } = await supabase
         .from('bookmarks')
-        .select('id')
+        .select('id, salon_id')
         .eq('klant_id', user.id)
-        .eq('salon_id', barber.id)
-        .single()
 
       if (error) {
-        // Handle various error cases gracefully
-        if (error.code === 'PGRST116' || error.status === 406 || error.message.includes('406')) {
-          // No bookmark found or access denied - not bookmarked
-          setIsBookmarked(false)
-          return
-        }
         console.error('Error checking bookmark status:', error)
+        setIsBookmarked(false)
         return
       }
 
-      setIsBookmarked(!!data)
+      // Check if current barber is in the bookmarks list
+      const isBookmarked = data?.some(bookmark => bookmark.salon_id === barber.id) || false
+      setIsBookmarked(isBookmarked)
     } catch (err) {
       console.error('Error checking bookmark status:', err)
       // On any error, assume not bookmarked
