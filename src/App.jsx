@@ -47,20 +47,24 @@ function AppContent() {
     if (!loading && user && userProfile) {
       const currentPath = window.location.pathname
       
-      // Don't redirect from protected pages
-      if (currentPath.startsWith('/kapper/') || currentPath.startsWith('/client/') || currentPath.startsWith('/admin') || currentPath.startsWith('/dashboard')) {
+      // Don't redirect if already on correct dashboard
+      if (currentPath.startsWith('/kapper/') && userProfile.role === 'kapper') {
+        return
+      }
+      if (currentPath.startsWith('/client/') && userProfile.role === 'client') {
+        return
+      }
+      if (currentPath.startsWith('/admin') && userProfile.role === 'admin') {
         return
       }
       
-      // Only redirect from login/register pages, NOT from homepage
-      if (currentPath === '/login' || currentPath === '/register') {
-        if (userProfile.role === 'admin') {
-          navigate('/admin', { replace: true })
-        } else if (userProfile.role === 'kapper') {
-          navigate('/kapper/dashboard', { replace: true })
-        } else if (userProfile.role === 'client') {
-          navigate('/client/dashboard', { replace: true })
-        }
+      // Redirect based on user role
+      if (userProfile.role === 'admin') {
+        navigate('/admin', { replace: true })
+      } else if (userProfile.role === 'kapper') {
+        navigate('/kapper/dashboard', { replace: true })
+      } else if (userProfile.role === 'client') {
+        navigate('/client/dashboard', { replace: true })
       }
     }
   }, [user, userProfile, loading, navigate])

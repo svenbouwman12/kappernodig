@@ -78,7 +78,7 @@ export default function KapperLoginPage() {
           if (profile?.role === 'kapper') {
             navigate('/kapper/dashboard')
           } else if (profile?.role === 'client') {
-            navigate('/client/dashboard')
+            setError('Dit is een klant account. Gebruik de klant login pagina.')
           } else {
             setError('Account type niet gevonden. Neem contact op met de beheerder.')
           }
