@@ -37,6 +37,13 @@ export function AuthProvider({ children }) {
             return
           }
           
+          // If user profile doesn't exist, create a default one
+          if (error.code === 'PGRST116') {
+            console.log('User profile not found - creating default profile')
+            setUserProfile({ role: 'client', naam: 'Nieuwe gebruiker', profielfoto: null })
+            return
+          }
+          
           setUserProfile(null)
           return
         }
@@ -44,7 +51,8 @@ export function AuthProvider({ children }) {
         setUserProfile(profile)
       } catch (err) {
         console.error('Error loading user profile:', err)
-        setUserProfile(null)
+        // Fallback to default client profile if anything goes wrong
+        setUserProfile({ role: 'client', naam: 'Nieuwe gebruiker', profielfoto: null })
       }
     }
 
