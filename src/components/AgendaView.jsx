@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import { Calendar, Clock, Plus } from 'lucide-react'
+import { Calendar, Clock, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext.jsx'
 
 export default function AgendaView({ salonId, onAppointmentClick }) {
   const { user } = useAuth()
-  const [selectedDate, setSelectedDate] = useState(new Date())
+  const [selectedWeek, setSelectedWeek] = useState(new Date())
   const [appointments, setAppointments] = useState([])
   const [loading, setLoading] = useState(true)
   const [currentTime, setCurrentTime] = useState(new Date())
@@ -19,23 +19,20 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
     return () => clearInterval(interval)
   }, [])
 
-  // Load appointments for selected date
+  // Load appointments for selected week
   useEffect(() => {
     if (salonId) {
       loadAppointments()
     }
-  }, [salonId, selectedDate])
+  }, [salonId, selectedWeek])
 
   async function loadAppointments() {
     if (!salonId) return
 
     setLoading(true)
     try {
-      const startOfDay = new Date(selectedDate)
-      startOfDay.setHours(0, 0, 0, 0)
-      
-      const endOfDay = new Date(selectedDate)
-      endOfDay.setHours(23, 59, 59, 999)
+      const weekStart = getWeekStart(selectedWeek)
+      const weekEnd = getWeekEnd(selectedWeek)
 
       const { data, error } = await supabase
         .from('appointments')
@@ -48,8 +45,8 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
           )
         `)
         .eq('salon_id', salonId)
-        .gte('start_tijd', startOfDay.toISOString())
-        .lte('start_tijd', endOfDay.toISOString())
+        .gte('start_tijd', weekStart.toISOString())
+        .lte('start_tijd', weekEnd.toISOString())
         .order('start_tijd')
 
       if (error) {
@@ -66,11 +63,40 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
     }
   }
 
-  // Generate time slots (8:00 - 20:00)
+  // Helper functions for week navigation
+  const getWeekStart = (date) => {
+    const d = new Date(date)
+    const day = d.getDay()
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1) // Adjust when day is Sunday
+    d.setDate(diff)
+    d.setHours(0, 0, 0, 0)
+    return d
+  }
+
+  const getWeekEnd = (date) => {
+    const weekStart = getWeekStart(date)
+    const weekEnd = new Date(weekStart)
+    weekEnd.setDate(weekStart.getDate() + 6)
+    weekEnd.setHours(23, 59, 59, 999)
+    return weekEnd
+  }
+
+  const getWeekDays = () => {
+    const weekStart = getWeekStart(selectedWeek)
+    const days = []
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(weekStart)
+      day.setDate(weekStart.getDate() + i)
+      days.push(day)
+    }
+    return days
+  }
+
+  // Generate time slots (8:00 - 20:00) in 15-minute intervals
   const generateTimeSlots = () => {
     const slots = []
     for (let hour = 8; hour < 20; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
+      for (let minute = 0; minute < 60; minute += 15) {
         const time = new Date()
         time.setHours(hour, minute, 0, 0)
         slots.push(time)
@@ -80,21 +106,46 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
   }
 
   const timeSlots = generateTimeSlots()
+  const weekDays = getWeekDays()
 
-  // Check if current time is within the selected date
-  const isCurrentDate = () => {
+  // Check if current time is within the selected week
+  const isCurrentWeek = () => {
     const today = new Date()
-    const selected = new Date(selectedDate)
-    return today.toDateString() === selected.toDateString()
+    const weekStart = getWeekStart(selectedWeek)
+    const weekEnd = getWeekEnd(selectedWeek)
+    return today >= weekStart && today <= weekEnd
   }
 
-  // Get appointment for a specific time slot
-  const getAppointmentForSlot = (slotTime) => {
+  // Get appointment for a specific time slot and day
+  const getAppointmentForSlot = (slotTime, day) => {
     return appointments.find(apt => {
       const startTime = new Date(apt.start_tijd)
-      return startTime.getHours() === slotTime.getHours() && 
-             startTime.getMinutes() === slotTime.getMinutes()
+      const endTime = new Date(apt.eind_tijd)
+      const aptDate = new Date(startTime)
+      aptDate.setHours(0, 0, 0, 0)
+      const dayDate = new Date(day)
+      dayDate.setHours(0, 0, 0, 0)
+      
+      // Check if it's the same day
+      if (aptDate.getTime() !== dayDate.getTime()) return false
+      
+      // Check if the slot time falls within the appointment time range
+      const slotTimeMs = slotTime.getTime()
+      const startTimeMs = startTime.getTime()
+      const endTimeMs = endTime.getTime()
+      
+      return slotTimeMs >= startTimeMs && slotTimeMs < endTimeMs
     })
+  }
+
+  // Check if this slot is the start of an appointment
+  const isAppointmentStart = (slotTime, day) => {
+    const appointment = getAppointmentForSlot(slotTime, day)
+    if (!appointment) return false
+    
+    const startTime = new Date(appointment.start_tijd)
+    return startTime.getHours() === slotTime.getHours() && 
+           startTime.getMinutes() === slotTime.getMinutes()
   }
 
   // Get service color based on service type
@@ -118,12 +169,18 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
   }
 
   // Check if current time line should be shown
-  const shouldShowCurrentTime = (slotTime) => {
-    if (!isCurrentDate()) return false
+  const shouldShowCurrentTime = (slotTime, day) => {
+    if (!isCurrentWeek()) return false
     
     const now = currentTime
+    const today = new Date()
+    const dayDate = new Date(day)
+    
+    // Check if it's the same day
+    if (today.toDateString() !== dayDate.toDateString()) return false
+    
     const slotStart = new Date(slotTime)
-    const slotEnd = new Date(slotTime.getTime() + 30 * 60000) // 30 minutes later
+    const slotEnd = new Date(slotTime.getTime() + 15 * 60000) // 15 minutes later
     
     return now >= slotStart && now < slotEnd
   }
@@ -134,17 +191,28 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
     }
   }
 
-  const handleDateChange = (date) => {
-    setSelectedDate(date)
+  const handleWeekNavigation = (direction) => {
+    const newWeek = new Date(selectedWeek)
+    newWeek.setDate(selectedWeek.getDate() + (direction === 'next' ? 7 : -7))
+    setSelectedWeek(newWeek)
   }
 
-  const formatDate = (date) => {
-    return date.toLocaleDateString('nl-NL', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
+  const formatWeekRange = () => {
+    const weekStart = getWeekStart(selectedWeek)
+    const weekEnd = getWeekEnd(selectedWeek)
+    
+    const startStr = weekStart.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
+    const endStr = weekEnd.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })
+    
+    return `${startStr} - ${endStr}`
+  }
+
+  const formatDayName = (date) => {
+    return date.toLocaleDateString('nl-NL', { weekday: 'short' })
+  }
+
+  const formatDayNumber = (date) => {
+    return date.getDate()
   }
 
   if (!salonId) {
@@ -157,30 +225,63 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-      {/* Header with date selector */}
+      {/* Header with week navigation */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <Calendar className="h-5 w-5 text-gray-500" />
             <div>
               <h2 className="text-xl font-semibold text-gray-900">
-                {formatDate(selectedDate)}
+                Week {formatWeekRange()}
               </h2>
               <p className="text-sm text-gray-500">Agenda overzicht</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <input
-              type="date"
-              value={selectedDate.toISOString().split('T')[0]}
-              onChange={(e) => handleDateChange(new Date(e.target.value))}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
+            <button
+              onClick={() => handleWeekNavigation('prev')}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Vorige week"
+            >
+              <ChevronLeft className="h-5 w-5 text-gray-600" />
+            </button>
+            <button
+              onClick={() => setSelectedWeek(new Date())}
+              className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Deze week
+            </button>
+            <button
+              onClick={() => handleWeekNavigation('next')}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Volgende week"
+            >
+              <ChevronRight className="h-5 w-5 text-gray-600" />
+            </button>
             <button className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 flex items-center space-x-2">
               <Plus className="h-4 w-4" />
               <span>Nieuwe afspraak</span>
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* Week header with days */}
+      <div className="border-b border-gray-200">
+        <div className="grid grid-cols-8 gap-1">
+          <div className="p-3 text-sm font-medium text-gray-500 bg-gray-50">
+            Tijd
+          </div>
+          {weekDays.map((day, index) => (
+            <div key={index} className="p-3 text-center">
+              <div className="text-sm font-medium text-gray-900">
+                {formatDayName(day)}
+              </div>
+              <div className="text-lg font-semibold text-gray-700">
+                {formatDayNumber(day)}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -192,48 +293,59 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
             <p className="mt-2 text-gray-500">Laden...</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-1 p-4">
-            {timeSlots.map((slot, index) => {
-              const appointment = getAppointmentForSlot(slot)
-              const isCurrentTime = shouldShowCurrentTime(slot)
-              
-              return (
-                <div key={index} className="relative">
-                  {/* Current time indicator */}
-                  {isCurrentTime && (
-                    <div className="absolute left-0 right-0 h-0.5 bg-red-500 z-10">
-                      <div className="absolute -left-2 -top-1 w-3 h-3 bg-red-500 rounded-full"></div>
-                    </div>
-                  )}
+          <div className="grid grid-cols-8 gap-1">
+            {timeSlots.map((slot, slotIndex) => (
+              <React.Fragment key={slotIndex}>
+                {/* Time column */}
+                <div className="p-2 text-sm text-gray-500 font-medium bg-gray-50 border-r border-gray-200">
+                  {formatTime(slot)}
+                </div>
+                
+                {/* Day columns */}
+                {weekDays.map((day, dayIndex) => {
+                  const appointment = getAppointmentForSlot(slot, day)
+                  const isCurrentTime = shouldShowCurrentTime(slot, day)
+                  const isStart = isAppointmentStart(slot, day)
                   
-                  <div className="flex items-center h-12 border-b border-gray-100">
-                    <div className="w-20 text-sm text-gray-500 font-medium">
-                      {formatTime(slot)}
-                    </div>
-                    
-                    <div className="flex-1 ml-4">
-                      {appointment ? (
-                        <button
-                          onClick={() => handleAppointmentClick(appointment)}
-                          className={`w-full p-2 rounded-lg border text-left hover:shadow-md transition-shadow ${getServiceColor(appointment.dienst)}`}
-                        >
-                          <div className="font-medium">
-                            {appointment.clients?.naam || 'Onbekende klant'}
-                          </div>
-                          <div className="text-sm opacity-75">
-                            {appointment.dienst}
-                          </div>
-                        </button>
-                      ) : (
-                        <div className="w-full p-2 text-gray-400 text-sm">
-                          Vrij
+                  return (
+                    <div key={dayIndex} className="relative p-0.5 border-r border-gray-100">
+                      {/* Current time indicator */}
+                      {isCurrentTime && (
+                        <div className="absolute left-0 right-0 h-0.5 bg-red-500 z-10">
+                          <div className="absolute -left-1 -top-1 w-2 h-2 bg-red-500 rounded-full"></div>
                         </div>
                       )}
+                      
+                      <div className="h-8">
+                        {appointment ? (
+                          <button
+                            onClick={() => handleAppointmentClick(appointment)}
+                            className={`w-full h-full p-1 rounded text-left hover:shadow-md transition-shadow ${getServiceColor(appointment.dienst)} ${
+                              isStart ? 'border-l-2 border-l-blue-500' : ''
+                            }`}
+                          >
+                            {isStart && (
+                              <>
+                                <div className="text-xs font-medium truncate">
+                                  {appointment.clients?.naam || 'Onbekende klant'}
+                                </div>
+                                <div className="text-xs opacity-75 truncate">
+                                  {appointment.dienst}
+                                </div>
+                              </>
+                            )}
+                          </button>
+                        ) : (
+                          <div className="w-full h-full p-1 text-gray-200 text-xs">
+                            ·
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </div>
-              )
-            })}
+                  )
+                })}
+              </React.Fragment>
+            ))}
           </div>
         )}
       </div>
