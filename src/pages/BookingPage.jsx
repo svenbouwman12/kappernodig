@@ -158,7 +158,7 @@ export default function BookingPage() {
         isPast: isToday && currentTime < now
       })
 
-      currentTime.setMinutes(currentTime.getMinutes() + 30) // 30-minute intervals
+      currentTime.setMinutes(currentTime.getMinutes() + 15) // 15-minute intervals
     }
 
     return slots
@@ -497,13 +497,13 @@ export default function BookingPage() {
                       <p className="text-gray-600">Beschikbare tijden laden...</p>
                     </div>
                   ) : availableSlots.length > 0 ? (
-                    <div className="grid grid-cols-4 md:grid-cols-6 gap-3">
+                    <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
                       {availableSlots.map(slot => (
                         <button
                           key={slot.time}
                           onClick={() => slot.available ? handleTimeClick(slot.time) : null}
                           disabled={!slot.available}
-                          className={`p-3 text-center border rounded-lg transition-colors ${
+                          className={`p-2 text-sm text-center border rounded-lg transition-colors ${
                             !slot.available
                               ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
                               : booking.time === slot.time 
