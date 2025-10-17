@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Calendar, Clock, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext.jsx'
+import AddAppointmentModal from './AddAppointmentModal.jsx'
 
 export default function AgendaView({ salonId, onAppointmentClick }) {
   const { user } = useAuth()
@@ -9,6 +10,7 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
   const [appointments, setAppointments] = useState([])
   const [loading, setLoading] = useState(true)
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [showAddModal, setShowAddModal] = useState(false)
 
   // Update current time every minute
   useEffect(() => {
@@ -191,6 +193,11 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
     }
   }
 
+  const handleAppointmentAdded = (newAppointment) => {
+    // Reload appointments to show the new one
+    loadAppointments()
+  }
+
   const handleWeekNavigation = (direction) => {
     const newWeek = new Date(selectedWeek)
     newWeek.setDate(selectedWeek.getDate() + (direction === 'next' ? 7 : -7))
@@ -258,7 +265,10 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
             >
               <ChevronRight className="h-5 w-5 text-gray-600" />
             </button>
-            <button className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 flex items-center space-x-2">
+            <button 
+              onClick={() => setShowAddModal(true)}
+              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 flex items-center space-x-2"
+            >
               <Plus className="h-4 w-4" />
               <span>Nieuwe afspraak</span>
             </button>
@@ -372,6 +382,14 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
           </div>
         </div>
       </div>
+
+      {/* Add Appointment Modal */}
+      <AddAppointmentModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        salonId={salonId}
+        onAppointmentAdded={handleAppointmentAdded}
+      />
     </div>
   )
 }
