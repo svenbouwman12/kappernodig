@@ -27,13 +27,19 @@ function AppContent() {
 
   useEffect(() => {
     if (!loading && user && userProfile) {
-      // Only redirect if we're on the homepage or regular login/register pages (NOT kapper pages)
       const currentPath = window.location.pathname
+      
+      // Don't redirect from kapper pages - let them handle their own redirects
+      if (currentPath.startsWith('/kapper/')) {
+        return
+      }
+      
+      // Only redirect from specific pages to prevent conflicts
       if (currentPath === '/' || currentPath === '/login' || currentPath === '/register') {
         if (userProfile.role === 'admin') {
           navigate('/admin', { replace: true })
         }
-        // Remove automatic barber redirect - let KapperLoginPage handle its own redirect
+        // No automatic barber redirect - let individual pages handle their own redirects
       }
     }
   }, [user, userProfile, loading, navigate])
