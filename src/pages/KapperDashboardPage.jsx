@@ -399,7 +399,7 @@ export default function KapperDashboardPage() {
           <Card className="p-6">
             <div className="flex items-center">
               <div className="p-3 bg-red-100 rounded-xl">
-                <Heart className="h-6 w-6 text-red-600" />
+                <Heart className="h-6 w-6 text-red-600" fill="currentColor" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Totaal Favorieten</p>
@@ -485,7 +485,7 @@ export default function KapperDashboardPage() {
                         </div>
                       )}
                       <div className="flex items-center text-sm text-gray-600">
-                        <Heart size={16} className="mr-1 text-red-500" />
+                        <Heart size={16} className="mr-1 text-red-500" fill="currentColor" />
                         {barber.favorites_count || 0} favorieten
                       </div>
                     </div>
