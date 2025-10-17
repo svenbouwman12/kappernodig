@@ -1,140 +1,70 @@
-// Postcode lookup utility for Dutch addresses
-// Uses OpenPostcode.nl - FREE Dutch postcode API (no API key required)
+import getAdres from './bagApi.js'
 
-export async function lookupAddress(postcode, houseNumber) {
+/**
+ * Zoekt een adres op basis van postcode en huisnummer via de officiële BAG API
+ * @param {string} postcode - Nederlandse postcode (bijv. "9934 HE")
+ * @param {string|number} houseNumber - Huisnummer
+ * @returns {Promise<Object>} Adres object met straat, stad, coördinaten etc.
+ */
+export async function findAddress(postcode, houseNumber) {
   try {
-    // Clean postcode (remove spaces, convert to uppercase)
+    // Valideer input
+    if (!postcode || !houseNumber) {
+      throw new Error('Postcode en huisnummer zijn verplicht')
+    }
+
+    // Format postcode (verwijder spaties en maak hoofdletters)
     const cleanPostcode = postcode.replace(/\s/g, '').toUpperCase()
     
-    // Validate Dutch postcode format (1234AB)
-    const postcodeRegex = /^[1-9][0-9]{3}[A-Z]{2}$/
-    if (!postcodeRegex.test(cleanPostcode)) {
+    // Valideer postcode formaat (6 karakters: 4 cijfers + 2 letters)
+    if (!/^\d{4}[A-Z]{2}$/.test(cleanPostcode)) {
       throw new Error('Ongeldig postcode formaat. Gebruik formaat: 1234AB')
     }
 
-    // Validate house number
-    if (!houseNumber || houseNumber.trim() === '') {
-      throw new Error('Huisnummer is verplicht')
+    console.log(`BAG API lookup: ${cleanPostcode} ${houseNumber}`)
+    
+    // Gebruik BAG API voor adres lookup
+    const result = await getAdres(cleanPostcode, houseNumber)
+    
+    // Controleer op error
+    if (result.error) {
+      throw new Error(result.error)
     }
 
-    // Use Nominatim with optimized queries for Dutch addresses
+    // Format postcode met spatie (1234 AB)
     const formattedPostcode = `${cleanPostcode.slice(0, 4)} ${cleanPostcode.slice(4)}`
     
-    // Try multiple query formats to find the correct address
-    const queries = [
-      // Try with postcode first (more specific)
-      `${formattedPostcode} ${houseNumber} Nederland`,
-      // Try with house number first
-      `${houseNumber} ${formattedPostcode} Nederland`,
-      // Try without spaces in postcode
-      `${houseNumber} ${cleanPostcode} Nederland`,
-      // Try with "NL" instead of "Nederland"
-      `${formattedPostcode} ${houseNumber} NL`,
-      // Try with just the postcode and house number
-      `${formattedPostcode} ${houseNumber}`
-    ]
-    
-    let result = null
-    let bestMatch = null
-    
-    for (const query of queries) {
-      try {
-        console.log(`Trying query: "${query}"`)
-        
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
-        
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?` +
-          `format=json&` +
-          `q=${encodeURIComponent(query)}&` +
-          `addressdetails=1&` +
-          `countrycodes=nl&` +
-          `limit=5`,
-          {
-            headers: {
-              'User-Agent': 'KapperNodig/1.0',
-              'Accept': 'application/json'
-            },
-            signal: controller.signal
-          }
-        )
-        
-        clearTimeout(timeoutId)
-        
-        if (response.ok) {
-          const data = await response.json()
-          if (data && data.length > 0) {
-            // Find the best match with correct postcode
-            const match = data.find(item => {
-              const addr = item.address || {}
-              const itemPostcode = addr.postcode || ''
-              return itemPostcode === formattedPostcode || itemPostcode === cleanPostcode
-            })
-            
-            if (match) {
-              result = match
-              console.log(`Found exact match:`, match.display_name)
-              break
-            }
-            
-            // Keep first result as fallback
-            if (!bestMatch) {
-              bestMatch = data[0]
-              console.log(`Fallback match:`, bestMatch.display_name)
-            }
-          }
-        }
-      } catch (err) {
-        if (err.name === 'AbortError') {
-          console.warn(`Query timeout: "${query}"`)
-        } else {
-          console.warn(`Query failed: "${query}"`, err.message)
-        }
-        continue
-      }
+    // Bouw huisnummer string (inclusief letter en toevoeging)
+    let fullHouseNumber = result.huisnummer.toString()
+    if (result.huisletter) {
+      fullHouseNumber += result.huisletter
     }
-    
-    if (!result && bestMatch) {
-      result = bestMatch
-      console.log(`Using fallback result:`, result.display_name)
-    }
-    
-    if (!result) {
-      throw new Error(`Geen adres gevonden voor postcode ${cleanPostcode} nummer ${houseNumber}`)
+    if (result.huisnummertoevoeging) {
+      fullHouseNumber += result.huisnummertoevoeging
     }
 
-    const addr = result.address || {}
-    
-    // Extract address components from Nominatim
-    const street = addr.road || addr.street || addr.pedestrian || addr.footway || ''
-    const city = addr.city || addr.town || addr.village || addr.municipality || addr.suburb || ''
-    const province = addr.state || addr.county || ''
-    
-    if (!street) {
-      throw new Error('Geen straatnaam gevonden voor postcode ' + cleanPostcode + ' nummer ' + houseNumber)
-    }
-
+    // Return gestructureerd adres object
     return {
-      street: street,
-      houseNumber: houseNumber,
-      houseNumberAddition: '',
+      street: result.straatnaam,
+      houseNumber: fullHouseNumber,
+      houseNumberAddition: result.huisnummertoevoeging || '',
       postcode: formattedPostcode,
-      city: city,
-      province: province,
-      fullAddress: `${street} ${houseNumber}, ${formattedPostcode} ${city}`.trim(),
+      city: result.woonplaats,
+      province: result.provincie,
+      fullAddress: `${result.straatnaam} ${fullHouseNumber}, ${formattedPostcode} ${result.woonplaats}`.trim(),
       coordinates: {
-        lat: parseFloat(result.lat) || null,
-        lng: parseFloat(result.lon) || null
-      }
+        lat: null, // BAG API heeft geen coördinaten, maar wel betrouwbare adressen
+        lng: null
+      },
+      // Extra BAG informatie
+      bagId: result.adresseerbaarObjectIdentificatie,
+      status: result.status,
+      gemeente: result.gemeente,
+      typeOpenbareRuimte: result.typeOpenbareRuimte
     }
+
   } catch (error) {
     console.error('Postcode lookup error:', error)
     throw error
   }
-}
-
-// Main function
-export async function findAddress(postcode, houseNumber) {
-  return await lookupAddress(postcode, houseNumber)
 }
