@@ -379,7 +379,10 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
                               top: `${8 + (getCurrentTimePosition(slot) * 16)}px` // 8px base + position within 32px slot
                             }}
                           >
-                            <div className="absolute -left-2 -top-1 w-3 h-3 bg-red-500 rounded-full"></div>
+                            {/* Only show red dot on the first day (Monday) */}
+                            {dayIndex === 0 && (
+                              <div className="absolute -left-2 -top-1 w-3 h-3 bg-red-500 rounded-full"></div>
+                            )}
                           </div>
                         )}
                         
