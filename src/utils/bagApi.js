@@ -1,6 +1,6 @@
 /**
- * Haalt een adres op via de officiële BAG API van het Kadaster
- * @param {string} postcode - Nederlandse postcode (bijv. "9743AB")
+ * Haalt een adres op via de PostcodeAPI.nu API
+ * @param {string} postcode - Nederlandse postcode (bijv. "9711AC")
  * @param {number|string} huisnummer - Huisnummer
  * @returns {Promise<Object>} Adres object of error object
  */
@@ -19,16 +19,16 @@ async function getAdres(postcode, huisnummer) {
       throw new Error('Ongeldig postcode formaat. Gebruik formaat: 1234AB')
     }
 
-    // Maak API request naar BAG API
-    const url = `https://api.bag.kadaster.nl/lvbag/individuelebevragingen/v2/adressen?postcode=${encodeURIComponent(cleanPostcode)}&huisnummer=${encodeURIComponent(huisnummer)}`
+    // Maak API request naar PostcodeAPI.nu
+    const url = `https://postcodeapi.nu/api/v3/lookup/${cleanPostcode}/${huisnummer}`
     
-    console.log(`BAG API request: ${url}`)
+    console.log(`PostcodeAPI.nu request: ${url}`)
     
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'KapperNodig/1.0'
+        'X-Api-Key': '1TEsO6e2Fo2v6R6iTuGaS5lmaSuhNZZ32BkIUjJi',
+        'Accept': 'application/json'
       }
     })
 
@@ -36,40 +36,37 @@ async function getAdres(postcode, huisnummer) {
       if (response.status === 404) {
         return { error: "Geen adres gevonden voor deze combinatie van postcode en huisnummer." }
       }
-      throw new Error(`BAG API error: ${response.status} ${response.statusText}`)
+      throw new Error(`PostcodeAPI.nu error: ${response.status} ${response.statusText}`)
     }
 
     const data = await response.json()
     
-    // Controleer of er adressen zijn gevonden
-    if (!data._embedded || !data._embedded.adressen || data._embedded.adressen.length === 0) {
+    // Controleer of er een adres is gevonden
+    if (!data || !data.street) {
       return { error: "Geen adres gevonden voor deze combinatie van postcode en huisnummer." }
     }
 
-    // Neem het eerste adres (meestal is er maar één)
-    const adres = data._embedded.adressen[0]
-    
     // Format postcode met spatie (1234 AB)
     const formattedPostcode = `${cleanPostcode.slice(0, 4)} ${cleanPostcode.slice(4)}`
     
     // Return gestructureerd adres object
     return {
-      straatnaam: adres.straat || adres.openbareRuimte?.openbareRuimteNaam || '',
-      huisnummer: adres.huisnummer,
-      huisletter: adres.huisletter,
-      huisnummertoevoeging: adres.huisnummertoevoeging,
+      straatnaam: data.street || '',
+      huisnummer: data.houseNumber || huisnummer,
+      huisletter: data.houseNumberAddition || '',
+      huisnummertoevoeging: data.houseNumberAddition || '',
       postcode: formattedPostcode,
-      woonplaats: adres.woonplaats?.woonplaatsNaam || '',
-      gemeente: adres.gemeente?.gemeentenaam || '',
-      provincie: adres.provincie?.provincienaam || '',
+      woonplaats: data.city || '',
+      gemeente: data.municipality || '',
+      provincie: data.province || '',
       // Extra informatie
-      adresseerbaarObjectIdentificatie: adres.adresseerbaarObjectIdentificatie,
-      status: adres.nummeraanduiding?.status,
-      typeOpenbareRuimte: adres.openbareRuimte?.typeOpenbareRuimte
+      latitude: data.latitude,
+      longitude: data.longitude,
+      bagId: data.bagId
     }
 
   } catch (error) {
-    console.error('BAG API error:', error)
+    console.error('PostcodeAPI.nu error:', error)
     return { 
       error: `Technische fout bij het ophalen van adres: ${error.message}` 
     }

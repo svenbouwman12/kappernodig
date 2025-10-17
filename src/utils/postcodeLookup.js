@@ -53,14 +53,12 @@ export async function findAddress(postcode, houseNumber) {
       province: result.provincie,
       fullAddress: `${result.straatnaam} ${fullHouseNumber}, ${formattedPostcode} ${result.woonplaats}`.trim(),
       coordinates: {
-        lat: null, // BAG API heeft geen coördinaten, maar wel betrouwbare adressen
-        lng: null
+        lat: result.latitude || null, // PostcodeAPI.nu heeft coördinaten
+        lng: result.longitude || null
       },
-      // Extra BAG informatie
-      bagId: result.adresseerbaarObjectIdentificatie,
-      status: result.status,
-      gemeente: result.gemeente,
-      typeOpenbareRuimte: result.typeOpenbareRuimte
+      // Extra informatie
+      bagId: result.bagId,
+      gemeente: result.gemeente
     }
 
   } catch (error) {
