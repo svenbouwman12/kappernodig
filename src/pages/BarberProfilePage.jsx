@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import Card from '../components/Card.jsx'
 import Button from '../components/Button.jsx'
 import { supabase } from '../lib/supabase'
-import { MapPin, Phone, Globe, Star } from 'lucide-react'
+import { useAuth } from '../context/AuthContext.jsx'
+import { MapPin, Phone, Globe, Star, Heart } from 'lucide-react'
 
 const DUMMY = {
   id: '1',
@@ -24,9 +25,13 @@ const DUMMY = {
 
 export default function BarberProfilePage() {
   const { id } = useParams()
+  const navigate = useNavigate()
+  const { user, userProfile } = useAuth()
   const [barber, setBarber] = useState(null)
   const [services, setServices] = useState([])
   const [loading, setLoading] = useState(true)
+  const [isBookmarked, setIsBookmarked] = useState(false)
+  const [bookmarkLoading, setBookmarkLoading] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -71,6 +76,93 @@ export default function BarberProfilePage() {
     fetchData()
     return () => { cancelled = true }
   }, [id])
+
+  // Check if barber is bookmarked
+  useEffect(() => {
+    if (user && userProfile && barber) {
+      checkBookmarkStatus()
+    }
+  }, [user, userProfile, barber])
+
+  const checkBookmarkStatus = async () => {
+    if (!user || !barber) return
+
+    try {
+      const { data, error } = await supabase
+        .from('bookmarks')
+        .select('id')
+        .eq('klant_id', user.id)
+        .eq('salon_id', barber.id)
+        .single()
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error checking bookmark status:', error)
+        return
+      }
+
+      setIsBookmarked(!!data)
+    } catch (err) {
+      console.error('Error checking bookmark status:', err)
+    }
+  }
+
+  const handleBookmark = async () => {
+    // Check if user is logged in
+    if (!user || !userProfile) {
+      alert('Je moet ingelogd zijn om kappers toe te voegen aan je favorieten. Log in of maak een account aan.')
+      navigate('/client/login')
+      return
+    }
+
+    // Check if user is a client
+    if (userProfile.role !== 'client') {
+      alert('Alleen klanten kunnen kappers toevoegen aan hun favorieten.')
+      return
+    }
+
+    setBookmarkLoading(true)
+    try {
+      if (isBookmarked) {
+        // Remove bookmark
+        const { error } = await supabase
+          .from('bookmarks')
+          .delete()
+          .eq('klant_id', user.id)
+          .eq('salon_id', barber.id)
+
+        if (error) {
+          console.error('Error removing bookmark:', error)
+          alert('Er is een fout opgetreden bij het verwijderen van de favoriet.')
+          return
+        }
+
+        setIsBookmarked(false)
+        alert('Kapper verwijderd uit je favorieten.')
+      } else {
+        // Add bookmark
+        const { error } = await supabase
+          .from('bookmarks')
+          .insert({
+            klant_id: user.id,
+            salon_id: barber.id
+          })
+
+        if (error) {
+          console.error('Error adding bookmark:', error)
+          alert('Er is een fout opgetreden bij het toevoegen van de favoriet.')
+          return
+        }
+
+        setIsBookmarked(true)
+        alert('Kapper toegevoegd aan je favorieten!')
+      }
+    } catch (err) {
+      console.error('Error handling bookmark:', err)
+      alert('Er is een onverwachte fout opgetreden.')
+    } finally {
+      setBookmarkLoading(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -172,7 +264,22 @@ export default function BarberProfilePage() {
           </Card>
 
           <div className="flex gap-3">
-            <Button className="px-5">Favoriet</Button>
+            <Button 
+              onClick={handleBookmark}
+              disabled={bookmarkLoading}
+              className={`px-5 flex items-center gap-2 ${
+                isBookmarked 
+                  ? 'bg-red-500 hover:bg-red-600 text-white' 
+                  : 'bg-primary hover:bg-primary/90 text-white'
+              }`}
+            >
+              {bookmarkLoading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              ) : (
+                <Heart size={16} fill={isBookmarked ? 'currentColor' : 'none'} />
+              )}
+              {isBookmarked ? 'Verwijder uit favorieten' : 'Favoriet'}
+            </Button>
             <Button variant="secondary" className="px-5">Contact</Button>
           </div>
         </div>
