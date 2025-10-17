@@ -14,7 +14,7 @@ export default function ClientLoginPage() {
   const [naam, setNaam] = useState('')
   
   const navigate = useNavigate()
-  const { setUser } = useAuth()
+  const { user, userProfile } = useAuth()
 
   const handleLogin = async (e) => {
     e.preventDefault()
@@ -67,7 +67,6 @@ export default function ClientLoginPage() {
             // If profiles table doesn't exist, assume client role
             if (profileError.message.includes('relation "profiles" does not exist')) {
               console.log('Profiles table does not exist - assuming client role')
-              setUser(data.user)
               navigate('/client/dashboard')
               return
             }
@@ -77,10 +76,8 @@ export default function ClientLoginPage() {
           }
 
           if (profile?.role === 'client') {
-            setUser(data.user)
             navigate('/client/dashboard')
           } else if (profile?.role === 'kapper') {
-            setUser(data.user)
             navigate('/kapper/dashboard')
           } else {
             setError('Account type niet gevonden. Neem contact op met de beheerder.')
@@ -88,7 +85,6 @@ export default function ClientLoginPage() {
         } catch (profileErr) {
           console.error('Profile loading failed:', profileErr)
           // Assume client role if profile loading fails
-          setUser(data.user)
           navigate('/client/dashboard')
         }
       }

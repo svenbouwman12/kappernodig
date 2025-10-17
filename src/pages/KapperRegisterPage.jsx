@@ -6,7 +6,7 @@ import { User, Lock, Mail, ArrowRight, Eye, EyeOff, Scissors, Phone } from 'luci
 
 export default function KapperRegisterPage() {
   const navigate = useNavigate()
-  const { setUser } = useAuth()
+  const { user, userProfile } = useAuth()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -109,10 +109,8 @@ export default function KapperRegisterPage() {
         // Show success message internally instead of browser popup
         setSuccess(true)
         
-        // Auto-login after successful registration
-        setUser(data.user)
-        
         // Redirect after a short delay to show success message
+        // AuthContext will handle the user state automatically
         setTimeout(() => {
           navigate('/kapper/dashboard')
         }, 2000)

@@ -6,7 +6,7 @@ import { User, Lock, Mail, ArrowRight, Eye, EyeOff, Scissors } from 'lucide-reac
 
 export default function KapperLoginPage() {
   const navigate = useNavigate()
-  const { setUser } = useAuth()
+  const { user, userProfile } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -67,7 +67,6 @@ export default function KapperLoginPage() {
             // If profiles table doesn't exist, assume kapper role
             if (profileError.message.includes('relation "profiles" does not exist')) {
               console.log('Profiles table does not exist - assuming kapper role')
-              setUser(data.user)
               navigate('/kapper/dashboard')
               return
             }
@@ -77,10 +76,8 @@ export default function KapperLoginPage() {
           }
 
           if (profile?.role === 'kapper') {
-            setUser(data.user)
             navigate('/kapper/dashboard')
           } else if (profile?.role === 'client') {
-            setUser(data.user)
             navigate('/client/dashboard')
           } else {
             setError('Account type niet gevonden. Neem contact op met de beheerder.')
@@ -88,7 +85,6 @@ export default function KapperLoginPage() {
         } catch (profileErr) {
           console.error('Profile loading failed:', profileErr)
           // Assume kapper role if profile loading fails
-          setUser(data.user)
           navigate('/kapper/dashboard')
         }
       }
@@ -171,10 +167,8 @@ export default function KapperLoginPage() {
         // Show success message internally instead of browser popup
         setSuccess(true)
         
-        // Auto-login after successful registration
-        setUser(data.user)
-        
         // Redirect after a short delay to show success message
+        // AuthContext will handle the user state automatically
         setTimeout(() => {
           navigate('/kapper/dashboard')
         }, 2000)

@@ -14,7 +14,7 @@ export default function ClientRegisterPage() {
   const [success, setSuccess] = useState(false)
   
   const navigate = useNavigate()
-  const { setUser } = useAuth()
+  const { user, userProfile } = useAuth()
 
   const handleSignup = async (e) => {
     e.preventDefault()
@@ -87,10 +87,8 @@ export default function ClientRegisterPage() {
         // Show success message internally instead of browser popup
         setSuccess(true)
         
-        // Auto-login after successful registration
-        setUser(data.user)
-        
         // Redirect after a short delay to show success message
+        // AuthContext will handle the user state automatically
         setTimeout(() => {
           navigate('/client/dashboard')
         }, 2000)
