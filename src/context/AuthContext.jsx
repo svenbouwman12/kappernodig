@@ -29,6 +29,14 @@ export function AuthProvider({ children }) {
 
         if (error) {
           console.error('Error loading user profile:', error)
+          
+          // If profiles table doesn't exist, create a default profile
+          if (error.message.includes('relation "profiles" does not exist')) {
+            console.log('Profiles table does not exist - creating default profile')
+            setUserProfile({ role: 'client', naam: 'Nieuwe gebruiker', profielfoto: null })
+            return
+          }
+          
           setUserProfile(null)
           return
         }

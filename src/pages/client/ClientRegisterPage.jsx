@@ -1,103 +1,19 @@
 import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
-import { useAuth } from '../context/AuthContext.jsx'
-import { User, Lock, Mail, ArrowRight, Eye, EyeOff, Scissors } from 'lucide-react'
+import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../context/AuthContext.jsx'
+import { User, Lock, Mail, ArrowRight, Eye, EyeOff } from 'lucide-react'
 
-export default function KapperLoginPage() {
-  const navigate = useNavigate()
-  const { setUser } = useAuth()
+export default function ClientRegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [isSignup, setIsSignup] = useState(false)
   const [naam, setNaam] = useState('')
-
-  const handleLogin = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-
-    // Basic validation
-    if (!email.trim()) {
-      setError('Email is verplicht')
-      setLoading(false)
-      return
-    }
-
-    if (!password) {
-      setError('Wachtwoord is verplicht')
-      setLoading(false)
-      return
-    }
-
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password
-      })
-
-      if (error) {
-        // Better error messages
-        if (error.message.includes('Invalid login credentials')) {
-          setError('Ongeldige email of wachtwoord')
-        } else if (error.message.includes('Email not confirmed')) {
-          setError('Je email is nog niet bevestigd. Controleer je inbox.')
-        } else {
-          setError(error.message)
-        }
-        return
-      }
-
-      if (data.user) {
-        // Check user role
-        try {
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('role, naam')
-            .eq('id', data.user.id)
-            .single()
-
-          if (profileError) {
-            console.error('Error loading profile:', profileError)
-            
-            // If profiles table doesn't exist, assume kapper role
-            if (profileError.message.includes('relation "profiles" does not exist')) {
-              console.log('Profiles table does not exist - assuming kapper role')
-              setUser(data.user)
-              navigate('/kapper/dashboard')
-              return
-            }
-            
-            setError('Er is een fout opgetreden bij het laden van je profiel')
-            return
-          }
-
-          if (profile?.role === 'kapper') {
-            setUser(data.user)
-            navigate('/kapper/dashboard')
-          } else if (profile?.role === 'client') {
-            setUser(data.user)
-            navigate('/client/dashboard')
-          } else {
-            setError('Account type niet gevonden. Neem contact op met de beheerder.')
-          }
-        } catch (profileErr) {
-          console.error('Profile loading failed:', profileErr)
-          // Assume kapper role if profile loading fails
-          setUser(data.user)
-          navigate('/kapper/dashboard')
-        }
-      }
-    } catch (err) {
-      console.error('Login error:', err)
-      setError('Er is een onverwachte fout opgetreden')
-    } finally {
-      setLoading(false)
-    }
-  }
+  
+  const navigate = useNavigate()
+  const { setUser } = useAuth()
 
   const handleSignup = async (e) => {
     e.preventDefault()
@@ -147,7 +63,7 @@ export default function KapperLoginPage() {
             .upsert({ 
               id: data.user.id,
               email: email,
-              role: 'kapper', 
+              role: 'client', 
               naam: naam.trim() 
             })
 
@@ -170,7 +86,7 @@ export default function KapperLoginPage() {
         
         // Auto-login after successful registration
         setUser(data.user)
-        navigate('/kapper/dashboard')
+        navigate('/client/dashboard')
       }
     } catch (err) {
       setError('Er is een onverwachte fout opgetreden')
@@ -185,44 +101,39 @@ export default function KapperLoginPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
-            <Scissors className="h-8 w-8 text-primary" />
+            <User className="h-8 w-8 text-primary" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {isSignup ? 'Kapper Account Aanmaken' : 'Inloggen als Kapper'}
+            Account aanmaken
           </h1>
           <p className="text-gray-600 mt-2">
-            {isSignup 
-              ? 'Maak een kapper account aan om je salon te beheren' 
-              : 'Log in om je kapperszaak te beheren'
-            }
+            Maak een account aan om je afspraken te beheren
           </p>
         </div>
 
         {/* Form */}
         <div className="bg-white rounded-xl shadow-lg p-6">
-          <form onSubmit={isSignup ? handleSignup : handleLogin} className="space-y-4">
-            {isSignup && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Volledige naam *
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input
-                    type="text"
-                    value={naam}
-                    onChange={(e) => setNaam(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
-                    placeholder="Je volledige naam"
-                    required
-                    minLength={2}
-                  />
-                </div>
-                {naam && naam.length < 2 && (
-                  <p className="text-red-500 text-xs mt-1">Naam moet minimaal 2 karakters bevatten</p>
-                )}
+          <form onSubmit={handleSignup} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Volledige naam *
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={naam}
+                  onChange={(e) => setNaam(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+                  placeholder="Je volledige naam"
+                  required
+                  minLength={2}
+                />
               </div>
-            )}
+              {naam && naam.length < 2 && (
+                <p className="text-red-500 text-xs mt-1">Naam moet minimaal 2 karakters bevatten</p>
+              )}
+            </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -264,7 +175,7 @@ export default function KapperLoginPage() {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-              {isSignup && password && password.length < 6 && (
+              {password && password.length < 6 && (
                 <p className="text-red-500 text-xs mt-1">Wachtwoord moet minimaal 6 karakters bevatten</p>
               )}
             </div>
@@ -277,34 +188,30 @@ export default function KapperLoginPage() {
 
             <button
               type="submit"
-              disabled={loading || (isSignup && (!naam.trim() || !email.trim() || password.length < 6))}
+              disabled={loading || (!naam.trim() || !email.trim() || password.length < 6)}
               className="w-full bg-primary text-white py-3 px-4 rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-colors font-medium"
             >
               {loading ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
               ) : (
                 <>
-                  <span>{isSignup ? 'Account aanmaken' : 'Inloggen'}</span>
+                  <span>Account aanmaken</span>
                   <ArrowRight className="h-4 w-4" />
                 </>
               )}
             </button>
           </form>
 
-          {/* Toggle between login and signup */}
+          {/* Link to login */}
           <div className="mt-6 text-center">
             <p className="text-gray-600 text-sm">
-              {isSignup ? 'Al een account?' : 'Nog geen account?'}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSignup(!isSignup)
-                  setError('')
-                }}
+              Al een account?
+              <Link
+                to="/client/login"
                 className="ml-1 text-primary hover:text-primary/80 font-medium"
               >
-                {isSignup ? 'Inloggen' : 'Account aanmaken'}
-              </button>
+                Inloggen
+              </Link>
             </p>
           </div>
 

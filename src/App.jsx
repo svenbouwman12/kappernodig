@@ -13,6 +13,7 @@ import RegisterPage from './pages/RegisterPage.jsx'
 import MapPage from './pages/MapPage.jsx'
 import AdminDashboardPage from './pages/AdminDashboardPage.jsx'
 import ClientLoginPage from './pages/client/ClientLoginPage.jsx'
+import ClientRegisterPage from './pages/client/ClientRegisterPage.jsx'
 import ClientDashboardPage from './pages/client/ClientDashboardPage.jsx'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
 
@@ -86,6 +87,7 @@ function AppContent() {
           <Route path="/kapper/register" element={<div className="container-max"><KapperRegisterPage /></div>} />
           <Route path="/register" element={<div className="container-max"><RegisterPage /></div>} />
           <Route path="/client/login" element={<ClientLoginPage />} />
+          <Route path="/client/register" element={<ClientRegisterPage />} />
           <Route
             path="/client/dashboard"
             element={

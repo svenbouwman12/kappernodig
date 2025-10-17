@@ -376,12 +376,7 @@ export default function HomePage() {
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link to="/client/login">
                   <Button variant="primary" size="lg">
-                    Inloggen als klant
-                  </Button>
-                </Link>
-                <Link to="/kapper/login">
-                  <Button variant="outline" size="lg">
-                    Inloggen als kapper
+                    Heb je al een account? Inloggen
                   </Button>
                 </Link>
               </div>

@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import Button from '../components/Button.jsx'
-import Card from '../components/Card.jsx'
+import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext.jsx'
+import { User, Lock, Mail, ArrowRight, Eye, EyeOff, Scissors, Phone } from 'lucide-react'
 
 export default function KapperRegisterPage() {
   const navigate = useNavigate()
+  const { setUser } = useAuth()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -13,37 +14,41 @@ export default function KapperRegisterPage() {
   const [phone, setPhone] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
-  async function handleRegister(e) {
+  const handleRegister = async (e) => {
     e.preventDefault()
     setLoading(true)
     setError('')
-    
-    // Validate name
+
+    // Validate required fields
     if (!name.trim()) {
-      setError('Naam is verplicht.')
+      setError('Volledige naam is verplicht')
       setLoading(false)
       return
     }
 
-    // Validate passwords match
-    if (password !== confirmPassword) {
-      setError('Wachtwoorden komen niet overeen.')
+    if (!email.trim()) {
+      setError('Email is verplicht')
       setLoading(false)
       return
     }
 
-    // Validate password length
-    if (password.length < 6) {
-      setError('Wachtwoord moet minimaal 6 karakters lang zijn.')
-      setLoading(false)
-      return
-    }
-
-    // Validate phone number
     if (!phone.trim()) {
-      setError('Telefoonnummer is verplicht.')
+      setError('Telefoonnummer is verplicht')
+      setLoading(false)
+      return
+    }
+
+    if (password.length < 6) {
+      setError('Wachtwoord moet minimaal 6 karakters bevatten')
+      setLoading(false)
+      return
+    }
+
+    if (password !== confirmPassword) {
+      setError('Wachtwoorden komen niet overeen')
       setLoading(false)
       return
     }
@@ -51,178 +56,242 @@ export default function KapperRegisterPage() {
     // Basic phone number validation (Dutch format)
     const phoneRegex = /^(\+31|0)[1-9][0-9]{8}$/
     if (!phoneRegex.test(phone.replace(/\s/g, ''))) {
-      setError('Voer een geldig Nederlands telefoonnummer in (bijv. 0612345678 of +31612345678).')
+      setError('Voer een geldig Nederlands telefoonnummer in (bijv. 0612345678 of +31612345678)')
       setLoading(false)
       return
     }
 
     try {
-      // Skip duplicate check to avoid 406 error
-      // We'll handle duplicates in the auth signup
-
-      // Create auth user
-      const { data: authData, error: authError } = await supabase.auth.signUp({ 
-        email, 
-        password
-      })
-      
-      if (authError) {
-        console.error('Auth error:', authError)
-        if (authError.message.includes('User already registered')) {
-          setError('Er bestaat al een account met dit email adres. Probeer in te loggen.')
-        } else {
-          setError('Onjuiste gegevens. Controleer je email en wachtwoord.')
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            naam: name.trim()
+          }
         }
-        setLoading(false)
+      })
+
+      if (error) {
+        setError(error.message)
         return
       }
 
-      if (authData.user) {
-        // Create user profile with barber role (use upsert to handle existing users)
-        const { error: userError } = await supabase.from('users').upsert({
-          id: authData.user.id,
-          email,
-          role: 'barber'
-        })
-        
-        if (userError) {
-          console.error('Error creating user profile:', userError)
-          setError('Er is een fout opgetreden bij het aanmaken van je account.')
-          setLoading(false)
-          return
-        }
-
-        // Create kapper account in separate table (if table exists)
+      if (data.user) {
+        // Try to create/update profile in profiles table
         try {
-          const { error: kapperError } = await supabase.from('kapper_accounts').insert({
-            user_id: authData.user.id,
-            name: name.trim(),
-            email,
-            phone: phone.trim()
-          })
-          
-          if (kapperError) {
-            console.log('Kapper account table not available, continuing with basic registration')
-            // Continue without kapper account - user can still use the system
-          }
-        } catch (err) {
-          console.log('Kapper account table not available, continuing with basic registration')
-          // Continue without kapper account - user can still use the system
-        }
-        
-        // Wait a moment for the user to be created, then try to login
-        setTimeout(async () => {
-          try {
-            const { error: loginError } = await supabase.auth.signInWithPassword({
-              email,
-              password
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .upsert({ 
+              id: data.user.id,
+              email: email,
+              role: 'kapper', 
+              naam: name.trim() 
             })
+
+          if (profileError) {
+            console.error('Error creating/updating profile:', profileError)
             
-            if (loginError) {
-              console.log('Auto-login not possible, user needs to verify email first')
-              setSuccess(true)
+            // If profiles table doesn't exist, show helpful message
+            if (profileError.message.includes('relation "profiles" does not exist')) {
+              setError('Database setup niet compleet. Neem contact op met de beheerder.')
               return
             }
-            
-            // If login successful, redirect to kapper dashboard
-            console.log('Login successful! Redirecting to kapper dashboard...')
-            // Use a longer delay to ensure auth state is fully updated
-            setTimeout(() => {
-              navigate('/kapper/dashboard', { replace: true })
-            }, 500)
-          } catch (loginErr) {
-            console.log('Auto-login failed, user needs to verify email first')
-            setSuccess(true)
           }
-        }, 1000)
-        
-        setSuccess(true)
-      }
-      
-    } catch (err) {
-      console.error('Registration error:', err)
-      setError('Er is een fout opgetreden bij het registreren.')
-    }
-    
-    setLoading(false)
-  }
+        } catch (profileErr) {
+          console.error('Profile creation failed:', profileErr)
+          // Continue anyway - user can still be created
+        }
 
-  if (success) {
-    return (
-      <div className="max-w-md mx-auto">
-        <Card>
-          <div className="text-center">
-            <div className="text-6xl mb-4">✅</div>
-            <h1 className="text-xl font-semibold mb-4 text-green-600">Account aangemaakt!</h1>
-            <p className="text-sm text-secondary/70 mb-4">
-              Je kapper account is succesvol aangemaakt. Je wordt automatisch doorgestuurd naar je dashboard...
-            </p>
-            <div className="space-y-2">
-              <Button onClick={() => navigate('/kapper/dashboard', { replace: true })} className="w-full">
-                Ga naar Dashboard
-              </Button>
-              <p className="text-xs text-secondary/60">
-                Als je niet automatisch wordt doorgestuurd, klik dan op de knop hierboven.
-              </p>
-            </div>
-          </div>
-        </Card>
-      </div>
-    )
+        setError('')
+        alert('Account succesvol aangemaakt! Je wordt nu doorgestuurd naar het dashboard.')
+        
+        // Auto-login after successful registration
+        setUser(data.user)
+        navigate('/kapper/dashboard')
+      }
+    } catch (err) {
+      setError('Er is een onverwachte fout opgetreden')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <div className="max-w-md mx-auto">
-      <Card>
-        <h1 className="text-xl font-semibold mb-4">Kapper Registreren</h1>
-        <form onSubmit={handleRegister} className="space-y-3">
-          <input 
-            value={name} 
-            onChange={(e) => setName(e.target.value)} 
-            placeholder="Naam" 
-            type="text" 
-            className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2" 
-            required
-          />
-          <input 
-            value={email} 
-            onChange={(e) => setEmail(e.target.value)} 
-            placeholder="Email" 
-            type="email" 
-            className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2" 
-            required
-          />
-          <input 
-            value={phone} 
-            onChange={(e) => setPhone(e.target.value)} 
-            placeholder="Telefoonnummer" 
-            type="tel" 
-            className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2" 
-            required
-          />
-          <input 
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
-            placeholder="Wachtwoord (min. 6 karakters)" 
-            type="password" 
-            className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2" 
-            required
-            minLength={6}
-          />
-          <input 
-            value={confirmPassword} 
-            onChange={(e) => setConfirmPassword(e.target.value)} 
-            placeholder="Wachtwoord bevestigen" 
-            type="password" 
-            className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2" 
-            required
-          />
-          {error && <div className="text-red-600 text-sm">{error}</div>}
-          <Button className="w-full" disabled={loading}>
-            {loading ? 'Bezig...' : 'Kapper Account Aanmaken'}
-          </Button>
-        </form>
-      </Card>
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center p-4">
+      <div className="max-w-md w-full">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
+            <Scissors className="h-8 w-8 text-primary" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Kapper Account Aanmaken
+          </h1>
+          <p className="text-gray-600 mt-2">
+            Maak een kapper account aan om je salon te beheren
+          </p>
+        </div>
+
+        {/* Form */}
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <form onSubmit={handleRegister} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Volledige naam *
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+                  placeholder="Je volledige naam"
+                  required
+                  minLength={2}
+                />
+              </div>
+              {name && name.length < 2 && (
+                <p className="text-red-500 text-xs mt-1">Naam moet minimaal 2 karakters bevatten</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email *
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+                  placeholder="je@email.com"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Telefoonnummer *
+              </label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+                  placeholder="0612345678"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Wachtwoord *
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+                  placeholder="Je wachtwoord"
+                  required
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {password && password.length < 6 && (
+                <p className="text-red-500 text-xs mt-1">Wachtwoord moet minimaal 6 karakters bevatten</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Wachtwoord bevestigen *
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+                  placeholder="Bevestig je wachtwoord"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {confirmPassword && password !== confirmPassword && (
+                <p className="text-red-500 text-xs mt-1">Wachtwoorden komen niet overeen</p>
+              )}
+            </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-red-600 text-sm">{error}</p>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading || (!name.trim() || !email.trim() || !phone.trim() || password.length < 6 || password !== confirmPassword)}
+              className="w-full bg-primary text-white py-3 px-4 rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-colors font-medium"
+            >
+              {loading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              ) : (
+                <>
+                  <span>Account aanmaken</span>
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Link to login */}
+          <div className="mt-6 text-center">
+            <p className="text-gray-600 text-sm">
+              Al een account?
+              <Link
+                to="/kapper/login"
+                className="ml-1 text-primary hover:text-primary/80 font-medium"
+              >
+                Inloggen
+              </Link>
+            </p>
+          </div>
+
+          {/* Back to main page */}
+          <div className="mt-4 text-center">
+            <Link
+              to="/"
+              className="text-gray-500 hover:text-gray-700 text-sm"
+            >
+              ← Terug naar hoofdpagina
+            </Link>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

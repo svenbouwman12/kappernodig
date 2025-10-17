@@ -21,36 +21,79 @@ export default function ClientLoginPage() {
     setLoading(true)
     setError('')
 
+    // Basic validation
+    if (!email.trim()) {
+      setError('Email is verplicht')
+      setLoading(false)
+      return
+    }
+
+    if (!password) {
+      setError('Wachtwoord is verplicht')
+      setLoading(false)
+      return
+    }
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password
       })
 
       if (error) {
-        setError(error.message)
+        // Better error messages
+        if (error.message.includes('Invalid login credentials')) {
+          setError('Ongeldige email of wachtwoord')
+        } else if (error.message.includes('Email not confirmed')) {
+          setError('Je email is nog niet bevestigd. Controleer je inbox.')
+        } else {
+          setError(error.message)
+        }
         return
       }
 
       if (data.user) {
         // Check user role
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role, naam')
-          .eq('id', data.user.id)
-          .single()
+        try {
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('role, naam')
+            .eq('id', data.user.id)
+            .single()
 
-        if (profile?.role === 'client') {
+          if (profileError) {
+            console.error('Error loading profile:', profileError)
+            
+            // If profiles table doesn't exist, assume client role
+            if (profileError.message.includes('relation "profiles" does not exist')) {
+              console.log('Profiles table does not exist - assuming client role')
+              setUser(data.user)
+              navigate('/client/dashboard')
+              return
+            }
+            
+            setError('Er is een fout opgetreden bij het laden van je profiel')
+            return
+          }
+
+          if (profile?.role === 'client') {
+            setUser(data.user)
+            navigate('/client/dashboard')
+          } else if (profile?.role === 'kapper') {
+            setUser(data.user)
+            navigate('/kapper/dashboard')
+          } else {
+            setError('Account type niet gevonden. Neem contact op met de beheerder.')
+          }
+        } catch (profileErr) {
+          console.error('Profile loading failed:', profileErr)
+          // Assume client role if profile loading fails
           setUser(data.user)
           navigate('/client/dashboard')
-        } else if (profile?.role === 'kapper') {
-          setUser(data.user)
-          navigate('/dashboard')
-        } else {
-          setError('Account type niet gevonden. Neem contact op met de beheerder.')
         }
       }
     } catch (err) {
+      console.error('Login error:', err)
       setError('Er is een onverwachte fout opgetreden')
     } finally {
       setLoading(false)
@@ -62,13 +105,32 @@ export default function ClientLoginPage() {
     setLoading(true)
     setError('')
 
+    // Validate required fields
+    if (!naam.trim()) {
+      setError('Volledige naam is verplicht')
+      setLoading(false)
+      return
+    }
+
+    if (!email.trim()) {
+      setError('Email is verplicht')
+      setLoading(false)
+      return
+    }
+
+    if (password.length < 6) {
+      setError('Wachtwoord moet minimaal 6 karakters bevatten')
+      setLoading(false)
+      return
+    }
+
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            naam: naam
+            naam: naam.trim()
           }
         }
       })
@@ -79,19 +141,37 @@ export default function ClientLoginPage() {
       }
 
       if (data.user) {
-        // Update profile with client role
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({ role: 'client', naam: naam })
-          .eq('id', data.user.id)
+        // Try to create/update profile in profiles table
+        try {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .upsert({ 
+              id: data.user.id,
+              email: email,
+              role: 'client', 
+              naam: naam.trim() 
+            })
 
-        if (profileError) {
-          console.error('Error updating profile:', profileError)
+          if (profileError) {
+            console.error('Error creating/updating profile:', profileError)
+            
+            // If profiles table doesn't exist, show helpful message
+            if (profileError.message.includes('relation "profiles" does not exist')) {
+              setError('Database setup niet compleet. Neem contact op met de beheerder.')
+              return
+            }
+          }
+        } catch (profileErr) {
+          console.error('Profile creation failed:', profileErr)
+          // Continue anyway - user can still be created
         }
 
         setError('')
-        alert('Account aangemaakt! Je kunt nu inloggen.')
+        alert('Account succesvol aangemaakt! Je kunt nu inloggen.')
         setIsSignup(false)
+        setEmail('')
+        setPassword('')
+        setNaam('')
       }
     } catch (err) {
       setError('Er is een onverwachte fout opgetreden')
@@ -133,11 +213,15 @@ export default function ClientLoginPage() {
                     type="text"
                     value={naam}
                     onChange={(e) => setNaam(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
                     placeholder="Je volledige naam"
                     required
+                    minLength={2}
                   />
                 </div>
+                {naam && naam.length < 2 && (
+                  <p className="text-red-500 text-xs mt-1">Naam moet minimaal 2 karakters bevatten</p>
+                )}
               </div>
             )}
 
@@ -151,7 +235,7 @@ export default function ClientLoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
                   placeholder="je@email.com"
                   required
                 />
@@ -168,18 +252,22 @@ export default function ClientLoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
                   placeholder="Je wachtwoord"
                   required
+                  minLength={6}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+              {isSignup && password && password.length < 6 && (
+                <p className="text-red-500 text-xs mt-1">Wachtwoord moet minimaal 6 karakters bevatten</p>
+              )}
             </div>
 
             {error && (
@@ -190,8 +278,8 @@ export default function ClientLoginPage() {
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full bg-primary text-white py-2 px-4 rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-colors"
+              disabled={loading || (isSignup && (!naam.trim() || !email.trim() || password.length < 6))}
+              className="w-full bg-primary text-white py-3 px-4 rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-colors font-medium"
             >
               {loading ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
