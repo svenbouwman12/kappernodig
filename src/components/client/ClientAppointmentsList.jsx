@@ -87,7 +87,7 @@ export default function ClientAppointmentsList() {
           .from('appointments')
           .select(`
             *,
-            barbers!inner(
+            barbers(
               id,
               name,
               location,
@@ -99,15 +99,38 @@ export default function ClientAppointmentsList() {
           .eq('client_profile_id', user.id)
           .order('start_tijd', { ascending: true })
 
-        // If no appointments found with client_profile_id, try the old system
+        // If no appointments found with client_profile_id, try the new booking system
         if (!data || data.length === 0) {
-          console.log('No appointments found with client_profile_id, trying old system...')
+          console.log('No appointments found with client_profile_id, trying new booking system...')
           
-          // Get client records for this user
-          const { data: clients, error: clientError } = await supabase
-            .from('clients')
-            .select('id')
-            .eq('email', user.email)
+          // Try new booking system with client_email
+          const { data: newBookings, error: newError } = await supabase
+            .from('appointments')
+            .select(`
+              *,
+              barbers(
+                id,
+                name,
+                location,
+                address,
+                phone,
+                website
+              )
+            `)
+            .eq('client_email', user.email)
+            .order('start_tijd', { ascending: true })
+          
+          if (!newError && newBookings && newBookings.length > 0) {
+            data = newBookings
+            error = null
+          } else {
+            console.log('No appointments found with client_email, trying old system...')
+            
+            // Get client records for this user
+            const { data: clients, error: clientError } = await supabase
+              .from('clients')
+              .select('id')
+              .eq('email', user.email)
           
           if (clients && clients.length > 0) {
             const clientIds = clients.map(c => c.id)
@@ -115,7 +138,7 @@ export default function ClientAppointmentsList() {
               .from('appointments')
               .select(`
                 *,
-                barbers!inner(
+                barbers(
                   id,
                   name,
                   location,
@@ -131,6 +154,7 @@ export default function ClientAppointmentsList() {
               data = oldAppointments
               error = null
             }
+          }
           }
         }
 
