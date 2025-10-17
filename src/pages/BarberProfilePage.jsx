@@ -96,7 +96,13 @@ export default function BarberProfilePage() {
         .eq('salon_id', barber.id)
         .single()
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
+        // Handle various error cases gracefully
+        if (error.code === 'PGRST116' || error.status === 406 || error.message.includes('406')) {
+          // No bookmark found or access denied - not bookmarked
+          setIsBookmarked(false)
+          return
+        }
         console.error('Error checking bookmark status:', error)
         return
       }
@@ -104,6 +110,8 @@ export default function BarberProfilePage() {
       setIsBookmarked(!!data)
     } catch (err) {
       console.error('Error checking bookmark status:', err)
+      // On any error, assume not bookmarked
+      setIsBookmarked(false)
     }
   }
 

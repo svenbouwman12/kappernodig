@@ -365,9 +365,23 @@ export default function MapPage() {
           const icon = L.divIcon({ html, className: 'barber-pin', iconSize: [24, 32], iconAnchor: [12, 32] })
           const marker = L.marker([item.lat, item.lng], { icon })
           marker.bindPopup(`
-            <div style="min-width: 180px; padding: 10px;">
-              <div style="font-weight: 700; color: #FF6B00; font-size: 15px; margin-bottom: 4px;">${item.name}</div>
-              <div style="color: #666; font-size: 12px;">Zoom verder in voor details</div>
+            <div style="min-width: 220px; padding: 12px;">
+              <div style="font-weight: 700; color: #FF6B00; font-size: 16px; margin-bottom: 6px;">${item.name}</div>
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <span style="background: #FF6B00; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">${item.price_range || '€€'}</span>
+                <span style="color: #666; font-size: 12px;">★ ${item.rating || 'N/A'}</span>
+              </div>
+              <a href="/barber/${item.id}" style="
+                display: inline-block;
+                background: #FF6B00;
+                color: #fff;
+                padding: 6px 12px;
+                border-radius: 6px;
+                text-decoration: none;
+                font-size: 12px;
+                font-weight: 600;
+                margin-top: 4px;
+              ">Bekijk profiel</a>
             </div>
           `)
           marker.addTo(layer)

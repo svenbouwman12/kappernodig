@@ -31,22 +31,12 @@ export function AuthProvider({ children }) {
         if (error) {
           console.error('Error loading user profile:', error)
           
-          // If profiles table doesn't exist, create a default profile
-          if (error.message.includes('relation "profiles" does not exist')) {
-            console.log('Profiles table does not exist - creating default profile')
-            setUserProfile({ role: 'client', naam: 'Nieuwe gebruiker', profielfoto: null })
-            return
-          }
-          
-          // If user profile doesn't exist, create a default one
-          if (error.code === 'PGRST116') {
-            console.log('User profile not found - creating default profile')
-            setUserProfile({ role: 'client', naam: 'Nieuwe gebruiker', profielfoto: null })
-            return
-          }
-          
-          // Handle 406 errors (Not Acceptable) - likely RLS or table issues
-          if (error.status === 406 || error.message.includes('406')) {
+          // Handle various error cases with fallback
+          if (error.message.includes('relation "profiles" does not exist') ||
+              error.code === 'PGRST116' ||
+              error.status === 406 ||
+              error.message.includes('406') ||
+              error.message.includes('Not Acceptable')) {
             console.log('Profiles table access error - creating default profile')
             setUserProfile({ role: 'client', naam: 'Nieuwe gebruiker', profielfoto: null })
             return
@@ -118,7 +108,7 @@ export function AuthProvider({ children }) {
         console.log('Auth timeout - setting loading to false')
         setLoading(false)
       }
-    }, 2000) // 2 second timeout
+    }, 1000) // 1 second timeout for faster response
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
