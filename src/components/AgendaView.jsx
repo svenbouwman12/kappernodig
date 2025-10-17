@@ -207,6 +207,7 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
   }
 
   const handleEditAppointment = (appointment) => {
+    setSelectedAppointment(null) // Close details modal first
     setEditingAppointment(appointment)
     setShowEditModal(true)
   }
