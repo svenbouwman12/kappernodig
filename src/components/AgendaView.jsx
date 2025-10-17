@@ -167,8 +167,30 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
     return today >= weekStart && today <= weekEnd
   }
 
-  // Get appointment for a specific time slot and day (only at start time)
+  // Get appointment for a specific time slot and day (check if slot falls within appointment duration)
   const getAppointmentForSlot = (slotTime, day) => {
+    return appointments.find(apt => {
+      const startTime = new Date(apt.start_tijd)
+      const endTime = new Date(apt.eind_tijd)
+      const aptDate = new Date(startTime)
+      aptDate.setHours(0, 0, 0, 0)
+      const dayDate = new Date(day)
+      dayDate.setHours(0, 0, 0, 0)
+      
+      // Check if it's the same day
+      if (aptDate.getTime() !== dayDate.getTime()) return false
+      
+      // Check if slot time falls within appointment duration
+      const slotTimeMs = slotTime.getTime()
+      const startTimeMs = startTime.getTime()
+      const endTimeMs = endTime.getTime()
+      
+      return slotTimeMs >= startTimeMs && slotTimeMs < endTimeMs
+    })
+  }
+
+  // Check if this slot is the start of an appointment
+  const isAppointmentStart = (slotTime, day) => {
     return appointments.find(apt => {
       const startTime = new Date(apt.start_tijd)
       const aptDate = new Date(startTime)
@@ -179,16 +201,10 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
       // Check if it's the same day
       if (aptDate.getTime() !== dayDate.getTime()) return false
       
-      // Only show appointment at its start time
+      // Check if this is exactly the start time
       return startTime.getHours() === slotTime.getHours() && 
              startTime.getMinutes() === slotTime.getMinutes()
     })
-  }
-
-  // Check if this slot is the start of an appointment (now always true if appointment exists)
-  const isAppointmentStart = (slotTime, day) => {
-    const appointment = getAppointmentForSlot(slotTime, day)
-    return !!appointment
   }
 
   // Get service color based on service type
