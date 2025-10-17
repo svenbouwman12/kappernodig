@@ -17,102 +17,109 @@ export async function lookupAddress(postcode, houseNumber) {
       throw new Error('Huisnummer is verplicht')
     }
 
-    // Use Nominatim with optimized query for Dutch addresses
+    // Use a reliable Dutch postcode API
     const formattedPostcode = `${cleanPostcode.slice(0, 4)} ${cleanPostcode.slice(4)}`
     
-    // Try multiple query formats for better results
-    const queries = [
-      `${houseNumber} ${formattedPostcode} Nederland`,
-      `${formattedPostcode} ${houseNumber} Nederland`,
-      `${houseNumber} ${cleanPostcode} Nederland`
+    // Try multiple Dutch postcode APIs
+    const apis = [
+      {
+        name: 'PostcodeAPI.nu',
+        url: `https://api.postcodeapi.nu/v2/postcode/${cleanPostcode}/${houseNumber}`,
+        parser: (data) => ({
+          street: data.street || '',
+          city: data.city || '',
+          province: data.province || '',
+          lat: data.latitude || null,
+          lng: data.longitude || null
+        })
+      },
+      {
+        name: 'Postcode.eu',
+        url: `https://api.postcode.eu/nl/v1/postcode/${cleanPostcode}/${houseNumber}`,
+        parser: (data) => ({
+          street: data.street || '',
+          city: data.city || '',
+          province: data.province || '',
+          lat: data.latitude || null,
+          lng: data.longitude || null
+        })
+      },
+      {
+        name: 'Nominatim (fallback)',
+        url: `https://nominatim.openstreetmap.org/search?format=json&q=${houseNumber} ${formattedPostcode} Nederland&addressdetails=1&countrycodes=nl&limit=1`,
+        parser: (data) => {
+          if (data.length === 0) return null
+          const item = data[0]
+          const addr = item.address || {}
+          return {
+            street: addr.road || addr.street || '',
+            city: addr.city || addr.town || addr.village || '',
+            province: addr.state || '',
+            lat: parseFloat(item.lat) || null,
+            lng: parseFloat(item.lon) || null
+          }
+        }
+      }
     ]
     
     let result = null
-    let bestMatch = null
+    let lastError = null
     
-    for (const query of queries) {
+    for (const api of apis) {
       try {
-        // Add timeout to prevent hanging requests
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+        console.log(`Trying ${api.name}...`)
         
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?` +
-          `format=json&` +
-          `q=${encodeURIComponent(query)}&` +
-          `addressdetails=1&` +
-          `countrycodes=nl&` +
-          `limit=3`,
-          {
-            headers: {
-              'User-Agent': 'KapperNodig/1.0',
-              'Accept': 'application/json'
-            },
-            signal: controller.signal
-          }
-        )
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 8000) // 8 second timeout
+        
+        const response = await fetch(api.url, {
+          mode: 'cors',
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'KapperNodig/1.0'
+          },
+          signal: controller.signal
+        })
         
         clearTimeout(timeoutId)
-
+        
         if (response.ok) {
           const data = await response.json()
-          if (data && data.length > 0) {
-            // Find the best match with street name
-            const match = data.find(item => 
-              item.address && 
-              (item.address.road || item.address.street) &&
-              item.address.postcode === formattedPostcode
-            )
-            if (match) {
-              result = match
-              break
-            }
-            // Keep first result as fallback
-            if (!bestMatch) {
-              bestMatch = data[0]
-            }
+          result = api.parser(data)
+          
+          if (result && result.street) {
+            console.log(`Success with ${api.name}:`, result.street)
+            break
           }
+        } else {
+          console.warn(`${api.name} failed with status:`, response.status)
         }
       } catch (err) {
         if (err.name === 'AbortError') {
-          console.warn('Query timeout:', query)
+          console.warn(`${api.name} timeout`)
         } else {
-          console.warn('Query failed:', query, err)
+          console.warn(`${api.name} error:`, err.message)
         }
+        lastError = err
         continue
       }
     }
     
-    if (!result && bestMatch) {
-      result = bestMatch
-    }
-
-    if (!result) {
-      throw new Error('Geen adres gevonden voor postcode ' + cleanPostcode + ' nummer ' + houseNumber)
-    }
-
-    const addr = result.address || {}
-    
-    // Extract address components from Nominatim with better fallbacks
-    const street = addr.road || addr.street || addr.pedestrian || addr.footway || ''
-    const city = addr.city || addr.town || addr.village || addr.municipality || addr.suburb || ''
-    const province = addr.state || addr.county || ''
-    
-    if (!street) {
-      throw new Error('Geen straatnaam gevonden voor postcode ' + cleanPostcode + ' nummer ' + houseNumber)
+    if (!result || !result.street) {
+      throw new Error(`Geen adres gevonden voor postcode ${cleanPostcode} nummer ${houseNumber}. ${lastError ? 'Laatste error: ' + lastError.message : ''}`)
     }
 
     return {
-      street: street,
+      street: result.street,
       houseNumber: houseNumber,
       houseNumberAddition: '',
       postcode: formattedPostcode,
-      city: city,
-      province: province,
-      fullAddress: `${street} ${houseNumber}, ${formattedPostcode} ${city}`.trim(),
+      city: result.city,
+      province: result.province,
+      fullAddress: `${result.street} ${houseNumber}, ${formattedPostcode} ${result.city}`.trim(),
       coordinates: {
-        lat: parseFloat(result.lat) || null,
-        lng: parseFloat(result.lon) || null
+        lat: result.lat,
+        lng: result.lng
       }
     }
   } catch (error) {
