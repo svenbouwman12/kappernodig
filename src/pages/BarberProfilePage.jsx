@@ -289,7 +289,13 @@ export default function BarberProfilePage() {
               )}
               {isBookmarked ? 'Verwijder uit favorieten' : 'Favoriet'}
             </Button>
-            <Button variant="secondary" className="px-5">Contact</Button>
+            <Button 
+              variant="secondary" 
+              className="px-5"
+              onClick={() => navigate(`/barber/${id}/book`)}
+            >
+              Boek afspraak
+            </Button>
           </div>
         </div>
       </div>

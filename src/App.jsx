@@ -16,6 +16,7 @@ import AdminDashboardPage from './pages/AdminDashboardPage.jsx'
 import ClientLoginPage from './pages/client/ClientLoginPage.jsx'
 import ClientRegisterPage from './pages/client/ClientRegisterPage.jsx'
 import ClientDashboardPage from './pages/client/ClientDashboardPage.jsx'
+import BookingPage from './pages/BookingPage.jsx'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
 
 function ProtectedRoute({ children }) {
@@ -195,6 +196,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <ClientDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/barber/:id/book"
+            element={
+              <ProtectedRoute>
+                <BookingPage />
               </ProtectedRoute>
             }
           />

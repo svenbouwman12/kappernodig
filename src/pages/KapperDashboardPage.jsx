@@ -7,6 +7,7 @@ import AppointmentModal from '../components/AppointmentModal.jsx'
 import ClientsTable from '../components/ClientsTable.jsx'
 import ClientModal from '../components/ClientModal.jsx'
 import Greeting from '../components/Greeting.jsx'
+import NotificationSystem from '../components/NotificationSystem.jsx'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext.jsx'
 import { 
@@ -277,6 +278,8 @@ export default function KapperDashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Notification System */}
+      {selectedSalon && <NotificationSystem salonId={selectedSalon} />}
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

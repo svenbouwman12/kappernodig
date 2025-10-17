@@ -32,6 +32,33 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
     }
   }, [salonId, selectedWeek])
 
+  // Set up realtime subscription for appointments
+  useEffect(() => {
+    if (!salonId) return
+
+    const channel = supabase
+      .channel('appointments_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'appointments',
+          filter: `salon_id=eq.${salonId}`
+        },
+        (payload) => {
+          console.log('Appointment change detected:', payload)
+          // Reload appointments when changes occur
+          loadAppointments()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [salonId])
+
   async function loadAppointments() {
     if (!salonId) return
 
