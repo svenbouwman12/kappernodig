@@ -74,7 +74,11 @@ export default function KapperLoginPage() {
         
         // Use React Router navigation instead of window.location
         console.log('Navigating to dashboard with React Router...')
-        navigate('/kapper/dashboard', { replace: true })
+        
+        // Add a small delay to ensure auth state is updated
+        setTimeout(() => {
+          navigate('/kapper/dashboard', { replace: true })
+        }, 100)
         
         setLoading(false)
         return

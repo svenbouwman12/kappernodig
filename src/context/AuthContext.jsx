@@ -23,6 +23,7 @@ export function AuthProvider({ children }) {
       setUserProfile({ role: 'barber', barber_id: null })
     }
 
+    // Get initial session
     supabase.auth.getSession().then(async ({ data }) => {
       if (!mounted) return
       setUser(data.session?.user ?? null)
@@ -34,8 +35,24 @@ export function AuthProvider({ children }) {
       setLoading(false)
     })
 
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return
+      
+      console.log('Auth state change:', event, session?.user?.id)
+      
+      setUser(session?.user ?? null)
+      if (session?.user) {
+        await loadUserProfile(session.user.id, session.user.email)
+      } else {
+        setUserProfile(null)
+      }
+      setLoading(false)
+    })
+
     return () => {
       mounted = false
+      subscription.unsubscribe()
     }
   }, [])
 

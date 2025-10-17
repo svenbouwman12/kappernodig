@@ -27,19 +27,13 @@ function AppContent() {
 
   useEffect(() => {
     if (!loading && user && userProfile) {
-      // Only redirect if we're on the homepage or admin login pages (NOT kapper login)
+      // Only redirect if we're on the homepage or regular login/register pages (NOT kapper pages)
       const currentPath = window.location.pathname
-      
-      // Don't redirect if we're already on a dashboard or admin page
       if (currentPath === '/' || currentPath === '/login' || currentPath === '/register') {
-        // ALWAYS redirect to kapper dashboard since we set all users as barber
-        navigate('/kapper/dashboard', { replace: true })
-      }
-    } else if (!loading && !user) {
-      // If user is logged out, make sure we're not on protected pages
-      const currentPath = window.location.pathname
-      if (currentPath.startsWith('/kapper/dashboard')) {
-        navigate('/', { replace: true })
+        if (userProfile.role === 'admin') {
+          navigate('/admin', { replace: true })
+        }
+        // Remove automatic barber redirect - let KapperLoginPage handle its own redirect
       }
     }
   }, [user, userProfile, loading, navigate])
@@ -68,7 +62,14 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
-          {/* Admin route removed - all users go to kapper dashboard */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <div className="container-max"><AdminDashboardPage /></div>
+              </ProtectedRoute>
+            }
+          />
           <Route path="/login" element={<div className="container-max"><LoginPage /></div>} />
           <Route path="/kapper/login" element={<div className="container-max"><KapperLoginPage /></div>} />
           <Route path="/kapper/register" element={<div className="container-max"><KapperRegisterPage /></div>} />
