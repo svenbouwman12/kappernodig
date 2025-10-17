@@ -64,7 +64,7 @@ export default function KapperDashboardPage() {
     }
   }
 
-  async function saveBarber(barberData) {
+  async function saveBarber(barberData, localServices = []) {
     try {
       // Geocode address to get coordinates
       let coordinates = { lat: null, lng: null }
@@ -140,10 +140,8 @@ export default function KapperDashboardPage() {
           if (servicesError) {
             console.error('Error saving services:', servicesError)
             alert('Kapperszaak opgeslagen, maar er was een fout bij het opslaan van de diensten.')
-          } else {
-            // Clear local services after successful save
-            setLocalServices([])
           }
+          // Note: localServices are managed within BarberForm component
         }
       }
 
@@ -197,6 +195,11 @@ export default function KapperDashboardPage() {
       console.error('Error deleting barber:', err)
       alert('Er is een fout opgetreden bij het verwijderen.')
     }
+  }
+
+  function clearLocalServices() {
+    // This function is called from BarberForm but doesn't need to do anything
+    // since localServices is managed within BarberForm component
   }
 
   if (loading) {
@@ -550,7 +553,10 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
       longitude: formData.longitude ? parseFloat(formData.longitude) : null,
     }
     
-    await onSave(data)
+    await onSave(data, localServices)
+    
+    // Clear local services after successful save
+    setLocalServices([])
     setSaving(false)
   }
 
