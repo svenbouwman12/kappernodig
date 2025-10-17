@@ -43,8 +43,16 @@ export default function Navbar() {
           <Link className="btn btn-secondary px-3 py-2 hidden sm:inline-flex" to="/map">Kaart</Link>
           {user && (
             <>
-              {/* Always show Dashboard link for logged in users */}
-              <Link className="btn btn-secondary px-3 py-2" to="/kapper/dashboard">Dashboard</Link>
+              {/* Show role-specific dashboard link */}
+              {userProfile?.role === 'client' && (
+                <Link className="btn btn-secondary px-3 py-2" to="/client/dashboard">Klant Dashboard</Link>
+              )}
+              {userProfile?.role === 'kapper' && (
+                <Link className="btn btn-secondary px-3 py-2" to="/kapper/dashboard">Kapper Dashboard</Link>
+              )}
+              {userProfile?.role === 'admin' && (
+                <Link className="btn btn-secondary px-3 py-2" to="/admin">Admin Dashboard</Link>
+              )}
               <button className="btn btn-secondary px-3 py-2" onClick={handleLogout}>Log uit</button>
             </>
           )}
