@@ -63,18 +63,25 @@ function AppContent() {
         return
       }
       
-      // Don't redirect from homepage
-      if (currentPath === '/') {
+      // Don't redirect from public pages that all users should be able to access
+      const publicPages = ['/', '/map', '/barber']
+      if (publicPages.some(page => currentPath === page || currentPath.startsWith(page + '/'))) {
         return
       }
       
-      // Redirect based on user role
-      if (userProfile.role === 'admin') {
-        navigate('/admin', { replace: true })
-      } else if (userProfile.role === 'kapper') {
-        navigate('/kapper/dashboard', { replace: true })
-      } else if (userProfile.role === 'client') {
-        navigate('/client/dashboard', { replace: true })
+      // Only redirect if user is on a protected route that doesn't match their role
+      const protectedRoutes = ['/dashboard', '/kapper/dashboard', '/client/dashboard', '/admin']
+      const isOnProtectedRoute = protectedRoutes.some(route => currentPath.startsWith(route))
+      
+      if (isOnProtectedRoute) {
+        // Redirect based on user role
+        if (userProfile.role === 'admin') {
+          navigate('/admin', { replace: true })
+        } else if (userProfile.role === 'kapper') {
+          navigate('/kapper/dashboard', { replace: true })
+        } else if (userProfile.role === 'client') {
+          navigate('/client/dashboard', { replace: true })
+        }
       }
     }
   }, [user, userProfile, loading, navigate])
