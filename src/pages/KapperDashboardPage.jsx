@@ -22,7 +22,8 @@ import {
   Calendar,
   Settings,
   BarChart3,
-  UserCheck
+  UserCheck,
+  Heart
 } from 'lucide-react'
 
 export default function KapperDashboardPage() {
@@ -87,7 +88,29 @@ export default function KapperDashboardPage() {
         return
       }
 
-      setBarbers(data || [])
+      // Load favorites count for each barber
+      const barbersWithFavorites = await Promise.all(
+        (data || []).map(async (barber) => {
+          try {
+            const { count, error: favoritesError } = await supabase
+              .from('bookmarks')
+              .select('*', { count: 'exact', head: true })
+              .eq('salon_id', barber.id)
+
+            if (favoritesError) {
+              console.error('Error loading favorites for barber:', barber.id, favoritesError)
+              return { ...barber, favorites_count: 0 }
+            }
+
+            return { ...barber, favorites_count: count || 0 }
+          } catch (err) {
+            console.error('Error loading favorites for barber:', barber.id, err)
+            return { ...barber, favorites_count: 0 }
+          }
+        })
+      )
+
+      setBarbers(barbersWithFavorites)
     } catch (err) {
       console.error('Error loading barbers:', err)
     } finally {
@@ -318,7 +341,7 @@ export default function KapperDashboardPage() {
         {activeTab === 'overview' && (
           <>
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <Card className="p-6">
             <div className="flex items-center">
               <div className="p-3 bg-blue-100 rounded-xl">
@@ -367,6 +390,20 @@ export default function KapperDashboardPage() {
                     ? (barbers.reduce((sum, b) => sum + (b.rating || 0), 0) / barbers.length).toFixed(1)
                     : '0.0'
                   }
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center">
+              <div className="p-3 bg-red-100 rounded-xl">
+                <Heart className="h-6 w-6 text-red-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Totaal Favorieten</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {barbers.reduce((sum, b) => sum + (b.favorites_count || 0), 0)}
                 </p>
               </div>
             </div>
@@ -446,6 +483,10 @@ export default function KapperDashboardPage() {
                           {barber.rating}
                         </div>
                       )}
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Heart size={16} className="mr-1 text-red-500" />
+                        {barber.favorites_count || 0} favorieten
+                      </div>
                     </div>
                   </div>
 
