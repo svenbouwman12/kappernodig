@@ -187,14 +187,16 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
   const shouldShowCurrentTimeForWeek = (slotTime) => {
     if (!isCurrentWeek()) return false
     
-    const now = currentTime
+    const now = new Date() // Use current time directly
     const today = new Date()
     
-    // Check if current time falls within this slot
-    const slotStart = new Date(slotTime)
-    const slotEnd = new Date(slotTime.getTime() + 15 * 60000) // 15 minutes later
+    // Create slot times for today
+    const todaySlotStart = new Date(today)
+    todaySlotStart.setHours(slotTime.getHours(), slotTime.getMinutes(), 0, 0)
     
-    return now >= slotStart && now < slotEnd
+    const todaySlotEnd = new Date(todaySlotStart.getTime() + 15 * 60000) // 15 minutes later
+    
+    return now >= todaySlotStart && now < todaySlotEnd
   }
 
   const handleAppointmentClick = (appointment) => {
