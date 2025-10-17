@@ -88,10 +88,6 @@ export default function BarberProfilePage() {
   const checkBookmarkStatus = async () => {
     if (!user || !barber) return
 
-    // Skip bookmark check if we're getting 406 errors
-    setIsBookmarked(false)
-    return
-
     try {
       const { data, error } = await supabase
         .from('bookmarks')
@@ -120,10 +116,6 @@ export default function BarberProfilePage() {
   }
 
   const handleBookmark = async () => {
-    // Temporarily disable bookmark functionality due to database issues
-    alert('Favoriet functionaliteit is tijdelijk uitgeschakeld vanwege database problemen. Probeer het later opnieuw.')
-    return
-
     // Check if user is logged in
     if (!user || !userProfile) {
       setShowLoginModal(true)
