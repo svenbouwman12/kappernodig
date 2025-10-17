@@ -6,6 +6,7 @@ import AgendaView from '../components/AgendaView.jsx'
 import AppointmentModal from '../components/AppointmentModal.jsx'
 import ClientsTable from '../components/ClientsTable.jsx'
 import ClientModal from '../components/ClientModal.jsx'
+import Greeting from '../components/Greeting.jsx'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext.jsx'
 import { 
@@ -40,13 +41,6 @@ export default function KapperDashboardPage() {
   const [selectedClient, setSelectedClient] = useState(null)
   const hasLoadedRef = useRef(false)
 
-  // Function to get greeting based on time of day
-  function getGreeting() {
-    const hour = new Date().getHours()
-    if (hour < 12) return 'Goedemorgen'
-    if (hour < 18) return 'Goedemiddag'
-    return 'Goedeavond'
-  }
 
   // Debug logging removed to prevent excessive re-renders
 
@@ -274,7 +268,7 @@ export default function KapperDashboardPage() {
           <div className="flex justify-between items-center py-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                {kapperName ? `${getGreeting()}, ${kapperName}!` : 'Kapper Dashboard'}
+                {kapperName ? <Greeting name={kapperName} /> : 'Kapper Dashboard'}
               </h1>
               <p className="text-gray-600 mt-1">Beheer je kapperszaken en afspraken</p>
             </div>

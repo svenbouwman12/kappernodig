@@ -1,12 +1,14 @@
 import React, { useState } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { useNavigate } from 'react-router-dom'
-import { LogOut, Calendar, Heart, User } from 'lucide-react'
+import { LogOut, Calendar, Heart, User, Settings } from 'lucide-react'
 import ClientAppointmentsList from '../../components/client/ClientAppointmentsList.jsx'
 import ClientBookmarksList from '../../components/client/ClientBookmarksList.jsx'
+import ClientProfile from '../../components/client/ClientProfile.jsx'
+import Greeting from '../../components/Greeting.jsx'
 
 export default function ClientDashboardPage() {
-  const { user, logout } = useAuth()
+  const { user, userProfile, logout } = useAuth()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('appointments')
 
@@ -38,7 +40,9 @@ export default function ClientDashboardPage() {
               </div>
               <div>
                 <h1 className="text-lg font-semibold text-gray-900">Mijn Dashboard</h1>
-                <p className="text-sm text-gray-500">Welkom terug!</p>
+                <p className="text-sm text-gray-500">
+                  <Greeting name={userProfile?.naam} />
+                </p>
               </div>
             </div>
             
@@ -80,6 +84,18 @@ export default function ClientDashboardPage() {
               <Heart className="h-4 w-4" />
               <span>Mijn kappers</span>
             </button>
+            
+            <button
+              onClick={() => setActiveTab('profile')}
+              className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'profile'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <Settings className="h-4 w-4" />
+              <span>Mijn profiel</span>
+            </button>
           </nav>
         </div>
       </div>
@@ -92,6 +108,10 @@ export default function ClientDashboardPage() {
         
         {activeTab === 'bookmarks' && (
           <ClientBookmarksList />
+        )}
+        
+        {activeTab === 'profile' && (
+          <ClientProfile />
         )}
       </div>
     </div>

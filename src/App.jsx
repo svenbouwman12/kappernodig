@@ -52,8 +52,8 @@ function AppContent() {
         return
       }
       
-      // Redirect based on user role
-      if (currentPath === '/' || currentPath === '/login' || currentPath === '/register') {
+      // Only redirect from login/register pages, NOT from homepage
+      if (currentPath === '/login' || currentPath === '/register') {
         if (userProfile.role === 'admin') {
           navigate('/admin', { replace: true })
         } else if (userProfile.role === 'kapper') {
