@@ -19,8 +19,25 @@ export function AuthProvider({ children }) {
         return
       }
       
-      // SIMPLE SOLUTION: Just set user as barber immediately
-      setUserProfile({ role: 'barber', barber_id: null })
+      try {
+        // Get user profile from profiles table
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('role, naam, profielfoto')
+          .eq('id', userId)
+          .single()
+
+        if (error) {
+          console.error('Error loading user profile:', error)
+          setUserProfile(null)
+          return
+        }
+
+        setUserProfile(profile)
+      } catch (err) {
+        console.error('Error loading user profile:', err)
+        setUserProfile(null)
+      }
     }
 
     // Get initial session and restore auth state
@@ -74,7 +91,13 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  const value = { user, userProfile, loading }
+  const logout = async () => {
+    await supabase.auth.signOut()
+    setUser(null)
+    setUserProfile(null)
+  }
+
+  const value = { user, userProfile, loading, logout }
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 

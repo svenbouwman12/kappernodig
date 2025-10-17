@@ -372,7 +372,19 @@ export default function HomePage() {
             <Card className="p-10 text-center h-full flex flex-col items-center justify-center">
               <div className="text-8xl mb-6">💇</div>
               <h3 className="text-2xl font-bold text-secondary mb-4">Vul je voorkeuren in</h3>
-              <p className="text-secondary/70 text-lg">Selecteer je geslacht, diensten en stad om kappers te vinden.</p>
+              <p className="text-secondary/70 text-lg mb-6">Selecteer je geslacht, diensten en stad om kappers te vinden.</p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link to="/client/login">
+                  <Button variant="primary" size="lg">
+                    Inloggen als klant
+                  </Button>
+                </Link>
+                <Link to="/kapper/login">
+                  <Button variant="outline" size="lg">
+                    Inloggen als kapper
+                  </Button>
+                </Link>
+              </div>
             </Card>
           )}
         </div>

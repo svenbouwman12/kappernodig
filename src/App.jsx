@@ -12,6 +12,8 @@ import KapperRegisterPage from './pages/KapperRegisterPage.jsx'
 import RegisterPage from './pages/RegisterPage.jsx'
 import MapPage from './pages/MapPage.jsx'
 import AdminDashboardPage from './pages/AdminDashboardPage.jsx'
+import ClientLoginPage from './pages/client/ClientLoginPage.jsx'
+import ClientDashboardPage from './pages/client/ClientDashboardPage.jsx'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
 
 function ProtectedRoute({ children }) {
@@ -29,17 +31,20 @@ function AppContent() {
     if (!loading && user && userProfile) {
       const currentPath = window.location.pathname
       
-      // Don't redirect from kapper pages - let them handle their own redirects
-      if (currentPath.startsWith('/kapper/')) {
+      // Don't redirect from protected pages
+      if (currentPath.startsWith('/kapper/') || currentPath.startsWith('/client/') || currentPath.startsWith('/admin') || currentPath.startsWith('/dashboard')) {
         return
       }
       
-      // Only redirect from specific pages to prevent conflicts
+      // Redirect based on user role
       if (currentPath === '/' || currentPath === '/login' || currentPath === '/register') {
         if (userProfile.role === 'admin') {
           navigate('/admin', { replace: true })
+        } else if (userProfile.role === 'kapper') {
+          navigate('/kapper/dashboard', { replace: true })
+        } else if (userProfile.role === 'client') {
+          navigate('/client/dashboard', { replace: true })
         }
-        // No automatic barber redirect - let individual pages handle their own redirects
       }
     }
   }, [user, userProfile, loading, navigate])
@@ -80,6 +85,15 @@ function AppContent() {
           <Route path="/kapper/login" element={<div className="container-max"><KapperLoginPage /></div>} />
           <Route path="/kapper/register" element={<div className="container-max"><KapperRegisterPage /></div>} />
           <Route path="/register" element={<div className="container-max"><RegisterPage /></div>} />
+          <Route path="/client/login" element={<ClientLoginPage />} />
+          <Route
+            path="/client/dashboard"
+            element={
+              <ProtectedRoute>
+                <ClientDashboardPage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
