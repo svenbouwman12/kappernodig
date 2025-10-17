@@ -33,6 +33,7 @@ export default function BarberProfilePage() {
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [bookmarkLoading, setBookmarkLoading] = useState(false)
   const [showLoginModal, setShowLoginModal] = useState(false)
+  const [showSuccessNotification, setShowSuccessNotification] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -158,7 +159,11 @@ export default function BarberProfilePage() {
         }
 
         setIsBookmarked(true)
-        alert('Kapper toegevoegd aan je favorieten!')
+        setShowSuccessNotification(true)
+        // Auto-hide notification after 3 seconds
+        setTimeout(() => {
+          setShowSuccessNotification(false)
+        }, 3000)
       }
     } catch (err) {
       console.error('Error handling bookmark:', err)
@@ -345,6 +350,20 @@ export default function BarberProfilePage() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Success Notification */}
+      {showSuccessNotification && (
+        <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2 animate-in slide-in-from-right duration-300">
+          <Heart className="h-5 w-5" />
+          <span className="font-medium">Kapper toegevoegd aan je favorieten!</span>
+          <button
+            onClick={() => setShowSuccessNotification(false)}
+            className="ml-2 text-white/80 hover:text-white"
+          >
+            ✕
+          </button>
         </div>
       )}
     </div>
