@@ -2,6 +2,10 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import Card from '../components/Card.jsx'
 import Button from '../components/Button.jsx'
+import AgendaView from '../components/AgendaView.jsx'
+import AppointmentModal from '../components/AppointmentModal.jsx'
+import ClientsTable from '../components/ClientsTable.jsx'
+import ClientModal from '../components/ClientModal.jsx'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext.jsx'
 import { 
@@ -16,7 +20,8 @@ import {
   Users,
   Calendar,
   Settings,
-  BarChart3
+  BarChart3,
+  UserCheck
 } from 'lucide-react'
 
 export default function KapperDashboardPage() {
@@ -27,6 +32,12 @@ export default function KapperDashboardPage() {
   const [editingBarber, setEditingBarber] = useState(null)
   const [geocoding, setGeocoding] = useState(false)
   const [kapperName, setKapperName] = useState('')
+  const [activeTab, setActiveTab] = useState('overview') // overview, agenda, clients
+  const [selectedSalon, setSelectedSalon] = useState(null)
+  const [showAppointmentModal, setShowAppointmentModal] = useState(false)
+  const [selectedAppointment, setSelectedAppointment] = useState(null)
+  const [showClientModal, setShowClientModal] = useState(false)
+  const [selectedClient, setSelectedClient] = useState(null)
   const hasLoadedRef = useRef(false)
 
   // Function to get greeting based on time of day
@@ -277,12 +288,52 @@ export default function KapperDashboardPage() {
               </Button>
             </div>
           </div>
+          
+          {/* Tab Navigation */}
+          <div className="flex space-x-1 border-b border-gray-200">
+            <button
+              onClick={() => setActiveTab('overview')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'overview'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <BarChart3 className="h-4 w-4 inline mr-2" />
+              Overzicht
+            </button>
+            <button
+              onClick={() => setActiveTab('agenda')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'agenda'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Calendar className="h-4 w-4 inline mr-2" />
+              Agenda
+            </button>
+            <button
+              onClick={() => setActiveTab('clients')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'clients'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <UserCheck className="h-4 w-4 inline mr-2" />
+              Klanten
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        {/* Tab Content */}
+        {activeTab === 'overview' && (
+          <>
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card className="p-6">
             <div className="flex items-center">
               <div className="p-3 bg-blue-100 rounded-xl">
@@ -443,7 +494,153 @@ export default function KapperDashboardPage() {
             </Button>
           </Card>
         )}
+          </>
+        )}
+
+        {/* Agenda Tab */}
+        {activeTab === 'agenda' && (
+          <div className="space-y-6">
+            {barbers.length > 0 ? (
+              <>
+                {/* Salon Selector */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Selecteer salon</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {barbers.map((barber) => (
+                      <button
+                        key={barber.id}
+                        onClick={() => setSelectedSalon(barber.id)}
+                        className={`p-4 rounded-lg border text-left transition-colors ${
+                          selectedSalon === barber.id
+                            ? 'border-primary bg-primary/5'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <h4 className="font-medium text-gray-900">{barber.name}</h4>
+                        <p className="text-sm text-gray-500">{barber.location}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Agenda View */}
+                {selectedSalon && (
+                  <AgendaView 
+                    salonId={selectedSalon}
+                    onAppointmentClick={(appointment) => {
+                      setSelectedAppointment(appointment)
+                      setShowAppointmentModal(true)
+                    }}
+                  />
+                )}
+              </>
+            ) : (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Geen salons beschikbaar</h3>
+                <p className="text-gray-500 mb-6">
+                  Voeg eerst een kapperszaak toe om de agenda te kunnen gebruiken.
+                </p>
+                <Button
+                  onClick={() => setShowAddForm(true)}
+                  className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-xl font-medium"
+                >
+                  <Plus size={20} className="mr-2" />
+                  Eerste Kapperzaak Toevoegen
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Clients Tab */}
+        {activeTab === 'clients' && (
+          <div className="space-y-6">
+            {barbers.length > 0 ? (
+              <>
+                {/* Salon Selector */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Selecteer salon</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {barbers.map((barber) => (
+                      <button
+                        key={barber.id}
+                        onClick={() => setSelectedSalon(barber.id)}
+                        className={`p-4 rounded-lg border text-left transition-colors ${
+                          selectedSalon === barber.id
+                            ? 'border-primary bg-primary/5'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <h4 className="font-medium text-gray-900">{barber.name}</h4>
+                        <p className="text-sm text-gray-500">{barber.location}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Clients Table */}
+                {selectedSalon && (
+                  <ClientsTable 
+                    salonId={selectedSalon}
+                    onEditClient={(client) => {
+                      setSelectedClient(client)
+                      setShowClientModal(true)
+                    }}
+                  />
+                )}
+              </>
+            ) : (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+                <UserCheck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Geen salons beschikbaar</h3>
+                <p className="text-gray-500 mb-6">
+                  Voeg eerst een kapperszaak toe om klanten te kunnen beheren.
+                </p>
+                <Button
+                  onClick={() => setShowAddForm(true)}
+                  className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-xl font-medium"
+                >
+                  <Plus size={20} className="mr-2" />
+                  Eerste Kapperzaak Toevoegen
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Modals */}
+      {showAppointmentModal && (
+        <AppointmentModal
+          appointment={selectedAppointment}
+          isOpen={showAppointmentModal}
+          onClose={() => {
+            setShowAppointmentModal(false)
+            setSelectedAppointment(null)
+          }}
+          onEdit={(appointment) => {
+            // TODO: Implement edit appointment
+            console.log('Edit appointment:', appointment)
+          }}
+          onDelete={(appointmentId) => {
+            // TODO: Implement delete appointment
+            console.log('Delete appointment:', appointmentId)
+          }}
+        />
+      )}
+
+      {showClientModal && (
+        <ClientModal
+          client={selectedClient}
+          isOpen={showClientModal}
+          onClose={() => {
+            setShowClientModal(false)
+            setSelectedClient(null)
+          }}
+          salonId={selectedSalon}
+        />
+      )}
     </div>
   )
 }
