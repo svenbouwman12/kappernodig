@@ -53,11 +53,40 @@ export default function KapperLoginPage() {
       }
 
       if (data.user) {
-        // AuthContext will handle role detection and routing automatically
-        // Just wait a moment for the context to update
-        setTimeout(() => {
+        // Check user role before proceeding
+        try {
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('role, naam')
+            .eq('id', data.user.id)
+            .single()
+
+          if (profileError) {
+            console.error('Error loading profile:', profileError)
+            
+            // If profiles table doesn't exist, assume kapper role
+            if (profileError.message.includes('relation "profiles" does not exist')) {
+              console.log('Profiles table does not exist - assuming kapper role')
+              navigate('/kapper/dashboard')
+              return
+            }
+            
+            setError('Er is een fout opgetreden bij het laden van je profiel')
+            return
+          }
+
+          if (profile?.role === 'kapper') {
+            navigate('/kapper/dashboard')
+          } else if (profile?.role === 'client') {
+            setError('Dit is een klant account. Gebruik de klant login pagina.')
+          } else {
+            setError('Account type niet gevonden. Neem contact op met de beheerder.')
+          }
+        } catch (profileErr) {
+          console.error('Profile loading failed:', profileErr)
+          // Assume kapper role if profile loading fails
           navigate('/kapper/dashboard')
-        }, 100)
+        }
       }
     } catch (err) {
       console.error('Login error:', err)
