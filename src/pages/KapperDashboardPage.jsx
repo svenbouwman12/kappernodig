@@ -54,25 +54,16 @@ export default function KapperDashboardPage() {
       // Keep loading state true while waiting for user and userProfile
       setLoading(true)
     }
-  }, []) // No dependencies - only run once on mount
+  }, [user, userProfile]) // Add dependencies to react to userProfile changes
 
-  async function loadKapperName() {
+  function loadKapperName() {
     try {
-      const { data, error } = await supabase
-        .from('kapper_accounts')
-        .select('name')
-        .eq('user_id', user?.id)
-        .single()
-
-      if (error) {
-        console.log('Kapper account not found, using fallback name')
+      // Use the userProfile naam if available, otherwise fallback to email or generic name
+      if (userProfile?.naam) {
+        setKapperName(userProfile.naam)
+      } else {
         // Fallback to user email or generic name
         setKapperName(userProfile?.email?.split('@')[0] || 'Kapper')
-        return
-      }
-
-      if (data?.name) {
-        setKapperName(data.name)
       }
     } catch (err) {
       console.log('Error loading kapper name, using fallback:', err)
