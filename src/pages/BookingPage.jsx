@@ -19,7 +19,10 @@ export default function BookingPage() {
     serviceId: '',
     date: '',
     time: '',
-    notes: ''
+    notes: '',
+    clientName: '',
+    clientEmail: '',
+    clientPhone: ''
   })
   const [availableSlots, setAvailableSlots] = useState([])
   const [loadingSlots, setLoadingSlots] = useState(false)
@@ -30,12 +33,9 @@ export default function BookingPage() {
   const [selectedDate, setSelectedDate] = useState(null)
 
   useEffect(() => {
-    if (!user || userProfile?.role !== 'client') {
-      navigate('/client/login?return=' + encodeURIComponent(window.location.pathname))
-      return
-    }
+    // Allow both logged in clients and anonymous users
     loadBarberData()
-  }, [user, userProfile, id, navigate])
+  }, [id])
 
   useEffect(() => {
     if (booking.serviceId && booking.date) {
@@ -209,8 +209,15 @@ export default function BookingPage() {
   }
 
   async function handleBookingSubmit() {
+    // Validate required fields
     if (!booking.serviceId || !booking.date || !booking.time) {
       setError('Vul alle verplichte velden in')
+      return
+    }
+
+    // For non-logged in users, validate client info
+    if (!user && (!booking.clientName || !booking.clientEmail)) {
+      setError('Vul je naam en e-mailadres in')
       return
     }
 
@@ -231,44 +238,19 @@ export default function BookingPage() {
       
       const endTime = new Date(appointmentDate.getTime() + (selectedService.duration_minutes || 30) * 60000)
 
-      // Create client record if it doesn't exist
-      let clientId
-      const { data: existingClient } = await supabase
-        .from('clients')
-        .select('id')
-        .eq('salon_id', id)
-        .eq('email', user.email)
-        .single()
+      // Get client info
+      const clientName = user ? (userProfile?.naam || user.email?.split('@')[0] || 'Klant') : booking.clientName
+      const clientEmail = user ? user.email : booking.clientEmail
+      const clientPhone = user ? (userProfile?.telefoon || '') : booking.clientPhone
 
-      if (existingClient) {
-        clientId = existingClient.id
-      } else {
-        const { data: newClient, error: clientError } = await supabase
-          .from('clients')
-          .insert({
-            salon_id: id,
-            naam: userProfile?.naam || user.email?.split('@')[0] || 'Klant',
-            telefoon: userProfile?.telefoon || '',
-            email: user.email
-          })
-          .select('id')
-          .single()
-
-        if (clientError) {
-          console.error('Error creating client:', clientError)
-          setError('Er is een fout opgetreden bij het aanmaken van het klantprofiel')
-          return
-        }
-
-        clientId = newClient.id
-      }
-
-      // Create appointment
+      // Create appointment directly with client info (no separate client record needed)
       const { data: appointment, error: appointmentError } = await supabase
         .from('appointments')
         .insert({
           salon_id: id,
-          klant_id: clientId,
+          client_name: clientName,
+          client_email: clientEmail,
+          client_phone: clientPhone || null,
           service_id: booking.serviceId,
           start_tijd: appointmentDate.toISOString(),
           eind_tijd: endTime.toISOString(),
@@ -285,13 +267,25 @@ export default function BookingPage() {
       }
 
       setSuccess(true)
-      setBooking({ serviceId: '', date: '', time: '', notes: '' })
+      setBooking({ 
+        serviceId: '', 
+        date: '', 
+        time: '', 
+        notes: '',
+        clientName: '',
+        clientEmail: '',
+        clientPhone: ''
+      })
       setSelectedDate(null)
       setAvailableSlots([])
 
-      // Redirect to client dashboard after 2 seconds
+      // Redirect based on login status
       setTimeout(() => {
-        navigate('/client/dashboard')
+        if (user && userProfile?.role === 'client') {
+          navigate('/client/dashboard')
+        } else {
+          navigate('/')
+        }
       }, 2000)
 
     } catch (error) {
@@ -479,6 +473,53 @@ export default function BookingPage() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Client Information - only show for non-logged in users */}
+                  {!user && (
+                    <div className="mb-4">
+                      <h3 className="text-lg font-medium mb-3">Jouw gegevens</h3>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Naam *
+                          </label>
+                          <input
+                            type="text"
+                            value={booking.clientName}
+                            onChange={(e) => setBooking({ ...booking, clientName: e.target.value })}
+                            placeholder="Jouw naam"
+                            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            E-mailadres *
+                          </label>
+                          <input
+                            type="email"
+                            value={booking.clientEmail}
+                            onChange={(e) => setBooking({ ...booking, clientEmail: e.target.value })}
+                            placeholder="jouw@email.com"
+                            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                            required
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Telefoonnummer (optioneel)
+                          </label>
+                          <input
+                            type="tel"
+                            value={booking.clientPhone}
+                            onChange={(e) => setBooking({ ...booking, clientPhone: e.target.value })}
+                            placeholder="06-12345678"
+                            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Notes */}
                   <div className="mb-4">
