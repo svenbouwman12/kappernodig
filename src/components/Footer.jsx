@@ -68,7 +68,9 @@ export default function Footer() {
 
           {/* Auth Section */}
           <div>
-            <h3 className="font-semibold text-secondary mb-3">Kapper Login</h3>
+            <h3 className="font-semibold text-secondary mb-3">
+              {user ? 'Account' : 'Kapper Login'}
+            </h3>
             {user ? (
               <div className="space-y-3">
                 {/* Show appropriate dashboard based on user role */}
