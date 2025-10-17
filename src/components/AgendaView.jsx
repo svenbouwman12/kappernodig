@@ -103,8 +103,9 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
     const slots = []
     for (let hour = 8; hour < 20; hour++) {
       for (let minute = 0; minute < 60; minute += 15) {
-        const time = new Date()
-        time.setHours(hour, minute, 0, 0)
+        // Create time object with today's date and specified time
+        const today = new Date()
+        const time = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hour, minute, 0, 0)
         slots.push(time)
       }
     }
@@ -202,7 +203,15 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
     const slotStartInMinutes = slotHour * 60 + slotMinute
     const slotEndInMinutes = slotStartInMinutes + 15
     
-    return currentTimeInMinutes >= slotStartInMinutes && currentTimeInMinutes < slotEndInMinutes
+    const shouldShow = currentTimeInMinutes >= slotStartInMinutes && currentTimeInMinutes < slotEndInMinutes
+    
+    // Debug logging
+    console.log(`Checking slot ${slotHour}:${slotMinute}`)
+    console.log(`Current: ${currentHour}:${currentMinute} (${currentTimeInMinutes} min)`)
+    console.log(`Slot: ${slotHour}:${slotMinute} (${slotStartInMinutes}-${slotEndInMinutes} min)`)
+    console.log(`Should show: ${shouldShow}`)
+    
+    return shouldShow
   }
 
   // Get the exact position of the current time within a slot (0-1)
@@ -210,6 +219,8 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
     if (!isCurrentWeek()) return 0
     
     const now = new Date()
+    
+    // Use local time explicitly
     const currentHour = now.getHours()
     const currentMinute = now.getMinutes()
     const currentSecond = now.getSeconds()
@@ -222,7 +233,17 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
     
     // Calculate position within the 15-minute slot (0-1)
     const positionInSlot = (currentTimeInMinutes - slotStartInMinutes) / 15
-    return Math.max(0, Math.min(1, positionInSlot))
+    const clampedPosition = Math.max(0, Math.min(1, positionInSlot))
+    
+    // Debug logging with timezone info
+    console.log(`Local time: ${currentHour}:${currentMinute}:${currentSecond}`)
+    console.log(`UTC time: ${now.getUTCHours()}:${now.getUTCMinutes()}:${now.getUTCSeconds()}`)
+    console.log(`Timezone offset: ${now.getTimezoneOffset()} minutes`)
+    console.log(`Slot: ${slotHour}:${slotMinute}`)
+    console.log(`Position in slot: ${positionInSlot.toFixed(3)} (${(positionInSlot * 100).toFixed(1)}%)`)
+    console.log(`Clamped position: ${clampedPosition.toFixed(3)}`)
+    
+    return clampedPosition
   }
 
   const handleAppointmentClick = (appointment) => {
@@ -405,7 +426,7 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
                     <div 
                       className="absolute left-0 right-0 h-0.5 bg-red-500 z-20"
                       style={{
-                        top: `${slotIndex * 32 + 8 + (getCurrentTimePosition(slot) * 16)}px`, // Position based on slot + time within slot
+                        top: `${slotIndex * 32 + 16 + (getCurrentTimePosition(slot) * 16)}px`, // Position based on slot + time within slot
                         left: '80px', // Start after time column
                         right: '0px' // Extend to end
                       }}
