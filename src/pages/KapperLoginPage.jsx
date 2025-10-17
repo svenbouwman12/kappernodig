@@ -14,6 +14,7 @@ export default function KapperLoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isSignup, setIsSignup] = useState(false)
   const [naam, setNaam] = useState('')
+  const [success, setSuccess] = useState(false)
 
   const handleLogin = async (e) => {
     e.preventDefault()
@@ -166,17 +167,49 @@ export default function KapperLoginPage() {
         }
 
         setError('')
-        alert('Account succesvol aangemaakt! Je wordt nu doorgestuurd naar het dashboard.')
+        
+        // Show success message internally instead of browser popup
+        setSuccess(true)
         
         // Auto-login after successful registration
         setUser(data.user)
-        navigate('/kapper/dashboard')
+        
+        // Redirect after a short delay to show success message
+        setTimeout(() => {
+          navigate('/kapper/dashboard')
+        }, 2000)
       }
     } catch (err) {
       setError('Er is een onverwachte fout opgetreden')
     } finally {
       setLoading(false)
     }
+  }
+
+  if (success) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-6">
+              <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+              Kapper Account succesvol aangemaakt!
+            </h1>
+            <p className="text-gray-600 mb-6">
+              Je wordt automatisch doorgestuurd naar je dashboard...
+            </p>
+            <div className="flex items-center justify-center space-x-2 text-primary">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+              <span className="text-sm">Bezig met inloggen...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
