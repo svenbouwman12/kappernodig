@@ -203,6 +203,16 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
     })
   }
 
+  // Calculate appointment height based on duration
+  const calculateAppointmentHeight = (appointment) => {
+    const startTime = new Date(appointment.start_tijd)
+    const endTime = new Date(appointment.eind_tijd)
+    const durationMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60)
+    
+    // Calculate height: 32px per 15 minutes (8px per slot * 4 slots per hour)
+    return Math.max(32, (durationMinutes / 15) * 32)
+  }
+
   // Get service color based on service type
   const getServiceColor = (serviceName) => {
     const colors = {
@@ -447,40 +457,29 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
                     const isCurrentTime = shouldShowCurrentTime(slot, day)
                     const isStart = isAppointmentStart(slot, day)
                     
-                    // Calculate appointment height based on duration
-                    const getAppointmentHeight = () => {
-                      if (!appointment || !isStart) return 'h-8'
-                      
-                      const startTime = new Date(appointment.start_tijd)
-                      const endTime = new Date(appointment.eind_tijd)
-                      const durationMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60)
-                      
-                      // Calculate height: 8px per 15 minutes, minimum 8px
-                      const heightPx = Math.max(8, (durationMinutes / 15) * 8)
-                      return `h-[${heightPx}px]`
-                    }
-                    
                     return (
                       <div key={dayIndex} className="relative p-0.5 border-r border-gray-100">
-                        <div className={getAppointmentHeight()}>
-                          {appointment ? (
+                        <div className="h-8">
+                          {appointment && isStart ? (
                             <button
                               onClick={() => handleAppointmentClick(appointment)}
-                              className={`w-full h-full p-1 rounded text-left hover:shadow-md transition-shadow ${getServiceColor(appointment.dienst)} ${
-                                isStart ? 'border-l-2 border-l-blue-500' : ''
-                              }`}
+                              className={`w-full p-1 rounded text-left hover:shadow-md transition-shadow ${getServiceColor(appointment.dienst)} border-l-2 border-l-blue-500`}
+                              style={{
+                                height: `${calculateAppointmentHeight(appointment)}px`,
+                                position: 'absolute',
+                                zIndex: 10
+                              }}
                             >
-                              {isStart && (
-                                <>
-                                  <div className="text-xs font-medium truncate">
-                                    {appointment.clients?.naam || 'Onbekende klant'}
-                                  </div>
-                                  <div className="text-xs opacity-75 truncate">
-                                    {appointment.dienst}
-                                  </div>
-                                </>
-                              )}
+                              <div className="text-xs font-medium truncate">
+                                {appointment.clients?.naam || 'Onbekende klant'}
+                              </div>
+                              <div className="text-xs opacity-75 truncate">
+                                {appointment.dienst}
+                              </div>
                             </button>
+                          ) : appointment ? (
+                            // Show as background for duration
+                            <div className={`w-full h-full ${getServiceColor(appointment.dienst)} opacity-30`}></div>
                           ) : (
                             <div className="w-full h-full p-1 text-gray-200 text-xs">
                               ·
