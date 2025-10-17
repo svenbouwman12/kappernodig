@@ -8,6 +8,10 @@ ADD COLUMN IF NOT EXISTS client_email TEXT,
 ADD COLUMN IF NOT EXISTS client_phone TEXT,
 ADD COLUMN IF NOT EXISTS opmerkingen TEXT;
 
+-- 2. Make klant_id nullable to support anonymous bookings
+ALTER TABLE public.appointments 
+ALTER COLUMN klant_id DROP NOT NULL;
+
 -- 2. Update existing appointments to have client info if klant_id exists
 UPDATE public.appointments 
 SET 

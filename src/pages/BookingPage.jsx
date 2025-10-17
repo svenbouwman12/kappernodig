@@ -243,20 +243,37 @@ export default function BookingPage() {
       const clientEmail = user ? user.email : booking.clientEmail
       const clientPhone = user ? (userProfile?.telefoon || '') : booking.clientPhone
 
-      // Create appointment directly with client info (no separate client record needed)
+      // Create appointment directly with client info
+      const appointmentData = {
+        salon_id: id,
+        client_name: clientName,
+        client_email: clientEmail,
+        client_phone: clientPhone || null,
+        service_id: booking.serviceId,
+        start_tijd: appointmentDate.toISOString(),
+        eind_tijd: endTime.toISOString(),
+        status: 'confirmed',
+        opmerkingen: booking.notes || null
+      }
+
+      // Only add klant_id for logged in users
+      if (user && userProfile?.role === 'client') {
+        // Try to find existing client record
+        const { data: existingClient } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('salon_id', id)
+          .eq('email', user.email)
+          .single()
+
+        if (existingClient) {
+          appointmentData.klant_id = existingClient.id
+        }
+      }
+
       const { data: appointment, error: appointmentError } = await supabase
         .from('appointments')
-        .insert({
-          salon_id: id,
-          client_name: clientName,
-          client_email: clientEmail,
-          client_phone: clientPhone || null,
-          service_id: booking.serviceId,
-          start_tijd: appointmentDate.toISOString(),
-          eind_tijd: endTime.toISOString(),
-          status: 'confirmed',
-          opmerkingen: booking.notes || null
-        })
+        .insert(appointmentData)
         .select()
         .single()
 
