@@ -76,7 +76,13 @@ export default function ClientLoginPage() {
           }
 
           if (profile?.role === 'client') {
-            navigate('/client/dashboard')
+            // Check if there's a return URL in the state
+            const returnUrl = new URLSearchParams(window.location.search).get('return')
+            if (returnUrl) {
+              navigate(returnUrl)
+            } else {
+              navigate('/client/dashboard')
+            }
           } else if (profile?.role === 'kapper') {
             navigate('/kapper/dashboard')
           } else {

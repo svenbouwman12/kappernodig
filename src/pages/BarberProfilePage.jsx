@@ -32,6 +32,7 @@ export default function BarberProfilePage() {
   const [loading, setLoading] = useState(true)
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [bookmarkLoading, setBookmarkLoading] = useState(false)
+  const [showLoginModal, setShowLoginModal] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -109,8 +110,7 @@ export default function BarberProfilePage() {
   const handleBookmark = async () => {
     // Check if user is logged in
     if (!user || !userProfile) {
-      alert('Je moet ingelogd zijn om kappers toe te voegen aan je favorieten. Log in of maak een account aan.')
-      navigate('/client/login')
+      setShowLoginModal(true)
       return
     }
 
@@ -284,6 +284,65 @@ export default function BarberProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Login Modal */}
+      {showLoginModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Inloggen vereist</h3>
+                <button
+                  onClick={() => setShowLoginModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="text-center">
+                  <Heart className="h-12 w-12 text-primary mx-auto mb-3" />
+                  <p className="text-gray-600 mb-4">
+                    Je moet ingelogd zijn om kappers toe te voegen aan je favorieten.
+                  </p>
+                </div>
+                
+                <div className="space-y-3">
+                  <button
+                    onClick={() => {
+                      setShowLoginModal(false)
+                      navigate(`/client/login?return=${encodeURIComponent(window.location.pathname)}`)
+                    }}
+                    className="w-full bg-primary text-white py-3 px-4 rounded-lg hover:bg-primary/90 transition-colors font-medium"
+                  >
+                    Inloggen
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      setShowLoginModal(false)
+                      navigate(`/client/register?return=${encodeURIComponent(window.location.pathname)}`)
+                    }}
+                    className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                  >
+                    Account aanmaken
+                  </button>
+                </div>
+                
+                <div className="text-center">
+                  <button
+                    onClick={() => setShowLoginModal(false)}
+                    className="text-gray-500 hover:text-gray-700 text-sm"
+                  >
+                    Annuleren
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

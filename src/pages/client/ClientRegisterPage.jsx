@@ -90,7 +90,13 @@ export default function ClientRegisterPage() {
         // Redirect after a short delay to show success message
         // AuthContext will handle the user state automatically
         setTimeout(() => {
-          navigate('/client/dashboard')
+          // Check if there's a return URL in the state
+          const returnUrl = new URLSearchParams(window.location.search).get('return')
+          if (returnUrl) {
+            navigate(returnUrl)
+          } else {
+            navigate('/client/dashboard')
+          }
         }, 2000)
       }
     } catch (err) {
