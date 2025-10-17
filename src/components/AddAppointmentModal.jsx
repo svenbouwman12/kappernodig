@@ -19,6 +19,12 @@ export default function AddAppointmentModal({ isOpen, onClose, salonId, onAppoin
   const [selectedDate, setSelectedDate] = useState('')
   const [selectedTime, setSelectedTime] = useState('')
   const [selectedDuration, setSelectedDuration] = useState(30)
+  const [showNewClientForm, setShowNewClientForm] = useState(false)
+  const [newClient, setNewClient] = useState({
+    naam: '',
+    telefoon: '',
+    email: ''
+  })
 
   // Load clients and services when modal opens
   useEffect(() => {
@@ -68,6 +74,44 @@ export default function AddAppointmentModal({ isOpen, onClose, salonId, onAppoin
     } catch (err) {
       console.error('Error loading services:', err)
       setServices([])
+    }
+  }
+
+  async function createNewClient() {
+    if (!newClient.naam.trim() || !newClient.telefoon.trim()) {
+      setError('Naam en telefoon zijn verplicht')
+      return null
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .insert({
+          salon_id: salonId,
+          naam: newClient.naam.trim(),
+          telefoon: newClient.telefoon.trim(),
+          email: newClient.email.trim() || null
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error creating client:', error)
+        setError('Er is een fout opgetreden bij het aanmaken van de klant')
+        return null
+      }
+
+      // Add to clients list and select it
+      setClients(prev => [...prev, data])
+      setFormData(prev => ({ ...prev, klant_id: data.id }))
+      setShowNewClientForm(false)
+      setNewClient({ naam: '', telefoon: '', email: '' })
+      setError('')
+      return data
+    } catch (err) {
+      console.error('Error creating client:', err)
+      setError('Er is een onverwachte fout opgetreden')
+      return null
     }
   }
 
@@ -178,6 +222,8 @@ export default function AddAppointmentModal({ isOpen, onClose, salonId, onAppoin
     setSelectedDate('')
     setSelectedTime('')
     setSelectedDuration(30)
+    setShowNewClientForm(false)
+    setNewClient({ naam: '', telefoon: '', email: '' })
     setError('')
     onClose()
   }
@@ -216,23 +262,92 @@ export default function AddAppointmentModal({ isOpen, onClose, salonId, onAppoin
 
           {/* Client Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <User className="h-4 w-4 inline mr-2" />
-              Klant
-            </label>
-            <select
-              value={formData.klant_id}
-              onChange={(e) => setFormData({...formData, klant_id: e.target.value})}
-              className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-transparent"
-              required
-            >
-              <option value="">Selecteer een klant</option>
-              {clients.map((client) => (
-                <option key={client.id} value={client.id}>
-                  {client.naam} - {client.telefoon}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700">
+                <User className="h-4 w-4 inline mr-2" />
+                Klant
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowNewClientForm(!showNewClientForm)}
+                className="text-sm text-primary hover:text-primary/80 font-medium"
+              >
+                {showNewClientForm ? 'Bestaande klant selecteren' : '+ Nieuwe klant toevoegen'}
+              </button>
+            </div>
+
+            {!showNewClientForm ? (
+              <select
+                value={formData.klant_id}
+                onChange={(e) => setFormData({...formData, klant_id: e.target.value})}
+                className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-transparent"
+                required
+              >
+                <option value="">Selecteer een klant</option>
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.naam} - {client.telefoon}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="space-y-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Naam *
+                  </label>
+                  <input
+                    type="text"
+                    value={newClient.naam}
+                    onChange={(e) => setNewClient({...newClient, naam: e.target.value})}
+                    className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-transparent"
+                    placeholder="Volledige naam"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Telefoon *
+                  </label>
+                  <input
+                    type="tel"
+                    value={newClient.telefoon}
+                    onChange={(e) => setNewClient({...newClient, telefoon: e.target.value})}
+                    className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-transparent"
+                    placeholder="06-12345678"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email (optioneel)
+                  </label>
+                  <input
+                    type="email"
+                    value={newClient.email}
+                    onChange={(e) => setNewClient({...newClient, email: e.target.value})}
+                    className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-transparent"
+                    placeholder="klant@email.com"
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={createNewClient}
+                    className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 text-sm font-medium"
+                  >
+                    Klant toevoegen
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowNewClientForm(false)}
+                    className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm font-medium"
+                  >
+                    Annuleren
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Service Selection */}
