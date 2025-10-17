@@ -190,11 +190,12 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
     
     const now = new Date()
     
-    // Get current time in local timezone
-    const currentHour = now.getHours()
-    const currentMinute = now.getMinutes()
+    // Force Netherlands timezone (UTC+1 or UTC+2)
+    const netherlandsTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Amsterdam"}))
     
-    // Get slot time in local timezone
+    const currentHour = netherlandsTime.getHours()
+    const currentMinute = netherlandsTime.getMinutes()
+    
     const slotHour = slotTime.getHours()
     const slotMinute = slotTime.getMinutes()
     
@@ -203,15 +204,7 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
     const slotStartInMinutes = slotHour * 60 + slotMinute
     const slotEndInMinutes = slotStartInMinutes + 15
     
-    const shouldShow = currentTimeInMinutes >= slotStartInMinutes && currentTimeInMinutes < slotEndInMinutes
-    
-    // Debug logging
-    console.log(`Checking slot ${slotHour}:${slotMinute}`)
-    console.log(`Current: ${currentHour}:${currentMinute} (${currentTimeInMinutes} min)`)
-    console.log(`Slot: ${slotHour}:${slotMinute} (${slotStartInMinutes}-${slotEndInMinutes} min)`)
-    console.log(`Should show: ${shouldShow}`)
-    
-    return shouldShow
+    return currentTimeInMinutes >= slotStartInMinutes && currentTimeInMinutes < slotEndInMinutes
   }
 
   // Get the exact position of the current time within a slot (0-1)
@@ -220,10 +213,12 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
     
     const now = new Date()
     
-    // Use local time explicitly
-    const currentHour = now.getHours()
-    const currentMinute = now.getMinutes()
-    const currentSecond = now.getSeconds()
+    // Force Netherlands timezone (UTC+1 or UTC+2)
+    const netherlandsTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Amsterdam"}))
+    
+    const currentHour = netherlandsTime.getHours()
+    const currentMinute = netherlandsTime.getMinutes()
+    const currentSecond = netherlandsTime.getSeconds()
     
     const slotHour = slotTime.getHours()
     const slotMinute = slotTime.getMinutes()
@@ -233,17 +228,7 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
     
     // Calculate position within the 15-minute slot (0-1)
     const positionInSlot = (currentTimeInMinutes - slotStartInMinutes) / 15
-    const clampedPosition = Math.max(0, Math.min(1, positionInSlot))
-    
-    // Debug logging with timezone info
-    console.log(`Local time: ${currentHour}:${currentMinute}:${currentSecond}`)
-    console.log(`UTC time: ${now.getUTCHours()}:${now.getUTCMinutes()}:${now.getUTCSeconds()}`)
-    console.log(`Timezone offset: ${now.getTimezoneOffset()} minutes`)
-    console.log(`Slot: ${slotHour}:${slotMinute}`)
-    console.log(`Position in slot: ${positionInSlot.toFixed(3)} (${(positionInSlot * 100).toFixed(1)}%)`)
-    console.log(`Clamped position: ${clampedPosition.toFixed(3)}`)
-    
-    return clampedPosition
+    return Math.max(0, Math.min(1, positionInSlot))
   }
 
   const handleAppointmentClick = (appointment) => {
