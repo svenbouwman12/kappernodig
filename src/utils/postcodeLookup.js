@@ -17,42 +17,86 @@ export async function lookupAddress(postcode, houseNumber) {
       throw new Error('Huisnummer is verplicht')
     }
 
-    // Use Nominatim with better query for Dutch addresses
+    // Use Nominatim with optimized query for Dutch addresses
     const formattedPostcode = `${cleanPostcode.slice(0, 4)} ${cleanPostcode.slice(4)}`
-    const query = `${houseNumber} ${formattedPostcode} Nederland`
     
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?` +
-      `format=json&` +
-      `q=${encodeURIComponent(query)}&` +
-      `addressdetails=1&` +
-      `countrycodes=nl&` +
-      `limit=1`,
-      {
-        headers: {
-          'User-Agent': 'KapperNodig/1.0',
-          'Accept': 'application/json'
-        }
-      }
-    )
+    // Try multiple query formats for better results
+    const queries = [
+      `${houseNumber} ${formattedPostcode} Nederland`,
+      `${formattedPostcode} ${houseNumber} Nederland`,
+      `${houseNumber} ${cleanPostcode} Nederland`
+    ]
+    
+    let result = null
+    let bestMatch = null
+    
+    for (const query of queries) {
+      try {
+        // Add timeout to prevent hanging requests
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+        
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?` +
+          `format=json&` +
+          `q=${encodeURIComponent(query)}&` +
+          `addressdetails=1&` +
+          `countrycodes=nl&` +
+          `limit=3`,
+          {
+            headers: {
+              'User-Agent': 'KapperNodig/1.0',
+              'Accept': 'application/json'
+            },
+            signal: controller.signal
+          }
+        )
+        
+        clearTimeout(timeoutId)
 
-    if (!response.ok) {
-      throw new Error('Adres lookup service niet beschikbaar. Probeer het later opnieuw.')
+        if (response.ok) {
+          const data = await response.json()
+          if (data && data.length > 0) {
+            // Find the best match with street name
+            const match = data.find(item => 
+              item.address && 
+              (item.address.road || item.address.street) &&
+              item.address.postcode === formattedPostcode
+            )
+            if (match) {
+              result = match
+              break
+            }
+            // Keep first result as fallback
+            if (!bestMatch) {
+              bestMatch = data[0]
+            }
+          }
+        }
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          console.warn('Query timeout:', query)
+        } else {
+          console.warn('Query failed:', query, err)
+        }
+        continue
+      }
+    }
+    
+    if (!result && bestMatch) {
+      result = bestMatch
     }
 
-    const data = await response.json()
-    
-    if (!data || data.length === 0) {
+    if (!result) {
       throw new Error('Geen adres gevonden voor postcode ' + cleanPostcode + ' nummer ' + houseNumber)
     }
 
-    const result = data[0]
     const addr = result.address || {}
     
-    // Extract address components from Nominatim
-    const street = addr.road || addr.street || ''
-    const city = addr.city || addr.town || addr.village || addr.municipality || ''
-    const province = addr.state || ''
+    // Extract address components from Nominatim with better fallbacks
+    const street = addr.road || addr.street || addr.pedestrian || addr.footway || ''
+    const city = addr.city || addr.town || addr.village || addr.municipality || addr.suburb || ''
+    const province = addr.state || addr.county || ''
     
     if (!street) {
       throw new Error('Geen straatnaam gevonden voor postcode ' + cleanPostcode + ' nummer ' + houseNumber)
