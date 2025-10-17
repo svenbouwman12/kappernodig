@@ -21,7 +21,34 @@ export function AuthProvider({ children }) {
       }
       
       try {
-        // Get user profile from profiles table
+        // First, check if user is a kapper by looking in barbers table
+        const { data: barberData } = await supabase
+          .from('barbers')
+          .select('id')
+          .eq('owner_id', userId)
+          .limit(1)
+        
+        if (barberData && barberData.length > 0) {
+          console.log('User is a kapper - setting kapper role')
+          setUserProfile({ role: 'kapper', naam: 'Kapper', profielfoto: null })
+          
+          // Update the profile in database to ensure consistency
+          try {
+            await supabase
+              .from('profiles')
+              .upsert({ 
+                id: userId, 
+                role: 'kapper', 
+                naam: 'Kapper',
+                profielfoto: null 
+              })
+          } catch (updateErr) {
+            console.error('Error updating kapper profile in database:', updateErr)
+          }
+          return
+        }
+
+        // If not a kapper, check profiles table for client role
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('role, naam, profielfoto')
@@ -37,22 +64,8 @@ export function AuthProvider({ children }) {
               error.status === 406 ||
               error.message.includes('406') ||
               error.message.includes('Not Acceptable')) {
-            console.log('Profiles table access error - checking if user is kapper')
-            
-            // Check if user is a kapper by looking in barbers table
-            const { data: barberData } = await supabase
-              .from('barbers')
-              .select('id')
-              .eq('owner_id', userId)
-              .limit(1)
-            
-            if (barberData && barberData.length > 0) {
-              console.log('User is a kapper - setting kapper role')
-              setUserProfile({ role: 'kapper', naam: 'Kapper', profielfoto: null })
-            } else {
-              console.log('User is not a kapper - setting client role')
-              setUserProfile({ role: 'client', naam: 'Nieuwe gebruiker', profielfoto: null })
-            }
+            console.log('Profiles table access error - setting client role')
+            setUserProfile({ role: 'client', naam: 'Nieuwe gebruiker', profielfoto: null })
             return
           }
           
@@ -60,32 +73,13 @@ export function AuthProvider({ children }) {
           return
         }
 
-        // If profile exists but role is wrong, check if user is actually a kapper
-        if (profile.role === 'client') {
-          const { data: barberData } = await supabase
-            .from('barbers')
-            .select('id')
-            .eq('owner_id', userId)
-            .limit(1)
-          
-          if (barberData && barberData.length > 0) {
-            console.log('User has barbers but profile says client - updating to kapper role')
-            setUserProfile({ ...profile, role: 'kapper' })
-            
-            // Update the role in the database
-            try {
-              await supabase
-                .from('profiles')
-                .update({ role: 'kapper' })
-                .eq('id', userId)
-            } catch (updateErr) {
-              console.error('Error updating role in database:', updateErr)
-            }
-            return
-          }
+        // If profile exists, use it
+        if (profile) {
+          setUserProfile(profile)
+        } else {
+          // No profile found, create default client profile
+          setUserProfile({ role: 'client', naam: 'Nieuwe gebruiker', profielfoto: null })
         }
-
-        setUserProfile(profile)
       } catch (err) {
         console.error('Error loading user profile:', err)
         // Fallback to default client profile if anything goes wrong

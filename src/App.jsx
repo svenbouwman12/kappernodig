@@ -47,7 +47,7 @@ function AppContent() {
     if (!loading && user && userProfile) {
       const currentPath = window.location.pathname
       
-      // Don't redirect if already on correct dashboard
+      // Don't redirect if already on correct dashboard or on login/register pages
       if (currentPath.startsWith('/kapper/') && userProfile.role === 'kapper') {
         return
       }
@@ -55,6 +55,16 @@ function AppContent() {
         return
       }
       if (currentPath.startsWith('/admin') && userProfile.role === 'admin') {
+        return
+      }
+      
+      // Don't redirect from login/register pages - let them handle their own routing
+      if (currentPath.includes('/login') || currentPath.includes('/register')) {
+        return
+      }
+      
+      // Don't redirect from homepage
+      if (currentPath === '/') {
         return
       }
       
