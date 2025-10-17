@@ -17,81 +17,58 @@ export async function lookupAddress(postcode, houseNumber) {
       throw new Error('Huisnummer is verplicht')
     }
 
-    // Try multiple APIs with fallback
-    const apis = [
-      // Try postcode.tech first
+    // Use Nominatim with better query for Dutch addresses
+    const formattedPostcode = `${cleanPostcode.slice(0, 4)} ${cleanPostcode.slice(4)}`
+    const query = `${houseNumber} ${formattedPostcode} Nederland`
+    
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?` +
+      `format=json&` +
+      `q=${encodeURIComponent(query)}&` +
+      `addressdetails=1&` +
+      `countrycodes=nl&` +
+      `limit=1`,
       {
-        url: `https://api.postcode.tech/v1/postcode/${cleanPostcode}/${houseNumber}`,
-        parser: (data) => ({
-          street: data.street || '',
-          city: data.city || '',
-          province: data.province || '',
-          lat: data.latitude || null,
-          lng: data.longitude || null
-        })
-      },
-      // Fallback to Nominatim
-      {
-        url: `https://nominatim.openstreetmap.org/search?format=json&q=${houseNumber}, ${cleanPostcode.slice(0, 4)} ${cleanPostcode.slice(4)}, Netherlands&addressdetails=1&countrycodes=nl&limit=1`,
-        parser: (data) => {
-          if (data.length === 0) return null
-          const item = data[0]
-          const addr = item.address || {}
-          return {
-            street: addr.road || addr.street || '',
-            city: addr.city || addr.town || addr.village || addr.municipality || '',
-            province: addr.state || '',
-            lat: parseFloat(item.lat) || null,
-            lng: parseFloat(item.lon) || null
-          }
+        headers: {
+          'User-Agent': 'KapperNodig/1.0',
+          'Accept': 'application/json'
         }
       }
-    ]
+    )
 
-    let result = null
-    let error = null
-
-    for (const api of apis) {
-      try {
-        const response = await fetch(api.url, {
-          mode: 'cors',
-          headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'KapperNodig/1.0'
-          }
-        })
-
-        if (response.ok) {
-          const data = await response.json()
-          result = api.parser(data)
-          if (result && result.street) {
-            break
-          }
-        }
-      } catch (err) {
-        error = err
-        continue
-      }
+    if (!response.ok) {
+      throw new Error('Adres lookup service niet beschikbaar. Probeer het later opnieuw.')
     }
 
-    if (!result || !result.street) {
+    const data = await response.json()
+    
+    if (!data || data.length === 0) {
       throw new Error('Geen adres gevonden voor postcode ' + cleanPostcode + ' nummer ' + houseNumber)
     }
 
-    // Format postcode with space (1234 AB)
-    const formattedPostcode = `${cleanPostcode.slice(0, 4)} ${cleanPostcode.slice(4)}`
+    const result = data[0]
+    const addr = result.address || {}
     
+    // Extract address components from Nominatim
+    const street = addr.road || addr.street || ''
+    const city = addr.city || addr.town || addr.village || addr.municipality || ''
+    const province = addr.state || ''
+    
+    if (!street) {
+      throw new Error('Geen straatnaam gevonden voor postcode ' + cleanPostcode + ' nummer ' + houseNumber)
+    }
+
     return {
-      street: result.street,
+      street: street,
       houseNumber: houseNumber,
       houseNumberAddition: '',
       postcode: formattedPostcode,
-      city: result.city,
-      province: result.province,
-      fullAddress: `${result.street} ${houseNumber}, ${formattedPostcode} ${result.city}`.trim(),
+      city: city,
+      province: province,
+      fullAddress: `${street} ${houseNumber}, ${formattedPostcode} ${city}`.trim(),
       coordinates: {
-        lat: result.lat,
-        lng: result.lng
+        lat: parseFloat(result.lat) || null,
+        lng: parseFloat(result.lon) || null
       }
     }
   } catch (error) {
