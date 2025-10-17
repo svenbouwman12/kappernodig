@@ -17,9 +17,9 @@ export async function lookupAddress(postcode, houseNumber) {
       throw new Error('Huisnummer is verplicht')
     }
 
-    // Use OpenPostcode.nl API (FREE, no API key required)
+    // Use proxy to avoid CORS issues
     const response = await fetch(
-      `https://openpostcode.nl/api/address?postcode=${cleanPostcode}&huisnummer=${houseNumber}`,
+      `/api/postcode/v1/postcode/${cleanPostcode}/${houseNumber}`,
       {
         headers: {
           'Accept': 'application/json'
@@ -33,7 +33,7 @@ export async function lookupAddress(postcode, houseNumber) {
 
     const data = await response.json()
     
-    if (!data || !data.straat) {
+    if (!data || !data.street) {
       throw new Error('Geen adres gevonden voor postcode ' + cleanPostcode + ' nummer ' + houseNumber)
     }
 
@@ -41,13 +41,13 @@ export async function lookupAddress(postcode, houseNumber) {
     const formattedPostcode = `${cleanPostcode.slice(0, 4)} ${cleanPostcode.slice(4)}`
     
     return {
-      street: data.straat || '',
+      street: data.street || '',
       houseNumber: houseNumber,
-      houseNumberAddition: data.huisnummer_toevoeging || '',
+      houseNumberAddition: data.houseNumberAddition || '',
       postcode: formattedPostcode,
-      city: data.plaats || '',
-      province: data.provincie || '',
-      fullAddress: `${data.straat || ''} ${houseNumber}${data.huisnummer_toevoeging || ''}, ${formattedPostcode} ${data.plaats || ''}`.trim(),
+      city: data.city || '',
+      province: data.province || '',
+      fullAddress: `${data.street || ''} ${houseNumber}${data.houseNumberAddition || ''}, ${formattedPostcode} ${data.city || ''}`.trim(),
       coordinates: {
         lat: data.latitude || null,
         lng: data.longitude || null
