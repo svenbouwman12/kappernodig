@@ -86,7 +86,24 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
         console.error('Error loading appointments:', error)
         setAppointments([])
       } else {
-        setAppointments(data || [])
+        // Process appointments to handle both old and new systems
+        const processedAppointments = (data || []).map(appointment => {
+          // If appointment has client_name (new system), use that
+          if (appointment.client_name) {
+            return {
+              ...appointment,
+              clients: {
+                naam: appointment.client_name,
+                telefoon: appointment.client_phone,
+                email: appointment.client_email
+              }
+            }
+          }
+          // Otherwise use the old clients relationship
+          return appointment
+        })
+        
+        setAppointments(processedAppointments)
       }
     } catch (err) {
       console.error('Error loading appointments:', err)

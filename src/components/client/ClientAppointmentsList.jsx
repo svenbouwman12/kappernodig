@@ -123,38 +123,6 @@ export default function ClientAppointmentsList() {
           if (!newError && newBookings && newBookings.length > 0) {
             data = newBookings
             error = null
-          } else {
-            console.log('No appointments found with client_email, trying old system...')
-            
-            // Get client records for this user
-            const { data: clients, error: clientError } = await supabase
-              .from('clients')
-              .select('id')
-              .eq('email', user.email)
-          
-          if (clients && clients.length > 0) {
-            const clientIds = clients.map(c => c.id)
-            const { data: oldAppointments, error: oldError } = await supabase
-              .from('appointments')
-              .select(`
-                *,
-                barbers!salon_id(
-                  id,
-                  name,
-                  location,
-                  address,
-                  phone,
-                  website
-                )
-              `)
-              .in('klant_id', clientIds)
-              .order('start_tijd', { ascending: true })
-            
-            if (!oldError && oldAppointments) {
-              data = oldAppointments
-              error = null
-            }
-          }
           }
         }
 
