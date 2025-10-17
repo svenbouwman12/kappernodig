@@ -20,7 +20,8 @@ export default function BookingPage() {
     date: '',
     time: '',
     notes: '',
-    clientName: '',
+    clientFirstName: '',
+    clientLastName: '',
     clientEmail: '',
     clientPhone: ''
   })
@@ -128,10 +129,21 @@ export default function BookingPage() {
       .gte('start_tijd', startTime.toISOString())
       .lt('start_tijd', endTime.toISOString())
 
+    // Get current time to filter out past slots
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const isToday = selectedDate.getTime() === today.getTime()
+
     // Generate time slots
     const currentTime = new Date(startTime)
     while (currentTime.getTime() + (duration * 60000) <= endTime.getTime()) {
       const slotEnd = new Date(currentTime.getTime() + (duration * 60000))
+      
+      // Skip slots in the past (only for today)
+      if (isToday && currentTime < now) {
+        currentTime.setMinutes(currentTime.getMinutes() + 30)
+        continue
+      }
       
       // Check if this slot conflicts with existing appointments
       const hasConflict = existingAppointments?.some(apt => {
@@ -140,13 +152,15 @@ export default function BookingPage() {
         return (currentTime < aptEnd && slotEnd > aptStart)
       })
 
-      if (!hasConflict) {
-        slots.push(currentTime.toTimeString().slice(0, 5))
-      }
+      slots.push({
+        time: currentTime.toTimeString().slice(0, 5),
+        available: !hasConflict,
+        isPast: isToday && currentTime < now
+      })
 
       currentTime.setMinutes(currentTime.getMinutes() + 30) // 30-minute intervals
     }
-    
+
     return slots
   }
 
@@ -218,8 +232,8 @@ export default function BookingPage() {
     }
 
     // For non-logged in users, validate client info
-    if (!user && (!booking.clientName || !booking.clientEmail)) {
-      setError('Vul je naam en e-mailadres in')
+    if (!user && (!booking.clientFirstName || !booking.clientLastName || !booking.clientEmail)) {
+      setError('Vul je voor- en achternaam en e-mailadres in')
       return
     }
 
@@ -241,7 +255,7 @@ export default function BookingPage() {
       const endTime = new Date(appointmentDate.getTime() + (selectedService.duration_minutes || 30) * 60000)
 
       // Get client info
-      const clientName = user ? (userProfile?.naam || user.email?.split('@')[0] || 'Klant') : booking.clientName
+      const clientName = user ? (userProfile?.naam || user.email?.split('@')[0] || 'Klant') : `${booking.clientFirstName} ${booking.clientLastName}`
       const clientEmail = user ? user.email : booking.clientEmail
       const clientPhone = user ? (userProfile?.telefoon || '') : booking.clientPhone
 
@@ -259,9 +273,11 @@ export default function BookingPage() {
         opmerkingen: booking.notes || null
       }
 
-      // Only add klant_id for logged in users
+      // Create client record for anonymous users or find existing for logged in users
+      let clientId = null
+      
       if (user && userProfile?.role === 'client') {
-        // Try to find existing client record
+        // For logged in users, find existing client record
         const { data: existingClient } = await supabase
           .from('clients')
           .select('id')
@@ -270,8 +286,38 @@ export default function BookingPage() {
           .single()
 
         if (existingClient) {
-          appointmentData.klant_id = existingClient.id
+          clientId = existingClient.id
         }
+      } else {
+        // For anonymous users, create a new client record
+        const { data: newClient, error: clientError } = await supabase
+          .from('clients')
+          .insert({
+            salon_id: id,
+            naam: clientName,
+            email: clientEmail,
+            telefoon: clientPhone || null,
+            adres: null, // Will be filled later if needed
+            stad: null,
+            postcode: null,
+            geboortedatum: null,
+            geslacht: null,
+            notities: `Klant aangemaakt via anonieme booking op ${new Date().toLocaleDateString('nl-NL')}`
+          })
+          .select('id')
+          .single()
+
+        if (clientError) {
+          console.error('Error creating client:', clientError)
+          // Continue without client record - appointment will still be created
+        } else {
+          clientId = newClient.id
+        }
+      }
+
+      // Add client ID to appointment if we have one
+      if (clientId) {
+        appointmentData.klant_id = clientId
       }
 
       const { data: appointment, error: appointmentError } = await supabase
@@ -306,7 +352,8 @@ export default function BookingPage() {
         date: '', 
         time: '', 
         notes: '',
-        clientName: '',
+        clientFirstName: '',
+        clientLastName: '',
         clientEmail: '',
         clientPhone: ''
       })
@@ -453,15 +500,19 @@ export default function BookingPage() {
                     <div className="grid grid-cols-4 md:grid-cols-6 gap-3">
                       {availableSlots.map(slot => (
                         <button
-                          key={slot}
-                          onClick={() => handleTimeClick(slot)}
+                          key={slot.time}
+                          onClick={() => slot.available ? handleTimeClick(slot.time) : null}
+                          disabled={!slot.available}
                           className={`p-3 text-center border rounded-lg transition-colors ${
-                            booking.time === slot 
-                              ? 'bg-primary text-white border-primary' 
-                              : 'border-gray-300 hover:bg-primary hover:text-white'
+                            !slot.available
+                              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                              : booking.time === slot.time 
+                                ? 'bg-primary text-white border-primary' 
+                                : 'border-gray-300 hover:bg-primary hover:text-white'
                           }`}
+                          title={!slot.available ? 'Deze tijd is al geboekt' : ''}
                         >
-                          {slot}
+                          {slot.time}
                         </button>
                       ))}
                     </div>
@@ -506,13 +557,26 @@ export default function BookingPage() {
                       <div className="grid md:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Naam *
+                            Voornaam *
                           </label>
                           <input
                             type="text"
-                            value={booking.clientName}
-                            onChange={(e) => setBooking({ ...booking, clientName: e.target.value })}
-                            placeholder="Jouw naam"
+                            value={booking.clientFirstName}
+                            onChange={(e) => setBooking({ ...booking, clientFirstName: e.target.value })}
+                            placeholder="Je voornaam"
+                            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Achternaam *
+                          </label>
+                          <input
+                            type="text"
+                            value={booking.clientLastName}
+                            onChange={(e) => setBooking({ ...booking, clientLastName: e.target.value })}
+                            placeholder="Je achternaam"
                             className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                             required
                           />
@@ -707,7 +771,8 @@ export default function BookingPage() {
                       date: '',
                       time: '',
                       notes: '',
-                      clientName: '',
+                      clientFirstName: '',
+                      clientLastName: '',
                       clientEmail: '',
                       clientPhone: ''
                     })
