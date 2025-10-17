@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Calendar, Clock, MapPin, User, Phone, Mail } from 'lucide-react'
+import { Calendar, Clock, MapPin, User, Phone, Mail, Plus, Search, Heart } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext.jsx'
 
@@ -8,12 +8,53 @@ export default function ClientAppointmentsList() {
   const [appointments, setAppointments] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedAppointment, setSelectedAppointment] = useState(null)
+  const [showBookAppointment, setShowBookAppointment] = useState(false)
+  const [bookmarks, setBookmarks] = useState([])
+  const [loadingBookmarks, setLoadingBookmarks] = useState(false)
 
   useEffect(() => {
     if (user) {
       loadAppointments()
     }
   }, [user])
+
+  async function loadBookmarks() {
+    if (!user) return
+
+    setLoadingBookmarks(true)
+    try {
+      const { data, error } = await supabase
+        .from('bookmarks')
+        .select(`
+          *,
+          barbers!inner(
+            id,
+            name,
+            description,
+            location,
+            address,
+            phone,
+            website,
+            rating,
+            image_url
+          )
+        `)
+        .eq('klant_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error loading bookmarks:', error)
+        setBookmarks([])
+      } else {
+        setBookmarks(data || [])
+      }
+    } catch (err) {
+      console.error('Error loading bookmarks:', err)
+      setBookmarks([])
+    } finally {
+      setLoadingBookmarks(false)
+    }
+  }
 
   async function loadAppointments() {
     if (!user) return
@@ -105,11 +146,23 @@ export default function ClientAppointmentsList() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">Mijn afspraken</h2>
-        <p className="text-gray-600 mt-1">
-          Overzicht van al je afspraken bij verschillende kappers
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Mijn afspraken</h2>
+          <p className="text-gray-600 mt-1">
+            Overzicht van al je afspraken bij verschillende kappers
+          </p>
+        </div>
+        <button
+          onClick={() => {
+            setShowBookAppointment(true)
+            loadBookmarks()
+          }}
+          className="flex items-center space-x-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
+        >
+          <Plus className="h-4 w-4" />
+          <span>Afspraak maken</span>
+        </button>
       </div>
 
       {/* Appointments List */}
@@ -252,6 +305,103 @@ export default function ClientAppointmentsList() {
                   <div>
                     <h4 className="font-medium text-gray-900 mb-2">Notities</h4>
                     <p className="text-gray-600 italic">"{selectedAppointment.notities}"</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Book Appointment Modal */}
+      {showBookAppointment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-gray-900">Afspraak maken</h3>
+                <button
+                  onClick={() => setShowBookAppointment(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              <div className="space-y-6">
+                {/* Bookmarked Kappers */}
+                {bookmarks.length > 0 && (
+                  <div>
+                    <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                      <Heart className="h-5 w-5 text-red-500 mr-2" />
+                      Je favoriete kappers
+                    </h4>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {bookmarks.map((bookmark) => (
+                        <div
+                          key={bookmark.id}
+                          className="p-4 border border-gray-200 rounded-lg hover:border-primary hover:shadow-md transition-all cursor-pointer"
+                          onClick={() => {
+                            // Navigate to barber profile or booking page
+                            window.open(`/barber/${bookmark.barbers.id}`, '_blank')
+                          }}
+                        >
+                          <div className="flex items-start space-x-3">
+                            <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                              <User className="h-6 w-6 text-gray-600" />
+                            </div>
+                            <div className="flex-1">
+                              <h5 className="font-medium text-gray-900">{bookmark.barbers.name}</h5>
+                              <p className="text-sm text-gray-600">{bookmark.barbers.location}</p>
+                              {bookmark.barbers.rating && (
+                                <div className="flex items-center mt-1">
+                                  <span className="text-yellow-500 text-sm">★</span>
+                                  <span className="text-sm text-gray-600 ml-1">{bookmark.barbers.rating}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Search New Kappers */}
+                <div>
+                  <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                    <Search className="h-5 w-5 text-primary mr-2" />
+                    Nieuwe kapper zoeken
+                  </h4>
+                  <div className="p-6 border-2 border-dashed border-gray-300 rounded-lg text-center hover:border-primary hover:bg-primary/5 transition-all cursor-pointer"
+                       onClick={() => {
+                         setShowBookAppointment(false)
+                         window.open('/', '_blank')
+                       }}>
+                    <Search className="h-8 w-8 text-gray-400 mx-auto mb-3" />
+                    <h5 className="font-medium text-gray-900 mb-2">Zoek nieuwe kappers</h5>
+                    <p className="text-sm text-gray-600">
+                      Ontdek kappers in jouw omgeving en voeg ze toe aan je favorieten
+                    </p>
+                  </div>
+                </div>
+
+                {bookmarks.length === 0 && (
+                  <div className="text-center py-8">
+                    <Heart className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                    <h4 className="text-lg font-medium text-gray-900 mb-2">Geen favoriete kappers</h4>
+                    <p className="text-gray-600 mb-4">
+                      Voeg kappers toe aan je favorieten om hier snelle toegang te krijgen
+                    </p>
+                    <button
+                      onClick={() => {
+                        setShowBookAppointment(false)
+                        window.open('/', '_blank')
+                      }}
+                      className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
+                    >
+                      Kappers zoeken
+                    </button>
                   </div>
                 )}
               </div>
