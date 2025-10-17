@@ -94,7 +94,12 @@ export default function BarberProfilePage() {
               {services.length > 0 ? (
                 services.map((s) => (
                   <div key={s.id} className="flex items-center justify-between bg-grayNeutral rounded-xl px-3 py-2">
-                    <span className="font-medium">{s.name}</span>
+                    <div>
+                      <span className="font-medium">{s.name}</span>
+                      {s.duration_minutes && (
+                        <div className="text-xs text-secondary/60">{s.duration_minutes} min</div>
+                      )}
+                    </div>
                     <span className="font-semibold">€ {s.price}</span>
                   </div>
                 ))

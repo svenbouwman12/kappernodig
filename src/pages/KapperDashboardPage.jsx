@@ -26,7 +26,16 @@ export default function KapperDashboardPage() {
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingBarber, setEditingBarber] = useState(null)
   const [geocoding, setGeocoding] = useState(false)
+  const [kapperName, setKapperName] = useState('')
   const hasLoadedRef = useRef(false)
+
+  // Function to get greeting based on time of day
+  function getGreeting() {
+    const hour = new Date().getHours()
+    if (hour < 12) return 'Goedemorgen'
+    if (hour < 18) return 'Goedemiddag'
+    return 'Goedeavond'
+  }
 
   // Debug logging removed to prevent excessive re-renders
 
@@ -35,11 +44,37 @@ export default function KapperDashboardPage() {
     if (user?.id && userProfile && !hasLoadedRef.current) {
       hasLoadedRef.current = true
       loadBarbers()
+      loadKapperName()
     } else if (!user?.id || !userProfile) {
       // Keep loading state true while waiting for user and userProfile
       setLoading(true)
     }
   }, []) // No dependencies - only run once on mount
+
+  async function loadKapperName() {
+    try {
+      const { data, error } = await supabase
+        .from('kapper_accounts')
+        .select('name')
+        .eq('user_id', user?.id)
+        .single()
+
+      if (error) {
+        console.log('Kapper account not found, using fallback name')
+        // Fallback to user email or generic name
+        setKapperName(userProfile?.email?.split('@')[0] || 'Kapper')
+        return
+      }
+
+      if (data?.name) {
+        setKapperName(data.name)
+      }
+    } catch (err) {
+      console.log('Error loading kapper name, using fallback:', err)
+      // Fallback to user email or generic name
+      setKapperName(userProfile?.email?.split('@')[0] || 'Kapper')
+    }
+  }
 
   async function loadBarbers() {
     setLoading(true)
@@ -130,7 +165,8 @@ export default function KapperDashboardPage() {
           const servicesToSave = localServices.map(service => ({
             barber_id: barberId,
             name: service.name,
-            price: service.price
+            price: service.price,
+            duration_minutes: service.duration_minutes || 30
           }))
 
           const { error: servicesError } = await supabase
@@ -226,7 +262,9 @@ export default function KapperDashboardPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Kapper Dashboard</h1>
+              <h1 className="text-3xl font-bold text-gray-900">
+                {kapperName ? `${getGreeting()}, ${kapperName}!` : 'Kapper Dashboard'}
+              </h1>
               <p className="text-gray-600 mt-1">Beheer je kapperszaken en afspraken</p>
             </div>
             <div className="flex items-center space-x-4">
@@ -428,7 +466,7 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
   
   const [services, setServices] = useState([])
   const [saving, setSaving] = useState(false)
-  const [newService, setNewService] = useState({ name: '', price: '' })
+  const [newService, setNewService] = useState({ name: '', price: '', duration_minutes: 30 })
   const [localServices, setLocalServices] = useState([]) // Services die nog niet opgeslagen zijn
 
   // Load services when barber changes
@@ -466,11 +504,12 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
       id: `temp-${Date.now()}`, // Temporary ID
       name: newService.name.trim(),
       price: parseFloat(newService.price),
+      duration_minutes: parseInt(newService.duration_minutes) || 30,
       isLocal: true // Flag to indicate it's not saved yet
     }
     
     setLocalServices(prev => [...prev, service])
-    setNewService({ name: '', price: '' })
+    setNewService({ name: '', price: '', duration_minutes: 30 })
   }
 
   function updateLocalService(serviceId, updates) {
@@ -685,6 +724,15 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
                 min="0"
                 className="w-24 bg-white border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary focus:border-transparent"
               />
+              <input
+                value={newService.duration_minutes}
+                onChange={(e) => setNewService({...newService, duration_minutes: e.target.value})}
+                placeholder="Duur (min)"
+                type="number"
+                min="1"
+                max="300"
+                className="w-24 bg-white border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
               <button
                 type="button"
                 onClick={addService}
@@ -776,13 +824,15 @@ function ServiceItem({ service, onUpdate, onDelete, isLocal = false }) {
   const [isEditing, setIsEditing] = useState(false)
   const [editData, setEditData] = useState({
     name: service.name,
-    price: service.price.toString()
+    price: service.price.toString(),
+    duration_minutes: service.duration_minutes?.toString() || '30'
   })
 
   function handleSave() {
     onUpdate(service.id, {
       name: editData.name.trim(),
-      price: parseFloat(editData.price)
+      price: parseFloat(editData.price),
+      duration_minutes: parseInt(editData.duration_minutes) || 30
     })
     setIsEditing(false)
   }
@@ -790,7 +840,8 @@ function ServiceItem({ service, onUpdate, onDelete, isLocal = false }) {
   function handleCancel() {
     setEditData({
       name: service.name,
-      price: service.price.toString()
+      price: service.price.toString(),
+      duration_minutes: service.duration_minutes?.toString() || '30'
     })
     setIsEditing(false)
   }
@@ -813,6 +864,16 @@ function ServiceItem({ service, onUpdate, onDelete, isLocal = false }) {
           className="w-24 bg-transparent border-none focus:outline-none text-right font-semibold text-primary"
           placeholder="0.00"
         />
+        <input
+          value={editData.duration_minutes}
+          onChange={(e) => setEditData({...editData, duration_minutes: e.target.value})}
+          type="number"
+          min="1"
+          max="300"
+          className="w-20 bg-transparent border-none focus:outline-none text-right text-sm text-gray-600"
+          placeholder="30"
+        />
+        <span className="text-xs text-gray-500">min</span>
         <button
           onClick={handleSave}
           className="px-4 py-2 bg-primary text-white text-sm rounded-xl hover:bg-primary/90 transition-colors font-medium"
@@ -846,7 +907,10 @@ function ServiceItem({ service, onUpdate, onDelete, isLocal = false }) {
         </div>
       </div>
       <div className="flex items-center gap-4">
-        <span className="font-semibold text-primary text-lg">€{service.price.toFixed(2)}</span>
+        <div className="text-right">
+          <div className="font-semibold text-primary text-lg">€{service.price.toFixed(2)}</div>
+          <div className="text-xs text-gray-500">{service.duration_minutes || 30} min</div>
+        </div>
         <button
           onClick={() => setIsEditing(true)}
           className="px-4 py-2 bg-primary/10 text-primary rounded-xl hover:bg-primary/20 transition-colors font-medium text-sm"
