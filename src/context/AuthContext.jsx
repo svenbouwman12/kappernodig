@@ -7,6 +7,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [userProfile, setUserProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   // Debug logging removed to prevent excessive re-renders
 
@@ -79,16 +80,22 @@ export function AuthProvider({ children }) {
         setLoading(false)
       } catch (err) {
         console.error('Error initializing auth:', err)
+        setError(err.message)
         setLoading(false)
       }
     }
 
-    // Initialize auth state
+    // Initialize auth state first
     initializeAuth()
 
-    // Listen for auth state changes
+    // Listen for auth state changes (but only after initial load)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return
+      
+      // Skip the initial session event to avoid double loading
+      if (event === 'INITIAL_SESSION') {
+        return
+      }
       
       console.log('Auth state change:', event, session?.user?.id)
       
@@ -113,7 +120,7 @@ export function AuthProvider({ children }) {
     setUserProfile(null)
   }
 
-  const value = { user, userProfile, loading, logout, setUser }
+  const value = { user, userProfile, loading, error, logout, setUser }
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
