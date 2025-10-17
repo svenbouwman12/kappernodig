@@ -1,5 +1,5 @@
 // Postcode lookup utility for Dutch addresses
-// Uses Nominatim (OpenStreetMap) for reliable address lookups
+// Uses OpenPostcode.nl - FREE Dutch postcode API (no API key required)
 
 export async function lookupAddress(postcode, houseNumber) {
   try {
@@ -17,22 +17,11 @@ export async function lookupAddress(postcode, houseNumber) {
       throw new Error('Huisnummer is verplicht')
     }
 
-    // Format postcode with space (1234 AB)
-    const formattedPostcode = `${cleanPostcode.slice(0, 4)} ${cleanPostcode.slice(4)}`
-    
-    // Use Nominatim (OpenStreetMap) for address lookup
-    const query = `${houseNumber}, ${formattedPostcode}, Netherlands`
-    
+    // Use OpenPostcode.nl API (FREE, no API key required)
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?` +
-      `format=json&` +
-      `q=${encodeURIComponent(query)}&` +
-      `addressdetails=1&` +
-      `countrycodes=nl&` +
-      `limit=1`,
+      `https://openpostcode.nl/api/address?postcode=${cleanPostcode}&huisnummer=${houseNumber}`,
       {
         headers: {
-          'User-Agent': 'KapperNodig/1.0',
           'Accept': 'application/json'
         }
       }
@@ -44,29 +33,24 @@ export async function lookupAddress(postcode, houseNumber) {
 
     const data = await response.json()
     
-    if (!data || data.length === 0) {
-      throw new Error('Geen adres gevonden voor postcode ' + formattedPostcode + ' nummer ' + houseNumber)
+    if (!data || !data.straat) {
+      throw new Error('Geen adres gevonden voor postcode ' + cleanPostcode + ' nummer ' + houseNumber)
     }
 
-    const result = data[0]
-    const addr = result.address || {}
-    
-    // Extract address components
-    const street = addr.road || addr.street || ''
-    const city = addr.city || addr.town || addr.village || addr.municipality || ''
-    const province = addr.state || ''
+    // Format postcode with space (1234 AB)
+    const formattedPostcode = `${cleanPostcode.slice(0, 4)} ${cleanPostcode.slice(4)}`
     
     return {
-      street: street,
+      street: data.straat || '',
       houseNumber: houseNumber,
-      houseNumberAddition: '',
+      houseNumberAddition: data.huisnummer_toevoeging || '',
       postcode: formattedPostcode,
-      city: city,
-      province: province,
-      fullAddress: `${street} ${houseNumber}, ${formattedPostcode} ${city}`.trim(),
+      city: data.plaats || '',
+      province: data.provincie || '',
+      fullAddress: `${data.straat || ''} ${houseNumber}${data.huisnummer_toevoeging || ''}, ${formattedPostcode} ${data.plaats || ''}`.trim(),
       coordinates: {
-        lat: parseFloat(result.lat) || null,
-        lng: parseFloat(result.lon) || null
+        lat: data.latitude || null,
+        lng: data.longitude || null
       }
     }
   } catch (error) {
