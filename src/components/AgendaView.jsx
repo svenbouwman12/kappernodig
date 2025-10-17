@@ -227,6 +227,26 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
     return Math.max(0, Math.min(1, positionInSlot))
   }
 
+  // Get exact time position in pixels from top of agenda
+  const getExactTimePosition = () => {
+    if (!isCurrentWeek()) return 0
+    
+    const now = new Date()
+    
+    // Add 1 hour to fix timezone issue
+    const currentHour = now.getHours() + 1
+    const currentMinute = now.getMinutes()
+    const currentSecond = now.getSeconds()
+    
+    // Calculate total minutes from 8:00 AM
+    const totalMinutesFrom8AM = (currentHour - 8) * 60 + currentMinute + (currentSecond / 60)
+    
+    // Convert to pixels (each 15-minute slot is 32px high)
+    const pixelsFromTop = (totalMinutesFrom8AM / 15) * 32
+    
+    return Math.max(0, pixelsFromTop)
+  }
+
   const handleAppointmentClick = (appointment) => {
     setSelectedAppointment(appointment)
   }
@@ -407,7 +427,7 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
                     <div 
                       className="absolute left-0 right-0 h-0.5 bg-red-500 z-20"
                       style={{
-                        top: `${slotIndex * 32 + 16 + (getCurrentTimePosition(slot) * 16)}px`, // Position based on slot + time within slot
+                        top: `${getExactTimePosition()}px`, // Position based on exact time
                         left: '80px', // Start after time column
                         right: '0px' // Extend to end
                       }}
