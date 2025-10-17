@@ -351,6 +351,13 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
                     
                     return (
                       <div key={dayIndex} className="relative p-0.5 border-r border-gray-100">
+                        {/* Current time line for this day */}
+                        {shouldShowTimeLine && (
+                          <div className="absolute left-0 right-0 h-0.5 bg-red-500 z-20 top-1/2 transform -translate-y-1/2">
+                            <div className="absolute -left-2 -top-1 w-3 h-3 bg-red-500 rounded-full"></div>
+                          </div>
+                        )}
+                        
                         <div className="h-8">
                           {appointment ? (
                             <button
@@ -379,17 +386,6 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
                       </div>
                     )
                   })}
-                  
-                  {/* Single current time line across all days */}
-                  {shouldShowTimeLine && (
-                    <div className="absolute left-0 right-0 h-0.5 bg-red-500 z-20" style={{
-                      top: `${slotIndex * 32 + 16}px`, // Position based on slot index
-                      left: '80px', // Start after time column
-                      right: '0px' // Extend to end
-                    }}>
-                      <div className="absolute -left-2 -top-1 w-3 h-3 bg-red-500 rounded-full"></div>
-                    </div>
-                  )}
                 </React.Fragment>
               )
             })}
