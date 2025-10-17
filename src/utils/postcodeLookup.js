@@ -1,5 +1,5 @@
 // Postcode lookup utility for Dutch addresses
-// Uses the PDOK (Publieke Dienstverlening Op de Kaart) API
+// Uses Nominatim (OpenStreetMap) for reliable address lookups
 
 export async function lookupAddress(postcode, houseNumber) {
   try {
@@ -17,109 +17,65 @@ export async function lookupAddress(postcode, houseNumber) {
       throw new Error('Huisnummer is verplicht')
     }
 
-    // Use PDOK BAG (Basisregistratie Adressen en Gebouwen) API
+    // Format postcode with space (1234 AB)
+    const formattedPostcode = `${cleanPostcode.slice(0, 4)} ${cleanPostcode.slice(4)}`
+    
+    // Use Nominatim (OpenStreetMap) for address lookup
+    const query = `${houseNumber}, ${formattedPostcode}, Netherlands`
+    
     const response = await fetch(
-      `https://api.pdok.nl/bag/v2/adressen?postcode=${cleanPostcode}&huisnummer=${houseNumber}&exacteMatch=true`,
+      `https://nominatim.openstreetmap.org/search?` +
+      `format=json&` +
+      `q=${encodeURIComponent(query)}&` +
+      `addressdetails=1&` +
+      `countrycodes=nl&` +
+      `limit=1`,
       {
         headers: {
+          'User-Agent': 'KapperNodig/1.0',
           'Accept': 'application/json'
         }
       }
     )
 
     if (!response.ok) {
-      throw new Error('Adres niet gevonden. Controleer postcode en huisnummer.')
-    }
-
-    const data = await response.json()
-    
-    if (!data._embedded || !data._embedded.adressen || data._embedded.adressen.length === 0) {
-      throw new Error('Geen adres gevonden voor deze postcode en huisnummer.')
-    }
-
-    const address = data._embedded.adressen[0]
-    
-    // Extract address components
-    const result = {
-      street: address.openbareRuimteNaam || '',
-      houseNumber: address.huisnummer || houseNumber,
-      houseNumberAddition: address.huisletter || address.huisnummertoevoeging || '',
-      postcode: address.postcode || cleanPostcode,
-      city: address.woonplaatsNaam || '',
-      province: address.provincieNaam || '',
-      fullAddress: `${address.openbareRuimteNaam || ''} ${address.huisnummer || houseNumber}${address.huisletter || address.huisnummertoevoeging || ''}, ${address.postcode || cleanPostcode} ${address.woonplaatsNaam || ''}`.trim(),
-      coordinates: {
-        lat: address.geoJSON?.coordinates?.[1] || null,
-        lng: address.geoJSON?.coordinates?.[0] || null
-      }
-    }
-
-    return result
-  } catch (error) {
-    console.error('Postcode lookup error:', error)
-    throw error
-  }
-}
-
-// Alternative fallback using Nominatim (OpenStreetMap)
-export async function lookupAddressFallback(postcode, houseNumber) {
-  try {
-    const cleanPostcode = postcode.replace(/\s/g, '').toUpperCase()
-    const query = `${houseNumber}, ${cleanPostcode}, Netherlands`
-    
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=nl&limit=1`,
-      {
-        headers: {
-          'User-Agent': 'KapperNodig/1.0'
-        }
-      }
-    )
-
-    if (!response.ok) {
-      throw new Error('Adres lookup service niet beschikbaar')
+      throw new Error('Adres lookup service niet beschikbaar. Probeer het later opnieuw.')
     }
 
     const data = await response.json()
     
     if (!data || data.length === 0) {
-      throw new Error('Geen adres gevonden voor deze postcode en huisnummer.')
+      throw new Error('Geen adres gevonden voor postcode ' + formattedPostcode + ' nummer ' + houseNumber)
     }
 
     const result = data[0]
+    const addr = result.address || {}
+    
+    // Extract address components
+    const street = addr.road || addr.street || ''
+    const city = addr.city || addr.town || addr.village || addr.municipality || ''
+    const province = addr.state || ''
     
     return {
-      street: result.display_name.split(',')[0] || '',
+      street: street,
       houseNumber: houseNumber,
       houseNumberAddition: '',
-      postcode: cleanPostcode,
-      city: result.address?.city || result.address?.town || result.address?.village || '',
-      province: result.address?.state || '',
-      fullAddress: result.display_name || '',
+      postcode: formattedPostcode,
+      city: city,
+      province: province,
+      fullAddress: `${street} ${houseNumber}, ${formattedPostcode} ${city}`.trim(),
       coordinates: {
         lat: parseFloat(result.lat) || null,
         lng: parseFloat(result.lon) || null
       }
     }
   } catch (error) {
-    console.error('Fallback postcode lookup error:', error)
+    console.error('Postcode lookup error:', error)
     throw error
   }
 }
 
-// Main function that tries PDOK first, then fallback
+// Main function
 export async function findAddress(postcode, houseNumber) {
-  try {
-    // Try PDOK first (more accurate for Dutch addresses)
-    return await lookupAddress(postcode, houseNumber)
-  } catch (error) {
-    console.log('PDOK lookup failed, trying fallback:', error.message)
-    try {
-      // Try Nominatim as fallback
-      return await lookupAddressFallback(postcode, houseNumber)
-    } catch (fallbackError) {
-      console.error('Both lookup methods failed:', fallbackError.message)
-      throw new Error('Adres niet gevonden. Controleer postcode en huisnummer.')
-    }
-  }
+  return await lookupAddress(postcode, houseNumber)
 }
