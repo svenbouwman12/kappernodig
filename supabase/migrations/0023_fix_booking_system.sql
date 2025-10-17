@@ -17,10 +17,15 @@ FROM public.clients c
 WHERE appointments.klant_id = c.id
 AND appointments.client_name IS NULL;
 
--- 3. Drop and recreate RLS policies for appointments to allow anonymous bookings
+-- 3. Drop ALL existing RLS policies for appointments to avoid conflicts
 DROP POLICY IF EXISTS "Appointments insert by client" ON public.appointments;
 DROP POLICY IF EXISTS "Appointments select by client" ON public.appointments;
 DROP POLICY IF EXISTS "Appointments update by client" ON public.appointments;
+DROP POLICY IF EXISTS "Appointments select by salon owner" ON public.appointments;
+DROP POLICY IF EXISTS "Appointments update by salon owner" ON public.appointments;
+DROP POLICY IF EXISTS "Appointments insert for all" ON public.appointments;
+DROP POLICY IF EXISTS "Appointments select by client email" ON public.appointments;
+DROP POLICY IF EXISTS "Appointments update by client email" ON public.appointments;
 
 -- 4. New RLS policies for appointments
 -- Allow anyone to insert appointments (for anonymous bookings)
@@ -59,11 +64,15 @@ CREATE POLICY "Appointments update by client email" ON public.appointments
     client_email = auth.jwt() ->> 'email'
   );
 
--- 5. Fix clients table RLS policies to allow salon owners to manage clients
+-- 5. Drop ALL existing clients table RLS policies to avoid conflicts
 DROP POLICY IF EXISTS "Clients select for salon owner" ON public.clients;
 DROP POLICY IF EXISTS "Clients insert for salon owner" ON public.clients;
 DROP POLICY IF EXISTS "Clients update for salon owner" ON public.clients;
 DROP POLICY IF EXISTS "Clients delete for salon owner" ON public.clients;
+DROP POLICY IF EXISTS "Clients select by salon owner" ON public.clients;
+DROP POLICY IF EXISTS "Clients insert by salon owner" ON public.clients;
+DROP POLICY IF EXISTS "Clients update by salon owner" ON public.clients;
+DROP POLICY IF EXISTS "Clients delete by salon owner" ON public.clients;
 
 -- Allow salon owners to manage clients for their salons
 CREATE POLICY "Clients select for salon owner" ON public.clients
@@ -102,7 +111,11 @@ CREATE POLICY "Clients delete for salon owner" ON public.clients
     )
   );
 
--- 6. Allow anonymous users to read salon hours and services
+-- 6. Drop existing policies and allow anonymous users to read salon hours and services
+DROP POLICY IF EXISTS "Salon hours select for anonymous" ON public.salon_hours;
+DROP POLICY IF EXISTS "Services select for anonymous" ON public.services;
+DROP POLICY IF EXISTS "Barbers select for anonymous" ON public.barbers;
+
 CREATE POLICY "Salon hours select for anonymous" ON public.salon_hours
   FOR SELECT TO anon USING (true);
 
