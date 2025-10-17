@@ -23,17 +23,35 @@ export function AuthProvider({ children }) {
       setUserProfile({ role: 'barber', barber_id: null })
     }
 
-    // Get initial session
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!mounted) return
-      setUser(data.session?.user ?? null)
-      if (data.session?.user) {
-        await loadUserProfile(data.session.user.id, data.session.user.email)
-      } else {
-        setUserProfile(null)
+    // Get initial session and restore auth state
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (error) {
+          console.error('Error getting session:', error)
+          setLoading(false)
+          return
+        }
+
+        if (!mounted) return
+        
+        if (session?.user) {
+          setUser(session.user)
+          await loadUserProfile(session.user.id, session.user.email)
+        } else {
+          setUser(null)
+          setUserProfile(null)
+        }
+        setLoading(false)
+      } catch (err) {
+        console.error('Error initializing auth:', err)
+        setLoading(false)
       }
-      setLoading(false)
-    })
+    }
+
+    // Initialize auth state
+    initializeAuth()
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
