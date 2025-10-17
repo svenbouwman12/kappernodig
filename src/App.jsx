@@ -201,11 +201,7 @@ function AppContent() {
           />
           <Route
             path="/barber/:id/book"
-            element={
-              <ProtectedRoute>
-                <BookingPage />
-              </ProtectedRoute>
-            }
+            element={<BookingPage />}
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
