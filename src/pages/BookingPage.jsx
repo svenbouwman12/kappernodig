@@ -29,6 +29,8 @@ export default function BookingPage() {
   const [bookingLoading, setBookingLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [showConfirmation, setShowConfirmation] = useState(false)
+  const [bookedAppointment, setBookedAppointment] = useState(null)
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState(null)
 
@@ -284,6 +286,20 @@ export default function BookingPage() {
         return
       }
 
+      // Store appointment details for confirmation popup
+      setBookedAppointment({
+        service: selectedService.name,
+        date: booking.date,
+        time: booking.time,
+        duration: selectedService.duration_minutes || 30,
+        clientName: clientName,
+        clientEmail: clientEmail,
+        barberName: barber?.naam || 'Kapper',
+        barberAddress: barber?.adres || '',
+        notes: booking.notes
+      })
+      
+      setShowConfirmation(true)
       setSuccess(true)
       setBooking({ 
         serviceId: '', 
@@ -296,15 +312,6 @@ export default function BookingPage() {
       })
       setSelectedDate(null)
       setAvailableSlots([])
-
-      // Redirect based on login status
-      setTimeout(() => {
-        if (user && userProfile?.role === 'client') {
-          navigate('/client/dashboard')
-        } else {
-          navigate('/')
-        }
-      }, 2000)
 
     } catch (error) {
       console.error('Error booking appointment:', error)
@@ -583,7 +590,7 @@ export default function BookingPage() {
           )}
 
           {/* Success Message */}
-          {success && (
+          {success && !showConfirmation && (
             <Card className="p-4 bg-green-50 border-green-200 mt-4">
               <div className="flex items-center">
                 <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
@@ -593,6 +600,130 @@ export default function BookingPage() {
           )}
         </div>
       </div>
+
+      {/* Confirmation Popup */}
+      {showConfirmation && bookedAppointment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              {/* Header */}
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="w-8 h-8 text-green-600" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  Afspraak Bevestigd! 🎉
+                </h2>
+                <p className="text-gray-600">
+                  Je afspraak is succesvol geboekt
+                </p>
+              </div>
+
+              {/* Appointment Details */}
+              <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                <h3 className="font-semibold text-gray-900 mb-3">Afspraakdetails</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Dienst:</span>
+                    <span className="font-medium">{bookedAppointment.service}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Datum:</span>
+                    <span className="font-medium">{new Date(bookedAppointment.date).toLocaleDateString('nl-NL', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Tijd:</span>
+                    <span className="font-medium">{bookedAppointment.time} ({bookedAppointment.duration} min)</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Kapper:</span>
+                    <span className="font-medium">{bookedAppointment.barberName}</span>
+                  </div>
+                  {bookedAppointment.barberAddress && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Adres:</span>
+                      <span className="font-medium text-right">{bookedAppointment.barberAddress}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Naam:</span>
+                    <span className="font-medium">{bookedAppointment.clientName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">E-mail:</span>
+                    <span className="font-medium">{bookedAppointment.clientEmail}</span>
+                  </div>
+                  {bookedAppointment.notes && (
+                    <div className="pt-2 border-t">
+                      <span className="text-gray-600 block mb-1">Opmerkingen:</span>
+                      <span className="font-medium">{bookedAppointment.notes}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Important Notes */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div className="flex items-start">
+                  <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
+                  <div className="text-sm text-blue-800">
+                    <p className="font-medium mb-1">Belangrijke informatie:</p>
+                    <ul className="space-y-1 text-xs">
+                      <li>• Je ontvangt een bevestigingsmail op {bookedAppointment.clientEmail}</li>
+                      <li>• Kom 5 minuten van tevoren</li>
+                      <li>• Annuleren kan tot 24 uur van tevoren</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex space-x-3">
+                <Button
+                  onClick={() => {
+                    setShowConfirmation(false)
+                    setBookedAppointment(null)
+                    if (user && userProfile?.role === 'client') {
+                      navigate('/client/dashboard')
+                    } else {
+                      navigate('/')
+                    }
+                  }}
+                  className="flex-1"
+                >
+                  Naar Dashboard
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowConfirmation(false)
+                    setBookedAppointment(null)
+                    setBooking({
+                      serviceId: '',
+                      date: '',
+                      time: '',
+                      notes: '',
+                      clientName: '',
+                      clientEmail: '',
+                      clientPhone: ''
+                    })
+                    setSelectedDate(null)
+                    setAvailableSlots([])
+                  }}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Nieuwe Afspraak
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

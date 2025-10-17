@@ -3,6 +3,8 @@
 
 -- 1. Drop all existing appointment policies to start fresh
 DROP POLICY IF EXISTS "Appointments insert for all" ON public.appointments;
+DROP POLICY IF EXISTS "Appointments insert anonymous" ON public.appointments;
+DROP POLICY IF EXISTS "Appointments insert authenticated" ON public.appointments;
 DROP POLICY IF EXISTS "Appointments select by salon owner" ON public.appointments;
 DROP POLICY IF EXISTS "Appointments select by client email" ON public.appointments;
 DROP POLICY IF EXISTS "Appointments update by salon owner" ON public.appointments;
