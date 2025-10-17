@@ -26,32 +26,45 @@ export default function BarberProfilePage() {
   const { id } = useParams()
   const [barber, setBarber] = useState(null)
   const [services, setServices] = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
     async function fetchData() {
-      // Load barber data
-      const { data: barberData, error: barberError } = await supabase.from('barbers').select('*').eq('id', id).single()
-      if (cancelled) return
-      
-      if (barberError || !barberData) {
+      setLoading(true)
+      try {
+        // Load barber data
+        const { data: barberData, error: barberError } = await supabase.from('barbers').select('*').eq('id', id).single()
+        if (cancelled) return
+        
+        if (barberError || !barberData) {
+          console.log('Barber not found, using dummy data')
+          setBarber({ ...DUMMY, id })
+          setServices(DUMMY.services)
+        } else {
+          setBarber(barberData)
+          
+          // Load services for this barber
+          const { data: servicesData, error: servicesError } = await supabase
+            .from('services')
+            .select('*')
+            .eq('barber_id', id)
+            .order('name')
+          
+          if (!servicesError && servicesData) {
+            setServices(servicesData)
+          } else {
+            console.error('Error loading services:', servicesError)
+            setServices([])
+          }
+        }
+      } catch (err) {
+        console.error('Error loading barber profile:', err)
         setBarber({ ...DUMMY, id })
         setServices(DUMMY.services)
-      } else {
-        setBarber(barberData)
-        
-        // Load services for this barber
-        const { data: servicesData, error: servicesError } = await supabase
-          .from('services')
-          .select('*')
-          .eq('barber_id', id)
-          .order('name')
-        
-        if (!servicesError && servicesData) {
-          setServices(servicesData)
-        } else {
-          console.error('Error loading services:', servicesError)
-          setServices([])
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
         }
       }
     }
@@ -59,7 +72,23 @@ export default function BarberProfilePage() {
     return () => { cancelled = true }
   }, [id])
 
-  if (!barber) return <div className="p-8">Laden...</div>
+  if (loading) {
+    return (
+      <div className="p-8 text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+        <p className="mt-2 text-gray-500">Kapperszaak laden...</p>
+      </div>
+    )
+  }
+
+  if (!barber) {
+    return (
+      <div className="p-8 text-center">
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">Kapperszaak niet gevonden</h2>
+        <p className="text-gray-600">De gevraagde kapperszaak bestaat niet of is niet meer beschikbaar.</p>
+      </div>
+    )
+  }
 
   const address = barber.address || `${barber.location || ''}`
   const phone = barber.phone || ''
