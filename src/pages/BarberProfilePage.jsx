@@ -25,16 +25,34 @@ const DUMMY = {
 export default function BarberProfilePage() {
   const { id } = useParams()
   const [barber, setBarber] = useState(null)
+  const [services, setServices] = useState([])
 
   useEffect(() => {
     let cancelled = false
     async function fetchData() {
-      const { data, error } = await supabase.from('barbers').select('*').eq('id', id).single()
+      // Load barber data
+      const { data: barberData, error: barberError } = await supabase.from('barbers').select('*').eq('id', id).single()
       if (cancelled) return
-      if (error || !data) {
+      
+      if (barberError || !barberData) {
         setBarber({ ...DUMMY, id })
+        setServices(DUMMY.services)
       } else {
-        setBarber(data)
+        setBarber(barberData)
+        
+        // Load services for this barber
+        const { data: servicesData, error: servicesError } = await supabase
+          .from('services')
+          .select('*')
+          .eq('barber_id', id)
+          .order('name')
+        
+        if (!servicesError && servicesData) {
+          setServices(servicesData)
+        } else {
+          console.error('Error loading services:', servicesError)
+          setServices([])
+        }
       }
     }
     fetchData()
@@ -73,12 +91,18 @@ export default function BarberProfilePage() {
           <Card>
             <h2 className="font-semibold mb-3">Diensten</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {(barber.services || DUMMY.services).map((s) => (
-                <div key={s.id} className="flex items-center justify-between bg-grayNeutral rounded-xl px-3 py-2">
-                  <span className="font-medium">{s.name}</span>
-                  <span className="font-semibold">€ {s.price}</span>
+              {services.length > 0 ? (
+                services.map((s) => (
+                  <div key={s.id} className="flex items-center justify-between bg-grayNeutral rounded-xl px-3 py-2">
+                    <span className="font-medium">{s.name}</span>
+                    <span className="font-semibold">€ {s.price}</span>
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-2 text-center py-4 text-secondary/70">
+                  <p>Geen diensten beschikbaar</p>
                 </div>
-              ))}
+              )}
             </div>
           </Card>
         </div>
