@@ -167,7 +167,7 @@ export default function ClientsTable({ salonId, onEditClient }) {
         {loading ? (
           <div className="p-8 text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-2 text-gray-500">Laden...</p>
+            <p className="mt-2 text-gray-500">Klanten ophalen...</p>
           </div>
         ) : filteredClients.length === 0 ? (
           <div className="p-8 text-center">

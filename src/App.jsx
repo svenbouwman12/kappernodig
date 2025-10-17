@@ -98,7 +98,7 @@ function AppContent() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600">Account laden...</p>
+          <p className="text-gray-600">Inloggen...</p>
         </div>
       </div>
     )
@@ -118,7 +118,7 @@ function AppContent() {
             Laden duurt langer dan verwacht
           </h1>
           <p className="text-gray-600 mb-4">
-            Er lijkt een probleem te zijn met het laden van je account. Probeer de pagina te vernieuwen.
+            Er lijkt een probleem te zijn met het inloggen. Probeer de pagina te vernieuwen.
           </p>
           <button
             onClick={() => window.location.reload()}

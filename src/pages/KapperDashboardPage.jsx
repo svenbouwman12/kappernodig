@@ -249,7 +249,7 @@ export default function KapperDashboardPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-secondary/70">
-            {!user ? 'Wachten op gebruikersgegevens...' : !userProfile ? 'Wachten op gebruikersprofiel...' : 'Kapperszaken laden...'}
+            {!user ? 'Gebruikersgegevens ophalen...' : !userProfile ? 'Profiel laden...' : 'Kapperszaken ophalen...'}
           </p>
           <div className="mt-4 text-xs text-gray-500">
             <div>User: {user ? '✅' : '❌'}</div>
