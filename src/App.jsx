@@ -35,7 +35,7 @@ function AppContent() {
     if (loading) {
       const timeoutId = setTimeout(() => {
         setLoadingTimeout(true)
-      }, 3000) // 3 second timeout
+      }, 1500) // 1.5 second timeout
       
       return () => clearTimeout(timeoutId)
     } else {
@@ -98,7 +98,7 @@ function AppContent() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600">Laden...</p>
+          <p className="text-gray-600">Account laden...</p>
         </div>
       </div>
     )

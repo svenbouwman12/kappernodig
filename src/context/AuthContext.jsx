@@ -65,7 +65,16 @@ export function AuthProvider({ children }) {
       
       if (session?.user) {
         setUser(session.user)
-        await loadUserProfile(session.user.id, session.user.email)
+        // Load profile with timeout
+        try {
+          await Promise.race([
+            loadUserProfile(session.user.id, session.user.email),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Profile loading timeout')), 1000))
+          ])
+        } catch (err) {
+          console.log('Profile loading timeout or error, using fallback')
+          setUserProfile({ role: 'client', naam: 'Nieuwe gebruiker', profielfoto: null })
+        }
       } else {
         setUser(null)
         setUserProfile(null)
@@ -96,13 +105,13 @@ export function AuthProvider({ children }) {
     // Initialize auth state
     initializeAuth()
 
-    // Set a timeout to ensure loading doesn't hang forever
+    // Set a shorter timeout to ensure loading doesn't hang forever
     const timeoutId = setTimeout(() => {
       if (mounted && loading) {
         console.log('Auth timeout - setting loading to false')
         setLoading(false)
       }
-    }, 5000) // 5 second timeout
+    }, 2000) // 2 second timeout
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {

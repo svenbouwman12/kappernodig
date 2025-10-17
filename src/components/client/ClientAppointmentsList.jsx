@@ -24,7 +24,7 @@ export default function ClientAppointmentsList() {
     if (loading) {
       const timeoutId = setTimeout(() => {
         setLoadingTimeout(true)
-      }, 3000) // 3 second timeout
+      }, 1000) // 1 second timeout
       
       return () => clearTimeout(timeoutId)
     } else {
@@ -80,57 +80,68 @@ export default function ClientAppointmentsList() {
     try {
       console.log('Loading appointments for user:', user.id, 'profile:', userProfile)
       
-      // First try to get appointments by client_profile_id (new system)
-      let { data, error } = await supabase
-        .from('appointments')
-        .select(`
-          *,
-          barbers!inner(
-            id,
-            name,
-            location,
-            address,
-            phone,
-            website
-          )
-        `)
-        .eq('client_profile_id', user.id)
-        .order('start_tijd', { ascending: true })
+      // Use Promise.race to timeout the database query
+      const loadData = async () => {
+        // First try to get appointments by client_profile_id (new system)
+        let { data, error } = await supabase
+          .from('appointments')
+          .select(`
+            *,
+            barbers!inner(
+              id,
+              name,
+              location,
+              address,
+              phone,
+              website
+            )
+          `)
+          .eq('client_profile_id', user.id)
+          .order('start_tijd', { ascending: true })
 
-      // If no appointments found with client_profile_id, try the old system
-      if (!data || data.length === 0) {
-        console.log('No appointments found with client_profile_id, trying old system...')
-        
-        // Get client records for this user
-        const { data: clients, error: clientError } = await supabase
-          .from('clients')
-          .select('id')
-          .eq('email', user.email)
-        
-        if (clients && clients.length > 0) {
-          const clientIds = clients.map(c => c.id)
-          const { data: oldAppointments, error: oldError } = await supabase
-            .from('appointments')
-            .select(`
-              *,
-              barbers!inner(
-                id,
-                name,
-                location,
-                address,
-                phone,
-                website
-              )
-            `)
-            .in('klant_id', clientIds)
-            .order('start_tijd', { ascending: true })
+        // If no appointments found with client_profile_id, try the old system
+        if (!data || data.length === 0) {
+          console.log('No appointments found with client_profile_id, trying old system...')
           
-          if (!oldError && oldAppointments) {
-            data = oldAppointments
-            error = null
+          // Get client records for this user
+          const { data: clients, error: clientError } = await supabase
+            .from('clients')
+            .select('id')
+            .eq('email', user.email)
+          
+          if (clients && clients.length > 0) {
+            const clientIds = clients.map(c => c.id)
+            const { data: oldAppointments, error: oldError } = await supabase
+              .from('appointments')
+              .select(`
+                *,
+                barbers!inner(
+                  id,
+                  name,
+                  location,
+                  address,
+                  phone,
+                  website
+                )
+              `)
+              .in('klant_id', clientIds)
+              .order('start_tijd', { ascending: true })
+            
+            if (!oldError && oldAppointments) {
+              data = oldAppointments
+              error = null
+            }
           }
         }
+
+        return { data, error }
       }
+
+      // Race between data loading and timeout
+      const { data, error } = await Promise.race([
+        loadData(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Appointments loading timeout')), 2000))
+      ])
 
       if (error) {
         console.error('Error loading appointments:', error)
@@ -194,7 +205,7 @@ export default function ClientAppointmentsList() {
     return (
       <div className="text-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-        <p className="mt-2 text-gray-500">Afspraken laden...</p>
+        <p className="mt-2 text-gray-500">Afspraken ophalen...</p>
       </div>
     )
   }
