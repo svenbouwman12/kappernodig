@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Card from '../components/Card.jsx'
 import Button from '../components/Button.jsx'
+import PostcodeLookup from '../components/PostcodeLookup.jsx'
 import AgendaView from '../components/AgendaView.jsx'
 import AppointmentModal from '../components/AppointmentModal.jsx'
 import ClientsTable from '../components/ClientsTable.jsx'
@@ -702,13 +703,29 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
     image_url: barber?.image_url || '',
     latitude: barber?.latitude || '',
     longitude: barber?.longitude || '',
-    gender_served: barber?.gender_served || 'both'
+    gender_served: barber?.gender_served || 'both',
+    // Postcode lookup fields
+    postcode: '',
+    houseNumber: '',
+    foundAddress: null
   })
   
   const [services, setServices] = useState([])
   const [saving, setSaving] = useState(false)
   const [newService, setNewService] = useState({ name: '', price: '', duration_minutes: 30 })
   const [localServices, setLocalServices] = useState([]) // Services die nog niet opgeslagen zijn
+
+  // Handle postcode lookup result
+  const handleAddressFound = (address) => {
+    setFormData(prev => ({
+      ...prev,
+      foundAddress: address,
+      address: address.fullAddress,
+      location: address.city,
+      latitude: address.coordinates.lat?.toString() || '',
+      longitude: address.coordinates.lng?.toString() || ''
+    }))
+  }
 
   // Load services when barber changes
   useEffect(() => {
@@ -860,23 +877,35 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
             />
           </div>
           
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Locatie</label>
-            <input
-              value={formData.location}
-              onChange={(e) => setFormData({...formData, location: e.target.value})}
-              placeholder="Stad, dorp"
-              className="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent"
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Adres</label>
+            <PostcodeLookup 
+              onAddressFound={handleAddressFound}
+              initialPostcode={formData.postcode}
+              initialHouseNumber={formData.houseNumber}
+              className="mb-4"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Adres</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Locatie (wordt automatisch ingevuld)</label>
+            <input
+              value={formData.location}
+              onChange={(e) => setFormData({...formData, location: e.target.value})}
+              placeholder="Stad, dorp"
+              className="w-full bg-gray-100 border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent"
+              readOnly
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Volledig adres (wordt automatisch ingevuld)</label>
             <input
               value={formData.address}
               onChange={(e) => setFormData({...formData, address: e.target.value})}
               placeholder="Straat en huisnummer"
-              className="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full bg-gray-100 border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent"
+              readOnly
             />
           </div>
           
