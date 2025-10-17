@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import Card from '../components/Card.jsx'
 import Button from '../components/Button.jsx'
 import AgendaView from '../components/AgendaView.jsx'
@@ -24,11 +24,13 @@ import {
   Settings,
   BarChart3,
   UserCheck,
-  Heart
+  Heart,
+  LogOut
 } from 'lucide-react'
 
 export default function KapperDashboardPage() {
-  const { user, userProfile } = useAuth()
+  const { user, userProfile, logout } = useAuth()
+  const navigate = useNavigate()
   const [barbers, setBarbers] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
@@ -43,6 +45,10 @@ export default function KapperDashboardPage() {
   const [selectedClient, setSelectedClient] = useState(null)
   const hasLoadedRef = useRef(false)
 
+  const handleLogout = async () => {
+    await logout()
+    navigate('/kapper/login')
+  }
 
   // Debug logging removed to prevent excessive re-renders
 
@@ -298,6 +304,14 @@ export default function KapperDashboardPage() {
                 <Plus size={20} />
                 <span>Nieuwe Kapperzaak Toevoegen</span>
               </Button>
+              
+              <button
+                onClick={handleLogout}
+                className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <LogOut size={20} />
+                <span>Uitloggen</span>
+              </button>
             </div>
           </div>
           
