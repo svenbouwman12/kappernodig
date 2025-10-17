@@ -190,11 +190,9 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
     
     const now = new Date()
     
-    // Force Netherlands timezone (UTC+1 or UTC+2)
-    const netherlandsTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Amsterdam"}))
-    
-    const currentHour = netherlandsTime.getHours()
-    const currentMinute = netherlandsTime.getMinutes()
+    // Add 1 hour to fix timezone issue
+    const currentHour = now.getHours() + 1
+    const currentMinute = now.getMinutes()
     
     const slotHour = slotTime.getHours()
     const slotMinute = slotTime.getMinutes()
@@ -213,12 +211,10 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
     
     const now = new Date()
     
-    // Force Netherlands timezone (UTC+1 or UTC+2)
-    const netherlandsTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Amsterdam"}))
-    
-    const currentHour = netherlandsTime.getHours()
-    const currentMinute = netherlandsTime.getMinutes()
-    const currentSecond = netherlandsTime.getSeconds()
+    // Add 1 hour to fix timezone issue
+    const currentHour = now.getHours() + 1
+    const currentMinute = now.getMinutes()
+    const currentSecond = now.getSeconds()
     
     const slotHour = slotTime.getHours()
     const slotMinute = slotTime.getMinutes()
