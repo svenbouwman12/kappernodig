@@ -3,6 +3,7 @@ import { Calendar, Clock, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext.jsx'
 import AddAppointmentModal from './AddAppointmentModal.jsx'
+import AppointmentModal from './AppointmentModal.jsx'
 
 export default function AgendaView({ salonId, onAppointmentClick }) {
   const { user } = useAuth()
@@ -11,6 +12,9 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
   const [loading, setLoading] = useState(true)
   const [currentTime, setCurrentTime] = useState(new Date())
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editingAppointment, setEditingAppointment] = useState(null)
+  const [selectedAppointment, setSelectedAppointment] = useState(null)
 
   // Update current time every minute
   useEffect(() => {
@@ -118,11 +122,10 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
     return today >= weekStart && today <= weekEnd
   }
 
-  // Get appointment for a specific time slot and day
+  // Get appointment for a specific time slot and day (only at start time)
   const getAppointmentForSlot = (slotTime, day) => {
     return appointments.find(apt => {
       const startTime = new Date(apt.start_tijd)
-      const endTime = new Date(apt.eind_tijd)
       const aptDate = new Date(startTime)
       aptDate.setHours(0, 0, 0, 0)
       const dayDate = new Date(day)
@@ -131,23 +134,16 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
       // Check if it's the same day
       if (aptDate.getTime() !== dayDate.getTime()) return false
       
-      // Check if the slot time falls within the appointment time range
-      const slotTimeMs = slotTime.getTime()
-      const startTimeMs = startTime.getTime()
-      const endTimeMs = endTime.getTime()
-      
-      return slotTimeMs >= startTimeMs && slotTimeMs < endTimeMs
+      // Only show appointment at its start time
+      return startTime.getHours() === slotTime.getHours() && 
+             startTime.getMinutes() === slotTime.getMinutes()
     })
   }
 
-  // Check if this slot is the start of an appointment
+  // Check if this slot is the start of an appointment (now always true if appointment exists)
   const isAppointmentStart = (slotTime, day) => {
     const appointment = getAppointmentForSlot(slotTime, day)
-    if (!appointment) return false
-    
-    const startTime = new Date(appointment.start_tijd)
-    return startTime.getHours() === slotTime.getHours() && 
-           startTime.getMinutes() === slotTime.getMinutes()
+    return !!appointment
   }
 
   // Get service color based on service type
@@ -187,15 +183,39 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
     return now >= slotStart && now < slotEnd
   }
 
+  // Check if current time line should be shown for any day in the week
+  const shouldShowCurrentTimeForWeek = (slotTime) => {
+    if (!isCurrentWeek()) return false
+    
+    const now = currentTime
+    const today = new Date()
+    
+    // Check if current time falls within this slot
+    const slotStart = new Date(slotTime)
+    const slotEnd = new Date(slotTime.getTime() + 15 * 60000) // 15 minutes later
+    
+    return now >= slotStart && now < slotEnd
+  }
+
   const handleAppointmentClick = (appointment) => {
-    if (onAppointmentClick) {
-      onAppointmentClick(appointment)
-    }
+    setSelectedAppointment(appointment)
   }
 
   const handleAppointmentAdded = (newAppointment) => {
     // Reload appointments to show the new one
     loadAppointments()
+  }
+
+  const handleEditAppointment = (appointment) => {
+    setEditingAppointment(appointment)
+    setShowEditModal(true)
+  }
+
+  const handleAppointmentUpdated = (updatedAppointment) => {
+    // Reload appointments to show the updated one
+    loadAppointments()
+    setShowEditModal(false)
+    setEditingAppointment(null)
   }
 
   const handleWeekNavigation = (direction) => {
@@ -304,58 +324,66 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
           </div>
         ) : (
           <div className="grid grid-cols-8 gap-1">
-            {timeSlots.map((slot, slotIndex) => (
-              <React.Fragment key={slotIndex}>
-                {/* Time column */}
-                <div className="p-2 text-sm text-gray-500 font-medium bg-gray-50 border-r border-gray-200">
-                  {formatTime(slot)}
-                </div>
-                
-                {/* Day columns */}
-                {weekDays.map((day, dayIndex) => {
-                  const appointment = getAppointmentForSlot(slot, day)
-                  const isCurrentTime = shouldShowCurrentTime(slot, day)
-                  const isStart = isAppointmentStart(slot, day)
+            {timeSlots.map((slot, slotIndex) => {
+              const shouldShowTimeLine = shouldShowCurrentTimeForWeek(slot)
+              
+              return (
+                <React.Fragment key={slotIndex}>
+                  {/* Time column */}
+                  <div className="p-2 text-sm text-gray-500 font-medium bg-gray-50 border-r border-gray-200">
+                    {formatTime(slot)}
+                  </div>
                   
-                  return (
-                    <div key={dayIndex} className="relative p-0.5 border-r border-gray-100">
-                      {/* Current time indicator */}
-                      {isCurrentTime && (
-                        <div className="absolute left-0 right-0 h-0.5 bg-red-500 z-10">
-                          <div className="absolute -left-1 -top-1 w-2 h-2 bg-red-500 rounded-full"></div>
+                  {/* Day columns */}
+                  {weekDays.map((day, dayIndex) => {
+                    const appointment = getAppointmentForSlot(slot, day)
+                    const isCurrentTime = shouldShowCurrentTime(slot, day)
+                    const isStart = isAppointmentStart(slot, day)
+                    
+                    return (
+                      <div key={dayIndex} className="relative p-0.5 border-r border-gray-100">
+                        <div className="h-8">
+                          {appointment ? (
+                            <button
+                              onClick={() => handleAppointmentClick(appointment)}
+                              className={`w-full h-full p-1 rounded text-left hover:shadow-md transition-shadow ${getServiceColor(appointment.dienst)} ${
+                                isStart ? 'border-l-2 border-l-blue-500' : ''
+                              }`}
+                            >
+                              {isStart && (
+                                <>
+                                  <div className="text-xs font-medium truncate">
+                                    {appointment.clients?.naam || 'Onbekende klant'}
+                                  </div>
+                                  <div className="text-xs opacity-75 truncate">
+                                    {appointment.dienst}
+                                  </div>
+                                </>
+                              )}
+                            </button>
+                          ) : (
+                            <div className="w-full h-full p-1 text-gray-200 text-xs">
+                              ·
+                            </div>
+                          )}
                         </div>
-                      )}
-                      
-                      <div className="h-8">
-                        {appointment ? (
-                          <button
-                            onClick={() => handleAppointmentClick(appointment)}
-                            className={`w-full h-full p-1 rounded text-left hover:shadow-md transition-shadow ${getServiceColor(appointment.dienst)} ${
-                              isStart ? 'border-l-2 border-l-blue-500' : ''
-                            }`}
-                          >
-                            {isStart && (
-                              <>
-                                <div className="text-xs font-medium truncate">
-                                  {appointment.clients?.naam || 'Onbekende klant'}
-                                </div>
-                                <div className="text-xs opacity-75 truncate">
-                                  {appointment.dienst}
-                                </div>
-                              </>
-                            )}
-                          </button>
-                        ) : (
-                          <div className="w-full h-full p-1 text-gray-200 text-xs">
-                            ·
-                          </div>
-                        )}
                       </div>
+                    )
+                  })}
+                  
+                  {/* Single current time line across all days */}
+                  {shouldShowTimeLine && (
+                    <div className="absolute left-0 right-0 h-0.5 bg-red-500 z-20" style={{
+                      top: `${slotIndex * 32 + 16}px`, // Position based on slot index
+                      left: '80px', // Start after time column
+                      right: '0px' // Extend to end
+                    }}>
+                      <div className="absolute -left-2 -top-1 w-3 h-3 bg-red-500 rounded-full"></div>
                     </div>
-                  )
-                })}
-              </React.Fragment>
-            ))}
+                  )}
+                </React.Fragment>
+              )
+            })}
           </div>
         )}
       </div>
@@ -390,6 +418,35 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
         salonId={salonId}
         onAppointmentAdded={handleAppointmentAdded}
       />
+
+      {/* Edit Appointment Modal */}
+      {editingAppointment && (
+        <AddAppointmentModal
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false)
+            setEditingAppointment(null)
+          }}
+          salonId={salonId}
+          onAppointmentAdded={handleAppointmentUpdated}
+          editingAppointment={editingAppointment}
+        />
+      )}
+
+      {/* Appointment Details Modal */}
+      {selectedAppointment && (
+        <AppointmentModal
+          appointment={selectedAppointment}
+          isOpen={!!selectedAppointment}
+          onClose={() => setSelectedAppointment(null)}
+          onEdit={handleEditAppointment}
+          onDelete={(appointmentId) => {
+            // Remove appointment from list and close modal
+            setAppointments(appointments.filter(apt => apt.id !== appointmentId))
+            setSelectedAppointment(null)
+          }}
+        />
+      )}
     </div>
   )
 }

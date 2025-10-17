@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import Button from './Button.jsx'
 import Card from './Card.jsx'
 
-export default function AddAppointmentModal({ isOpen, onClose, salonId, onAppointmentAdded }) {
+export default function AddAppointmentModal({ isOpen, onClose, salonId, onAppointmentAdded, editingAppointment = null }) {
   const [formData, setFormData] = useState({
     klant_id: '',
     dienst: '',
@@ -31,11 +31,39 @@ export default function AddAppointmentModal({ isOpen, onClose, salonId, onAppoin
     if (isOpen && salonId) {
       loadClients()
       loadServices()
-      // Set default date to today
-      const today = new Date()
-      setSelectedDate(today.toISOString().split('T')[0])
+      
+      if (editingAppointment) {
+        // Pre-fill form with existing appointment data
+        const startDate = new Date(editingAppointment.start_tijd)
+        const startTime = startDate.toTimeString().slice(0, 5)
+        const duration = Math.round((new Date(editingAppointment.eind_tijd) - startDate) / (1000 * 60))
+        
+        setFormData({
+          klant_id: editingAppointment.klant_id,
+          dienst: editingAppointment.dienst,
+          start_tijd: editingAppointment.start_tijd,
+          eind_tijd: editingAppointment.eind_tijd,
+          notities: editingAppointment.notities || ''
+        })
+        setSelectedDate(startDate.toISOString().split('T')[0])
+        setSelectedTime(startTime)
+        setSelectedDuration(duration)
+      } else {
+        // Set default date to today for new appointments
+        const today = new Date()
+        setSelectedDate(today.toISOString().split('T')[0])
+        setFormData({
+          klant_id: '',
+          dienst: '',
+          start_tijd: '',
+          eind_tijd: '',
+          notities: ''
+        })
+        setSelectedTime('')
+        setSelectedDuration(30)
+      }
     }
-  }, [isOpen, salonId])
+  }, [isOpen, salonId, editingAppointment])
 
   async function loadClients() {
     try {
@@ -180,21 +208,45 @@ export default function AddAppointmentModal({ isOpen, onClose, salonId, onAppoin
     }
 
     try {
-      const { data, error } = await supabase
-        .from('appointments')
-        .insert({
-          salon_id: salonId,
-          klant_id: formData.klant_id,
-          dienst: formData.dienst,
-          start_tijd: formData.start_tijd,
-          eind_tijd: formData.eind_tijd,
-          notities: formData.notities || null
-        })
-        .select()
+      let data, error
+      
+      if (editingAppointment) {
+        // Update existing appointment
+        const result = await supabase
+          .from('appointments')
+          .update({
+            klant_id: formData.klant_id,
+            dienst: formData.dienst,
+            start_tijd: formData.start_tijd,
+            eind_tijd: formData.eind_tijd,
+            notities: formData.notities || null
+          })
+          .eq('id', editingAppointment.id)
+          .select()
+        
+        data = result.data
+        error = result.error
+      } else {
+        // Create new appointment
+        const result = await supabase
+          .from('appointments')
+          .insert({
+            salon_id: salonId,
+            klant_id: formData.klant_id,
+            dienst: formData.dienst,
+            start_tijd: formData.start_tijd,
+            eind_tijd: formData.eind_tijd,
+            notities: formData.notities || null
+          })
+          .select()
+        
+        data = result.data
+        error = result.error
+      }
 
       if (error) {
-        console.error('Error creating appointment:', error)
-        setError('Er is een fout opgetreden bij het aanmaken van de afspraak')
+        console.error('Error saving appointment:', error)
+        setError(editingAppointment ? 'Er is een fout opgetreden bij het bijwerken van de afspraak' : 'Er is een fout opgetreden bij het aanmaken van de afspraak')
         return
       }
 
@@ -204,7 +256,7 @@ export default function AddAppointmentModal({ isOpen, onClose, salonId, onAppoin
       }
       handleClose()
     } catch (err) {
-      console.error('Error creating appointment:', err)
+      console.error('Error saving appointment:', err)
       setError('Er is een onverwachte fout opgetreden')
     } finally {
       setLoading(false)
@@ -240,8 +292,12 @@ export default function AddAppointmentModal({ isOpen, onClose, salonId, onAppoin
                 <Calendar className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">Nieuwe afspraak</h2>
-                <p className="text-sm text-gray-500">Voeg een nieuwe afspraak toe aan de agenda</p>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  {editingAppointment ? 'Afspraak bewerken' : 'Nieuwe afspraak'}
+                </h2>
+                <p className="text-sm text-gray-500">
+                  {editingAppointment ? 'Bewerk de afspraak gegevens' : 'Voeg een nieuwe afspraak toe aan de agenda'}
+                </p>
               </div>
             </div>
             <button
@@ -452,7 +508,7 @@ export default function AddAppointmentModal({ isOpen, onClose, salonId, onAppoin
               disabled={loading}
               className="px-6 py-2"
             >
-              {loading ? 'Bezig...' : 'Afspraak toevoegen'}
+              {loading ? (editingAppointment ? 'Bijwerken...' : 'Bezig...') : (editingAppointment ? 'Afspraak bijwerken' : 'Afspraak toevoegen')}
             </Button>
           </div>
         </form>
