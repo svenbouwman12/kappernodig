@@ -205,6 +205,26 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
     return currentTimeInMinutes >= slotStartInMinutes && currentTimeInMinutes < slotEndInMinutes
   }
 
+  // Get the exact position of the current time within a slot (0-1)
+  const getCurrentTimePosition = (slotTime) => {
+    if (!isCurrentWeek()) return 0
+    
+    const now = new Date()
+    const currentHour = now.getHours()
+    const currentMinute = now.getMinutes()
+    const currentSecond = now.getSeconds()
+    
+    const slotHour = slotTime.getHours()
+    const slotMinute = slotTime.getMinutes()
+    
+    const currentTimeInMinutes = currentHour * 60 + currentMinute + (currentSecond / 60)
+    const slotStartInMinutes = slotHour * 60 + slotMinute
+    
+    // Calculate position within the 15-minute slot (0-1)
+    const positionInSlot = (currentTimeInMinutes - slotStartInMinutes) / 15
+    return Math.max(0, Math.min(1, positionInSlot))
+  }
+
   const handleAppointmentClick = (appointment) => {
     setSelectedAppointment(appointment)
   }
@@ -353,7 +373,12 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
                       <div key={dayIndex} className="relative p-0.5 border-r border-gray-100">
                         {/* Current time line for this day */}
                         {shouldShowTimeLine && (
-                          <div className="absolute left-0 right-0 h-0.5 bg-red-500 z-20 top-1/2 transform -translate-y-1/2">
+                          <div 
+                            className="absolute left-0 right-0 h-0.5 bg-red-500 z-20"
+                            style={{
+                              top: `${8 + (getCurrentTimePosition(slot) * 16)}px` // 8px base + position within 32px slot
+                            }}
+                          >
                             <div className="absolute -left-2 -top-1 w-3 h-3 bg-red-500 rounded-full"></div>
                           </div>
                         )}
