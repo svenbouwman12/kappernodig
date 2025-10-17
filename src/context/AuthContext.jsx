@@ -45,6 +45,13 @@ export function AuthProvider({ children }) {
             return
           }
           
+          // Handle 406 errors (Not Acceptable) - likely RLS or table issues
+          if (error.status === 406 || error.message.includes('406')) {
+            console.log('Profiles table access error - creating default profile')
+            setUserProfile({ role: 'client', naam: 'Nieuwe gebruiker', profielfoto: null })
+            return
+          }
+          
           setUserProfile(null)
           return
         }
