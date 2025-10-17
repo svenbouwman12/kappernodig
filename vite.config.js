@@ -7,13 +7,6 @@ export default defineConfig({
   server: {
     hmr: {
       overlay: false
-    },
-    proxy: {
-      '/api/postcode': {
-        target: 'https://api.postcode.tech',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/postcode/, '')
-      }
     }
   }
 })

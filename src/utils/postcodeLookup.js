@@ -17,10 +17,11 @@ export async function lookupAddress(postcode, houseNumber) {
       throw new Error('Huisnummer is verplicht')
     }
 
-    // Use proxy to avoid CORS issues
+    // Use a reliable CORS-enabled API
     const response = await fetch(
-      `/api/postcode/v1/postcode/${cleanPostcode}/${houseNumber}`,
+      `https://api.postcode.eu/nl/v1/postcode/${cleanPostcode}/${houseNumber}`,
       {
+        mode: 'cors',
         headers: {
           'Accept': 'application/json'
         }
