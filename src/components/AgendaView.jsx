@@ -167,11 +167,10 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
     return today >= weekStart && today <= weekEnd
   }
 
-  // Get appointment for a specific time slot and day (check if slot falls within appointment duration)
+  // Get appointment for a specific time slot and day (only at start time)
   const getAppointmentForSlot = (slotTime, day) => {
     return appointments.find(apt => {
       const startTime = new Date(apt.start_tijd)
-      const endTime = new Date(apt.eind_tijd)
       const aptDate = new Date(startTime)
       aptDate.setHours(0, 0, 0, 0)
       const dayDate = new Date(day)
@@ -180,12 +179,9 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
       // Check if it's the same day
       if (aptDate.getTime() !== dayDate.getTime()) return false
       
-      // Check if slot time falls within appointment duration
-      const slotTimeMs = slotTime.getTime()
-      const startTimeMs = startTime.getTime()
-      const endTimeMs = endTime.getTime()
-      
-      return slotTimeMs >= startTimeMs && slotTimeMs < endTimeMs
+      // Only show appointment at its start time
+      return startTime.getHours() === slotTime.getHours() && 
+             startTime.getMinutes() === slotTime.getMinutes()
     })
   }
 
@@ -451,9 +447,22 @@ export default function AgendaView({ salonId, onAppointmentClick }) {
                     const isCurrentTime = shouldShowCurrentTime(slot, day)
                     const isStart = isAppointmentStart(slot, day)
                     
+                    // Calculate appointment height based on duration
+                    const getAppointmentHeight = () => {
+                      if (!appointment || !isStart) return 'h-8'
+                      
+                      const startTime = new Date(appointment.start_tijd)
+                      const endTime = new Date(appointment.eind_tijd)
+                      const durationMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60)
+                      
+                      // Calculate height: 8px per 15 minutes, minimum 8px
+                      const heightPx = Math.max(8, (durationMinutes / 15) * 8)
+                      return `h-[${heightPx}px]`
+                    }
+                    
                     return (
                       <div key={dayIndex} className="relative p-0.5 border-r border-gray-100">
-                        <div className="h-8">
+                        <div className={getAppointmentHeight()}>
                           {appointment ? (
                             <button
                               onClick={() => handleAppointmentClick(appointment)}
