@@ -93,16 +93,19 @@ export default function HomePage() {
       console.log('Filters:', { gender, services })
       console.log('Total barbers available:', barbers.length)
       
-      // Filter barbers within radius
-      let filtered = barbers.filter(barber => {
+      // Filter barbers within radius and calculate distances
+      let filtered = barbers.map(barber => {
         const distance = Math.sqrt(
           Math.pow(barber.lat - cityCoords.lat, 2) + 
           Math.pow(barber.lng - cityCoords.lng, 2)
         ) * 111000 / 1000 // Convert to km
         
         console.log(`Barber ${barber.name}: distance ${distance.toFixed(2)}km`)
-        return distance <= radius
-      })
+        return {
+          ...barber,
+          distance: distance
+        }
+      }).filter(barber => barber.distance <= radius)
 
       // Filter by gender if selected
       if (gender) {
@@ -127,7 +130,11 @@ export default function HomePage() {
         })
       }
       
+      // Sort by distance (closest first)
+      filtered.sort((a, b) => a.distance - b.distance)
+      
       console.log('Filtered barbers:', filtered.length)
+      console.log('Sorted by distance:', filtered.map(b => `${b.name}: ${b.distance.toFixed(2)}km`))
       setFilteredBarbers(filtered)
       setHasSearched(true)
     } else if (city && cities[city] && barbers.length === 0) {
@@ -354,6 +361,9 @@ export default function HomePage() {
                           </div>
                           <div className="text-sm text-gray-600 mt-2">
                             📍 {barber.address || barber.street || barber.location || 'Locatie beschikbaar op kaart'}
+                          </div>
+                          <div className="text-sm text-primary font-medium mt-1">
+                            📏 {barber.distance ? `${barber.distance.toFixed(1)} km` : 'Afstand onbekend'}
                           </div>
                         </div>
                       </div>
