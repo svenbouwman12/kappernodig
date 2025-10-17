@@ -102,6 +102,7 @@ export default function KapperDashboardPage() {
               return { ...barber, favorites_count: 0 }
             }
 
+            console.log(`Favorites count for barber ${barber.id} (${barber.name}):`, count)
             return { ...barber, favorites_count: count || 0 }
           } catch (err) {
             console.error('Error loading favorites for barber:', barber.id, err)
