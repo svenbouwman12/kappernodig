@@ -28,6 +28,16 @@ const AdminDashboardPage = () => {
     navigate('/admin/login')
   }
 
+  const handleCardClick = (kapperszaak) => {
+    console.log('=== CARD CLICKED ===')
+    console.log('Kapperszaak ID:', kapperszaak.id)
+    console.log('Kapperszaak Name:', kapperszaak.name)
+    console.log('Navigating to:', `/admin/kapperszaken/${kapperszaak.id}`)
+    
+    // Force navigation
+    window.location.href = `/admin/kapperszaken/${kapperszaak.id}`
+  }
+
   useEffect(() => {
     loadKapperszaken()
   }, [])
@@ -159,22 +169,28 @@ const AdminDashboardPage = () => {
                 Klik op een kapperszaak om deze te beheren
               </p>
             </div>
-            <button className="flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
-              <Plus size={18} className="mr-2" />
-              Kapper toevoegen
-            </button>
+            <div className="flex items-center space-x-3">
+              <button 
+                onClick={() => console.log('TEST BUTTON CLICKED')}
+                className="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+              >
+                TEST CLICK
+              </button>
+              <button className="flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                <Plus size={18} className="mr-2" />
+                Kapper toevoegen
+              </button>
+            </div>
           </div>
 
       {/* Kapperszaken Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredKapperszaken.map((kapperszaak) => (
-          <button
+          <div
             key={kapperszaak.id}
-            onClick={() => {
-              console.log('Navigating to kapperszaak:', kapperszaak.id)
-              navigate(`/admin/kapperszaken/${kapperszaak.id}`)
-            }}
-            className="block w-full text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg"
+            onClick={() => handleCardClick(kapperszaak)}
+            className="cursor-pointer"
+            style={{ pointerEvents: 'auto' }}
           >
             <Card className="p-6 hover:shadow-lg hover:bg-gray-50 transition-all duration-200 border-2 hover:border-primary/20">
               <div className="flex items-start justify-between mb-4">
@@ -234,7 +250,7 @@ const AdminDashboardPage = () => {
                 </div>
               </div>
             </Card>
-          </button>
+          </div>
         ))}
       </div>
 
