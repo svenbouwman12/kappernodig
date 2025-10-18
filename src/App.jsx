@@ -13,6 +13,7 @@ import ClientDashboardPage from './pages/client/ClientDashboardPage.jsx'
 import KapperLoginPage from './pages/KapperLoginPage.jsx'
 import KapperRegisterPage from './pages/KapperRegisterPage.jsx'
 import KapperDashboardPage from './pages/KapperDashboardPage.jsx'
+import BookingPage from './pages/BookingPage.jsx'
 import MapPage from './pages/MapPage.jsx'
 import AdminHome from './pages/admin/AdminHome.jsx'
 import AdminLoginPage from './pages/admin/AdminLoginPage.jsx'
@@ -54,6 +55,7 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<div className="container-max"><HomePage /></div>} />
           <Route path="/barber/:id" element={<div className="container-max"><BarberProfilePage /></div>} />
+          <Route path="/booking/:id" element={<div className="container-max"><BookingPage /></div>} />
           <Route path="/map" element={<MapPage />} />
           <Route
             path="/dashboard"

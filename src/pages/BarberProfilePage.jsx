@@ -565,7 +565,7 @@ export default function BarberProfilePage() {
             <Button 
               variant="secondary" 
               className="px-5"
-              onClick={() => navigate(`/barber/${id}/book`)}
+              onClick={() => navigate(`/booking/${id}`)}
             >
               Boek afspraak
             </Button>
