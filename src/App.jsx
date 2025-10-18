@@ -8,9 +8,9 @@ import BarberDashboardPage from './pages/BarberDashboardPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import RegisterPage from './pages/RegisterPage.jsx'
 import MapPage from './pages/MapPage.jsx'
-import AdminDashboardPage from './pages/AdminDashboardPage.jsx'
+import AdminHome from './pages/admin/AdminHome.jsx'
 import AdminLoginPage from './pages/admin/AdminLoginPage.jsx'
-import KapperszaakDetailPage from './pages/admin/KapperszaakDetailPage.jsx'
+import KapperszaakDetail from './pages/admin/KapperszaakDetail.jsx'
 import ProtectedAdminRoute from './components/admin/ProtectedAdminRoute.jsx'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
 
@@ -31,7 +31,7 @@ function AppContent() {
       const currentPath = window.location.pathname
       if (currentPath === '/login' || currentPath === '/register') {
         if (userProfile.role === 'admin') {
-          navigate('/dashboard/admin', { replace: true })
+          navigate('/admin', { replace: true })
         } else if (userProfile.role === 'barber') {
           navigate('/dashboard', { replace: true })
         }
@@ -58,18 +58,18 @@ function AppContent() {
           {/* Admin Routes */}
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route 
-            path="/dashboard/admin" 
+            path="/admin" 
             element={
               <ProtectedAdminRoute>
-                <AdminDashboardPage />
+                <AdminHome />
               </ProtectedAdminRoute>
             } 
           />
           <Route 
-            path="/dashboard/admin/kapperszaken/:id" 
+            path="/admin/kapperszaken/:id" 
             element={
               <ProtectedAdminRoute>
-                <KapperszaakDetailPage />
+                <KapperszaakDetail />
               </ProtectedAdminRoute>
             } 
           />
