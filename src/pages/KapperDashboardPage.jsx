@@ -291,25 +291,26 @@ export default function KapperDashboardPage() {
       const openingHoursData = []
       
       Object.entries(dayMap).forEach(([dayName, dayNumber]) => {
+        const isClosed = barberData[`${dayName}_closed`]
         const openTime = barberData[`${dayName}_open`]
         const closeTime = barberData[`${dayName}_close`]
         
-        if (openTime && closeTime) {
-          openingHoursData.push({
-            salon_id: barberId,
-            day_of_week: dayNumber,
-            open_time: openTime,
-            close_time: closeTime,
-            is_closed: false
-          })
-        } else {
-          // Mark as closed if no times are set
+        if (isClosed || (!openTime && !closeTime)) {
+          // Mark as closed if checkbox is checked or no times are set
           openingHoursData.push({
             salon_id: barberId,
             day_of_week: dayNumber,
             open_time: '09:00', // Required field, but won't be used
             close_time: '18:00', // Required field, but won't be used
             is_closed: true
+          })
+        } else if (openTime && closeTime) {
+          openingHoursData.push({
+            salon_id: barberId,
+            day_of_week: dayNumber,
+            open_time: openTime,
+            close_time: closeTime,
+            is_closed: false
           })
         }
       })
@@ -819,26 +820,34 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
     address: barber?.address || '',
     phone: barber?.phone || '',
     price_range: barber?.price_range || '€€',
-    rating: barber?.rating || '',
     image_url: barber?.image_url || '',
     latitude: barber?.latitude || '',
     longitude: barber?.longitude || '',
     gender_served: barber?.gender_served || 'both',
+    kvk_number: barber?.kvk_number || '',
+    btw_number: barber?.btw_number || '',
     // Opening hours for each day
-    monday_open: barber?.monday_open || '',
-    monday_close: barber?.monday_close || '',
-    tuesday_open: barber?.tuesday_open || '',
-    tuesday_close: barber?.tuesday_close || '',
-    wednesday_open: barber?.wednesday_open || '',
-    wednesday_close: barber?.wednesday_close || '',
-    thursday_open: barber?.thursday_open || '',
-    thursday_close: barber?.thursday_close || '',
-    friday_open: barber?.friday_open || '',
-    friday_close: barber?.friday_close || '',
-    saturday_open: barber?.saturday_open || '',
-    saturday_close: barber?.saturday_close || '',
-    sunday_open: barber?.sunday_open || '',
-    sunday_close: barber?.sunday_close || '',
+    monday_open: barber?.monday_open || '09:00',
+    monday_close: barber?.monday_close || '17:00',
+    monday_closed: barber?.monday_closed || false,
+    tuesday_open: barber?.tuesday_open || '09:00',
+    tuesday_close: barber?.tuesday_close || '17:00',
+    tuesday_closed: barber?.tuesday_closed || false,
+    wednesday_open: barber?.wednesday_open || '09:00',
+    wednesday_close: barber?.wednesday_close || '17:00',
+    wednesday_closed: barber?.wednesday_closed || false,
+    thursday_open: barber?.thursday_open || '09:00',
+    thursday_close: barber?.thursday_close || '17:00',
+    thursday_closed: barber?.thursday_closed || false,
+    friday_open: barber?.friday_open || '09:00',
+    friday_close: barber?.friday_close || '17:00',
+    friday_closed: barber?.friday_closed || false,
+    saturday_open: barber?.saturday_open || '09:00',
+    saturday_close: barber?.saturday_close || '17:00',
+    saturday_closed: barber?.saturday_closed || false,
+    sunday_open: barber?.sunday_open || '09:00',
+    sunday_close: barber?.sunday_close || '17:00',
+    sunday_closed: barber?.sunday_closed || false,
     // Postcode lookup fields
     postcode: '',
     houseNumber: '',
@@ -880,9 +889,16 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
 
       data.forEach(hour => {
         const dayName = dayMap[hour.day_of_week]
-        if (dayName && !hour.is_closed) {
-          openingHoursUpdate[`${dayName}_open`] = hour.open_time
-          openingHoursUpdate[`${dayName}_close`] = hour.close_time
+        if (dayName) {
+          if (hour.is_closed) {
+            openingHoursUpdate[`${dayName}_closed`] = true
+            openingHoursUpdate[`${dayName}_open`] = ''
+            openingHoursUpdate[`${dayName}_close`] = ''
+          } else {
+            openingHoursUpdate[`${dayName}_closed`] = false
+            openingHoursUpdate[`${dayName}_open`] = hour.open_time
+            openingHoursUpdate[`${dayName}_close`] = hour.close_time
+          }
         }
       })
 
@@ -1116,19 +1132,6 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
             </select>
           </div>
           
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Rating (1-5)</label>
-            <input
-              value={formData.rating}
-              onChange={(e) => setFormData({...formData, rating: e.target.value})}
-              placeholder="4.5"
-              type="number"
-              min="1"
-              max="5"
-              step="0.1"
-              className="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
-          </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Welk geslacht knip je?</label>
@@ -1141,6 +1144,26 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
               <option value="man">Alleen mannen</option>
               <option value="vrouw">Alleen vrouwen</option>
             </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">KVK nummer (optioneel)</label>
+            <input
+              value={formData.kvk_number || ''}
+              onChange={(e) => setFormData({...formData, kvk_number: e.target.value})}
+              placeholder="12345678"
+              className="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">BTW nummer (optioneel)</label>
+            <input
+              value={formData.btw_number || ''}
+              onChange={(e) => setFormData({...formData, btw_number: e.target.value})}
+              placeholder="NL123456789B01"
+              className="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent"
+            />
           </div>
           
           <div className="md:col-span-2">
@@ -1159,36 +1182,41 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
                   <div className="w-20 text-sm font-medium text-gray-700">
                     {day.label}
                   </div>
-                  <div className="flex items-center space-x-2 flex-1">
-                    <input
-                      type="time"
-                      value={formData[`${day.key}_open`] || ''}
-                      onChange={(e) => setFormData({...formData, [`${day.key}_open`]: e.target.value})}
-                      className="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
-                      placeholder="09:00"
-                    />
-                    <span className="text-gray-500">-</span>
-                    <input
-                      type="time"
-                      value={formData[`${day.key}_close`] || ''}
-                      onChange={(e) => setFormData({...formData, [`${day.key}_close`]: e.target.value})}
-                      className="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
-                      placeholder="18:00"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setFormData({
-                          ...formData,
-                          [`${day.key}_open`]: '',
-                          [`${day.key}_close`]: ''
-                        })
-                      }}
-                      className="text-gray-400 hover:text-red-500 text-sm px-2 py-1"
-                      title="Gesloten"
-                    >
-                      ✕
-                    </button>
+                  <div className="flex items-center space-x-3 flex-1">
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={formData[`${day.key}_closed`] || false}
+                        onChange={(e) => {
+                          const isClosed = e.target.checked
+                          setFormData({
+                            ...formData,
+                            [`${day.key}_closed`]: isClosed,
+                            [`${day.key}_open`]: isClosed ? '' : (formData[`${day.key}_open`] || '09:00'),
+                            [`${day.key}_close`]: isClosed ? '' : (formData[`${day.key}_close`] || '17:00')
+                          })
+                        }}
+                        className="rounded border-gray-300 text-primary focus:ring-primary"
+                      />
+                      <span className="text-sm text-gray-600">Gesloten</span>
+                    </label>
+                    {!formData[`${day.key}_closed`] && (
+                      <>
+                        <input
+                          type="time"
+                          value={formData[`${day.key}_open`] || '09:00'}
+                          onChange={(e) => setFormData({...formData, [`${day.key}_open`]: e.target.value})}
+                          className="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                        />
+                        <span className="text-gray-500">-</span>
+                        <input
+                          type="time"
+                          value={formData[`${day.key}_close`] || '17:00'}
+                          onChange={(e) => setFormData({...formData, [`${day.key}_close`]: e.target.value})}
+                          className="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                        />
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
