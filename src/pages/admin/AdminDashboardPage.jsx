@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext.jsx'
 import Card from '../../components/Card.jsx'
 import { 
   Building2, 
@@ -9,13 +10,23 @@ import {
   Wrench, 
   Calendar, 
   MessageSquare,
-  User
+  User,
+  Search,
+  LogOut,
+  Plus
 } from 'lucide-react'
 
 const AdminDashboardPage = () => {
   const [kapperszaken, setKapperszaken] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const navigate = useNavigate()
+  const { user, userProfile, logout } = useAuth()
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/admin/login')
+  }
 
   useEffect(() => {
     loadKapperszaken()
@@ -98,32 +109,61 @@ const AdminDashboardPage = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Kapperszaken Beheer</h1>
-        <p className="mt-2 text-gray-600">
-          Beheer alle kapperszaken en hun details
-        </p>
-      </div>
-
-      {/* Search Bar */}
-      <Card className="p-6">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Zoek op naam, locatie of eigenaar..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-          />
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="flex items-center justify-between h-16 px-6">
+          <div className="flex items-center space-x-4">
+            <h1 className="text-xl font-bold text-primary">Kapper Nodig</h1>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Zoek kapper, locatie..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-64 px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                <User size={16} className="text-white" />
+              </div>
+              <span className="text-sm font-medium text-gray-900">
+                {userProfile?.naam || 'Admin'}
+              </span>
+            </div>
+            
+            <button
+              onClick={handleLogout}
+              className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <LogOut size={16} />
+              <span>Uitloggen</span>
+            </button>
           </div>
         </div>
-      </Card>
+      </header>
+
+      {/* Main Content */}
+      <main className="p-6">
+        <div className="space-y-6">
+          {/* Page Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900">Admin Dashboard</h2>
+              <p className="mt-2 text-gray-600">
+                Klik op een kapperszaak om deze te beheren
+              </p>
+            </div>
+            <button className="flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+              <Plus size={18} className="mr-2" />
+              Kapper toevoegen
+            </button>
+          </div>
 
       {/* Kapperszaken Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -195,15 +235,17 @@ const AdminDashboardPage = () => {
         ))}
       </div>
 
-      {filteredKapperszaken.length === 0 && (
-        <Card className="p-12 text-center">
-          <Building2 className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Geen kapperszaken gevonden</h3>
-          <p className="text-gray-500">
-            {searchTerm ? 'Probeer een andere zoekterm.' : 'Er zijn nog geen kapperszaken geregistreerd.'}
-          </p>
-        </Card>
-      )}
+          {filteredKapperszaken.length === 0 && (
+            <Card className="p-12 text-center">
+              <Building2 className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Geen kapperszaken gevonden</h3>
+              <p className="text-gray-500">
+                {searchTerm ? 'Probeer een andere zoekterm.' : 'Er zijn nog geen kapperszaken geregistreerd.'}
+              </p>
+            </Card>
+          )}
+        </div>
+      </main>
     </div>
   )
 }

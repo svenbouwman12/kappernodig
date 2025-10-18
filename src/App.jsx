@@ -64,17 +64,24 @@ function AppContent() {
           />
           {/* Admin Routes */}
           <Route path="/admin/login" element={<AdminLoginPage />} />
+          <Route 
+            path="/admin" 
+            element={
+              <ProtectedAdminRoute>
+                <AdminDashboardPage />
+              </ProtectedAdminRoute>
+            } 
+          />
+          <Route path="/admin/kapperszaken/:id" element={<KapperszaakDetailPage />} />
           <Route
             path="/admin/*"
             element={
               <ProtectedAdminRoute>
                 <AdminLayout>
                   <Routes>
-                    <Route path="/" element={<AdminDashboardPage />} />
                     <Route path="/kappers" element={<AdminKappersPage />} />
                     <Route path="/klanten" element={<AdminKlantenPage />} />
                     <Route path="/kapperszaken" element={<AdminKapperszakenPage />} />
-                    <Route path="/kapperszaken/:id" element={<KapperszaakDetailPage />} />
                     <Route path="/boekingen" element={<AdminBoekingenPage />} />
                     <Route path="/diensten" element={<AdminDienstenPage />} />
                     <Route path="/reviews" element={<AdminReviewsPage />} />
