@@ -168,12 +168,15 @@ const AdminDashboardPage = () => {
       {/* Kapperszaken Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredKapperszaken.map((kapperszaak) => (
-          <Link
+          <button
             key={kapperszaak.id}
-            to={`/admin/kapperszaken/${kapperszaak.id}`}
-            className="block"
+            onClick={() => {
+              console.log('Navigating to kapperszaak:', kapperszaak.id)
+              navigate(`/admin/kapperszaken/${kapperszaak.id}`)
+            }}
+            className="block w-full text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg"
           >
-            <Card className="p-6 hover:shadow-lg transition-shadow duration-200">
+            <Card className="p-6 hover:shadow-lg hover:bg-gray-50 transition-all duration-200 border-2 hover:border-primary/20">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-3">
                   <div className="p-2 bg-primary/10 rounded-lg">
@@ -231,7 +234,7 @@ const AdminDashboardPage = () => {
                 </div>
               </div>
             </Card>
-          </Link>
+          </button>
         ))}
       </div>
 
