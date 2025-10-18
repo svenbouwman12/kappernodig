@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Card from '../components/Card.jsx'
 import Button from '../components/Button.jsx'
-import NederlandsePlaatsenAutocomplete from '../components/NederlandsePlaatsenAutocomplete.jsx'
+import StedenDropdown from '../components/StedenDropdown.jsx'
 import { supabase } from '../lib/supabase'
 
 export default function HomePage() {
@@ -71,11 +71,11 @@ export default function HomePage() {
             </div>
             
             <div className="relative">
-              <label className="block text-xl font-semibold text-secondary mb-4">📍 Typ je stad</label>
-              <NederlandsePlaatsenAutocomplete
+              <label className="block text-xl font-semibold text-secondary mb-4">📍 Selecteer je stad</label>
+              <StedenDropdown
                 value={selectedCity}
                 onChange={handleCitySelection}
-                placeholder="Typ je stad (bijv. Amsterdam, Rotterdam...)"
+                placeholder="Selecteer je stad (bijv. Amsterdam, Rotterdam...)"
                 className="w-full"
               />
             </div>
