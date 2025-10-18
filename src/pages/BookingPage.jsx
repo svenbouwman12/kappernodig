@@ -322,8 +322,7 @@ export default function BookingPage() {
             salon_id: id,
             naam: clientName,
             email: clientEmail,
-            telefoon: clientPhone || null,
-            notities: `Klant aangemaakt via anonieme booking op ${new Date().toLocaleDateString('nl-NL')}`
+            telefoon: clientPhone || null
           })
           .select('id')
           .single()
@@ -331,6 +330,7 @@ export default function BookingPage() {
         if (clientError) {
           console.error('Error creating client:', clientError)
           // Continue without client record - appointment will still be created
+          clientId = null
         } else {
           clientId = newClient.id
         }
