@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Card from '../components/Card.jsx'
 import Button from '../components/Button.jsx'
-import PostcodeLookup from '../components/PostcodeLookup.jsx'
 import AgendaView from '../components/AgendaView.jsx'
 import AppointmentModal from '../components/AppointmentModal.jsx'
 import ClientsTable from '../components/ClientsTable.jsx'
@@ -133,10 +132,13 @@ export default function KapperDashboardPage() {
       // Geocode address to get coordinates
       let coordinates = { lat: null, lng: null }
       
-      if (barberData.address && barberData.location) {
+      // Construct full address from individual fields
+      if (barberData.street && barberData.houseNumber && barberData.location) {
+        const fullAddress = `${barberData.street} ${barberData.houseNumber}, ${barberData.location}`
+        barberData.address = fullAddress
+        
         setGeocoding(true)
         try {
-          const fullAddress = `${barberData.address}, ${barberData.location}`
           console.log('Geocoding address:', fullAddress)
           
           // Use a simple geocoding service that doesn't require API key
@@ -848,10 +850,10 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
     sunday_open: barber?.sunday_open || '09:00',
     sunday_close: barber?.sunday_close || '17:00',
     sunday_closed: barber?.sunday_closed || false,
-    // Postcode lookup fields
-    postcode: '',
-    houseNumber: '',
-    foundAddress: null
+    // Address fields
+    street: barber?.street || '',
+    houseNumber: barber?.houseNumber || '',
+    postcode: barber?.postcode || ''
   })
   
   // Load opening hours when editing an existing barber
@@ -913,17 +915,6 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
   const [newService, setNewService] = useState({ name: '', price: '', duration_minutes: 30 })
   const [localServices, setLocalServices] = useState([]) // Services die nog niet opgeslagen zijn
 
-  // Handle postcode lookup result
-  const handleAddressFound = (address) => {
-    setFormData(prev => ({
-      ...prev,
-      foundAddress: address,
-      address: address.fullAddress,
-      location: address.city,
-      latitude: address.coordinates.lat?.toString() || '',
-      longitude: address.coordinates.lng?.toString() || ''
-    }))
-  }
 
   // Load services when barber changes
   useEffect(() => {
@@ -1075,35 +1066,51 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
             />
           </div>
           
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Adres</label>
-            <PostcodeLookup 
-              onAddressFound={handleAddressFound}
-              initialPostcode={formData.postcode}
-              initialHouseNumber={formData.houseNumber}
-              className="mb-4"
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Straatnaam *</label>
+            <input
+              value={formData.street || ''}
+              onChange={(e) => setFormData({...formData, street: e.target.value})}
+              placeholder="Bijv. Hoofdstraat"
+              className="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Locatie (wordt automatisch ingevuld)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Huisnummer *</label>
+            <input
+              value={formData.houseNumber || ''}
+              onChange={(e) => setFormData({...formData, houseNumber: e.target.value})}
+              placeholder="Bijv. 123"
+              className="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Stad *</label>
             <input
               value={formData.location}
               onChange={(e) => setFormData({...formData, location: e.target.value})}
-              placeholder="Stad, dorp"
-              className="w-full bg-gray-100 border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent"
-              readOnly
+              placeholder="Bijv. Amsterdam"
+              className="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Volledig adres (wordt automatisch ingevuld)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Postcode *</label>
             <input
-              value={formData.address}
-              onChange={(e) => setFormData({...formData, address: e.target.value})}
-              placeholder="Straat en huisnummer"
-              className="w-full bg-gray-100 border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent"
-              readOnly
+              value={formData.postcode || ''}
+              onChange={(e) => {
+                let value = e.target.value.toUpperCase()
+                // Auto-format postcode (add space after 4 digits)
+                if (value.length === 4 && !value.includes(' ')) {
+                  value = value + ' '
+                }
+                setFormData({...formData, postcode: value})
+              }}
+              placeholder="Bijv. 1234 AB"
+              maxLength="7"
+              className="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
           
