@@ -21,16 +21,17 @@ const AdminBoekingenPage = () => {
       let query = supabase
         .from('appointments')
         .select('*')
-        .order('appointment_date', { ascending: true })
+        .order('start_tijd', { ascending: true })
 
       // Apply filter
-      const today = new Date().toISOString().split('T')[0]
+      const today = new Date().toISOString()
+      const todayDate = new Date().toISOString().split('T')[0]
       if (filter === 'today') {
-        query = query.eq('appointment_date', today)
+        query = query.gte('start_tijd', todayDate + 'T00:00:00').lt('start_tijd', todayDate + 'T23:59:59')
       } else if (filter === 'upcoming') {
-        query = query.gte('appointment_date', today)
+        query = query.gte('start_tijd', today)
       } else if (filter === 'past') {
-        query = query.lt('appointment_date', today)
+        query = query.lt('start_tijd', today)
       }
 
       const { data: appointmentsData, error: appointmentsError } = await query
@@ -133,9 +134,9 @@ const AdminBoekingenPage = () => {
     }
   }
 
-  const getStatusBadge = (status, appointmentDate) => {
-    const today = new Date().toISOString().split('T')[0]
-    const isPast = appointmentDate < today
+  const getStatusBadge = (status, startTijd) => {
+    const today = new Date().toISOString()
+    const isPast = startTijd && startTijd < today
 
     if (status === 'completed') {
       return <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Voltooid</span>
@@ -172,29 +173,19 @@ const AdminBoekingenPage = () => {
       )
     },
     {
-      key: 'appointment_date',
-      title: 'Datum',
+      key: 'start_tijd',
+      title: 'Datum & Tijd',
       render: (value) => (
         <div className="flex items-center">
           <Calendar size={16} className="text-gray-400 mr-2" />
-          <span>{new Date(value).toLocaleDateString('nl-NL')}</span>
-        </div>
-      )
-    },
-    {
-      key: 'appointment_time',
-      title: 'Tijd',
-      render: (value) => (
-        <div className="flex items-center">
-          <Clock size={16} className="text-gray-400 mr-2" />
-          <span>{value}</span>
+          <span>{new Date(value).toLocaleDateString('nl-NL')} {new Date(value).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}</span>
         </div>
       )
     },
     {
       key: 'status',
       title: 'Status',
-      render: (value, row) => getStatusBadge(value, row.appointment_date)
+      render: (value, row) => getStatusBadge(value, row.start_tijd)
     },
     {
       key: 'created_at',
@@ -205,9 +196,18 @@ const AdminBoekingenPage = () => {
 
   const filterButtons = [
     { key: 'all', label: 'Alle Afspraken', count: boekingen.length },
-    { key: 'today', label: 'Vandaag', count: boekingen.filter(b => b.appointment_date === new Date().toISOString().split('T')[0]).length },
-    { key: 'upcoming', label: 'Toekomst', count: boekingen.filter(b => b.appointment_date >= new Date().toISOString().split('T')[0] && b.status !== 'cancelled').length },
-    { key: 'past', label: 'Verleden', count: boekingen.filter(b => b.appointment_date < new Date().toISOString().split('T')[0]).length }
+    { key: 'today', label: 'Vandaag', count: boekingen.filter(b => {
+      const today = new Date().toISOString().split('T')[0]
+      return b.start_tijd && b.start_tijd.split('T')[0] === today
+    }).length },
+    { key: 'upcoming', label: 'Toekomst', count: boekingen.filter(b => {
+      const today = new Date().toISOString()
+      return b.start_tijd && b.start_tijd >= today && b.status !== 'cancelled'
+    }).length },
+    { key: 'past', label: 'Verleden', count: boekingen.filter(b => {
+      const today = new Date().toISOString()
+      return b.start_tijd && b.start_tijd < today
+    }).length }
   ]
 
   return (

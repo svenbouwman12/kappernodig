@@ -21,7 +21,7 @@ const AdminDienstenPage = () => {
       const { data: servicesData, error: servicesError } = await supabase
         .from('services')
         .select('*')
-        .order('created_at', { ascending: false })
+        .order('name', { ascending: true })
 
       if (servicesError) {
         console.error('Error loading diensten:', servicesError)

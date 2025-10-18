@@ -96,7 +96,7 @@ const KapperszaakDetailPage = () => {
           )
         `)
         .eq('barber_id', kapperszaakId)
-        .order('appointment_date', { ascending: false })
+        .order('start_tijd', { ascending: false })
 
       setAppointments(appointmentsData || [])
 
@@ -310,7 +310,7 @@ const KapperszaakDetailPage = () => {
                         {appointment.profiles?.naam || 'Onbekende klant'}
                       </h4>
                       <p className="text-sm text-gray-600">
-                        {new Date(appointment.appointment_date).toLocaleDateString('nl-NL')} om {appointment.appointment_time}
+                        {new Date(appointment.start_tijd).toLocaleDateString('nl-NL')} om {new Date(appointment.start_tijd).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                     <div className="flex items-center space-x-2">
