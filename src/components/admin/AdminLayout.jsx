@@ -46,7 +46,7 @@ const AdminLayout = ({ children }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-screen bg-gray-50 flex">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div 
@@ -58,7 +58,7 @@ const AdminLayout = ({ children }) => {
       )}
 
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 lg:flex-shrink-0 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
@@ -116,7 +116,7 @@ const AdminLayout = ({ children }) => {
       </div>
 
       {/* Main content */}
-      <div className="lg:pl-64 flex flex-col min-h-screen">
+      <div className="lg:pl-0 flex flex-col flex-1 min-h-0">
         {/* Header */}
         <header className="bg-white shadow-sm border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center justify-between h-16 px-6">
@@ -149,7 +149,7 @@ const AdminLayout = ({ children }) => {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-6 overflow-auto">
+        <main className="flex-1 p-6 overflow-y-auto">
           {children}
         </main>
       </div>
