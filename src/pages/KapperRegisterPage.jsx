@@ -87,7 +87,8 @@ export default function KapperRegisterPage() {
               id: data.user.id,
               email: email,
               role: 'kapper', 
-              naam: name.trim() 
+              naam: name.trim(),
+              telefoon: phone.trim()
             })
 
           if (profileError) {
