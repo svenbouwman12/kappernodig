@@ -316,16 +316,16 @@ export default function BookingPage() {
         }
       } else {
         // For anonymous users, create a new client record
-        const { data: newClient, error: clientError } = await supabase
-          .from('clients')
-          .insert({
-            salon_id: id,
-            naam: clientName,
-            email: clientEmail,
-            telefoon: clientPhone || null
-          })
-          .select('id')
-          .single()
+          const { data: newClient, error: clientError } = await supabase
+            .from('clients')
+            .insert({
+              salon_id: id,
+              naam: clientName,
+              email: clientEmail,
+              telefoon: clientPhone || 'Niet opgegeven'
+            })
+            .select('id')
+            .single()
 
         if (clientError) {
           console.error('Error creating client:', clientError)
