@@ -10,6 +10,9 @@ import RegisterPage from './pages/RegisterPage.jsx'
 import ClientLoginPage from './pages/client/ClientLoginPage.jsx'
 import ClientRegisterPage from './pages/client/ClientRegisterPage.jsx'
 import ClientDashboardPage from './pages/client/ClientDashboardPage.jsx'
+import KapperLoginPage from './pages/KapperLoginPage.jsx'
+import KapperRegisterPage from './pages/KapperRegisterPage.jsx'
+import KapperDashboardPage from './pages/KapperDashboardPage.jsx'
 import MapPage from './pages/MapPage.jsx'
 import AdminHome from './pages/admin/AdminHome.jsx'
 import AdminLoginPage from './pages/admin/AdminLoginPage.jsx'
@@ -32,11 +35,11 @@ function AppContent() {
     if (!loading && user && userProfile) {
       // Only redirect from login/register pages, not from homepage
       const currentPath = window.location.pathname
-      if (currentPath === '/login' || currentPath === '/register' || currentPath === '/client/login' || currentPath === '/client/register') {
+      if (currentPath === '/login' || currentPath === '/register' || currentPath === '/client/login' || currentPath === '/client/register' || currentPath === '/kapper/login' || currentPath === '/kapper/register') {
         if (userProfile.role === 'admin') {
           navigate('/admin', { replace: true })
         } else if (userProfile.role === 'barber') {
-          navigate('/dashboard', { replace: true })
+          navigate('/kapper/dashboard', { replace: true })
         } else if (userProfile.role === 'client') {
           navigate('/client/dashboard', { replace: true })
         }
@@ -87,6 +90,16 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <div className="container-max"><ClientDashboardPage /></div>
+              </ProtectedRoute>
+            } 
+          />
+          <Route path="/kapper/login" element={<div className="container-max"><KapperLoginPage /></div>} />
+          <Route path="/kapper/register" element={<div className="container-max"><KapperRegisterPage /></div>} />
+          <Route 
+            path="/kapper/dashboard" 
+            element={
+              <ProtectedRoute>
+                <div className="container-max"><KapperDashboardPage /></div>
               </ProtectedRoute>
             } 
           />
