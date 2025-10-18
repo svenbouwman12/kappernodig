@@ -116,9 +116,9 @@ const AdminLayout = ({ children }) => {
       </div>
 
       {/* Main content */}
-      <div className="lg:pl-64">
+      <div className="lg:pl-64 flex flex-col min-h-screen">
         {/* Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200">
+        <header className="bg-white shadow-sm border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center justify-between h-16 px-6">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -149,7 +149,7 @@ const AdminLayout = ({ children }) => {
         </header>
 
         {/* Page content */}
-        <main className="p-6">
+        <main className="flex-1 p-6 overflow-auto">
           {children}
         </main>
       </div>

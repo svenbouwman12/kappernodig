@@ -449,9 +449,9 @@ const KapperszaakDetailPage = () => {
   }
 
   return (
-    <div className="flex h-full">
+    <div className="flex min-h-full">
       {/* Sidebar */}
-      <div className="w-64 bg-white border-r border-gray-200 p-6">
+      <div className="w-64 bg-white border-r border-gray-200 p-6 flex-shrink-0">
         <div className="mb-6">
           <button
             onClick={() => navigate('/admin')}
