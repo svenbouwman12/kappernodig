@@ -180,8 +180,11 @@ const AdminDashboardPage = () => {
             className="cursor-pointer"
             style={{ pointerEvents: 'auto' }}
           >
-            <Card className="p-6 hover:shadow-lg hover:bg-gray-50 transition-all duration-200 border-2 hover:border-primary/20">
-              <div className="flex items-start justify-between mb-4">
+            <Card 
+              className="p-6 hover:shadow-lg hover:bg-gray-50 transition-all duration-200 border-2 hover:border-primary/20"
+              style={{ pointerEvents: 'none' }}
+            >
+              <div className="flex items-start justify-between mb-4" style={{ pointerEvents: 'none' }}>
                 <div className="flex items-center space-x-3">
                   <div className="p-2 bg-primary/10 rounded-lg">
                     <Building2 className="h-6 w-6 text-primary" />
@@ -206,7 +209,7 @@ const AdminDashboardPage = () => {
 
               {/* Owner Info */}
               {kapperszaak.owner && (
-                <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                <div className="mb-4 p-3 bg-gray-50 rounded-lg" style={{ pointerEvents: 'none' }}>
                   <div className="flex items-center space-x-2">
                     <User className="h-4 w-4 text-gray-500" />
                     <div>
@@ -220,7 +223,7 @@ const AdminDashboardPage = () => {
               )}
 
               {/* Stats */}
-              <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="grid grid-cols-3 gap-4 text-center" style={{ pointerEvents: 'none' }}>
                 <div className="flex flex-col items-center">
                   <Wrench className="h-5 w-5 text-blue-500 mb-1" />
                   <span className="text-sm font-medium text-gray-900">{kapperszaak.servicesCount}</span>
