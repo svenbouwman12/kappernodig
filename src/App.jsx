@@ -7,6 +7,9 @@ import BarberProfilePage from './pages/BarberProfilePage.jsx'
 import BarberDashboardPage from './pages/BarberDashboardPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import RegisterPage from './pages/RegisterPage.jsx'
+import ClientLoginPage from './pages/client/ClientLoginPage.jsx'
+import ClientRegisterPage from './pages/client/ClientRegisterPage.jsx'
+import ClientDashboardPage from './pages/client/ClientDashboardPage.jsx'
 import MapPage from './pages/MapPage.jsx'
 import AdminHome from './pages/admin/AdminHome.jsx'
 import AdminLoginPage from './pages/admin/AdminLoginPage.jsx'
@@ -29,11 +32,13 @@ function AppContent() {
     if (!loading && user && userProfile) {
       // Only redirect from login/register pages, not from homepage
       const currentPath = window.location.pathname
-      if (currentPath === '/login' || currentPath === '/register') {
+      if (currentPath === '/login' || currentPath === '/register' || currentPath === '/client/login' || currentPath === '/client/register') {
         if (userProfile.role === 'admin') {
           navigate('/admin', { replace: true })
         } else if (userProfile.role === 'barber') {
           navigate('/dashboard', { replace: true })
+        } else if (userProfile.role === 'client') {
+          navigate('/client/dashboard', { replace: true })
         }
       }
     }
@@ -75,6 +80,16 @@ function AppContent() {
           />
           <Route path="/login" element={<div className="container-max"><LoginPage /></div>} />
           <Route path="/register" element={<div className="container-max"><RegisterPage /></div>} />
+          <Route path="/client/login" element={<div className="container-max"><ClientLoginPage /></div>} />
+          <Route path="/client/register" element={<div className="container-max"><ClientRegisterPage /></div>} />
+          <Route 
+            path="/client/dashboard" 
+            element={
+              <ProtectedRoute>
+                <div className="container-max"><ClientDashboardPage /></div>
+              </ProtectedRoute>
+            } 
+          />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
