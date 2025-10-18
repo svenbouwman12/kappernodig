@@ -146,9 +146,40 @@ export default function AddAppointmentModal({ isOpen, onClose, salonId, onAppoin
   // Generate time slots (8:00 - 20:00) in 15-minute intervals
   const generateTimeSlots = () => {
     const slots = []
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    
     for (let hour = 8; hour < 20; hour++) {
       for (let minute = 0; minute < 60; minute += 15) {
         const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
+        
+        // Filter out past time slots
+        if (selectedDate) {
+          const selectedDateObj = new Date(selectedDate)
+          const selectedDateOnly = new Date(selectedDateObj.getFullYear(), selectedDateObj.getMonth(), selectedDateObj.getDate())
+          
+          // Compare dates using local date strings to avoid timezone issues
+          const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+          const selectedDateString = `${selectedDateOnly.getFullYear()}-${String(selectedDateOnly.getMonth() + 1).padStart(2, '0')}-${String(selectedDateOnly.getDate()).padStart(2, '0')}`
+          
+          const isPastDate = selectedDateString < todayString
+          const isToday = todayString === selectedDateString
+          
+          // Skip all slots for past dates
+          if (isPastDate) {
+            continue
+          }
+          
+          // For today, skip slots that are in the past
+          if (isToday) {
+            const slotTime = new Date(selectedDateOnly)
+            slotTime.setHours(hour, minute, 0, 0)
+            if (slotTime < now) {
+              continue
+            }
+          }
+        }
+        
         slots.push(time)
       }
     }

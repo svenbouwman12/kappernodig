@@ -131,17 +131,38 @@ export default function BookingPage() {
 
     // Get current time to filter out past slots
     const now = new Date()
+    
+    // Ensure selectedDate is a proper Date object
+    const selectedDateObj = new Date(selectedDate)
+    
+    // Get today's date (start of day)
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const isToday = selectedDate.getTime() === today.getTime()
+    
+    // Get selected date (start of day)
+    const selectedDateOnly = new Date(selectedDateObj.getFullYear(), selectedDateObj.getMonth(), selectedDateObj.getDate())
+    
+    // Compare dates using local date strings to avoid timezone issues
+    const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+    const selectedDateString = `${selectedDateOnly.getFullYear()}-${String(selectedDateOnly.getMonth() + 1).padStart(2, '0')}-${String(selectedDateOnly.getDate()).padStart(2, '0')}`
+    
+    
+    const isToday = todayString === selectedDateString
+    const isPastDate = selectedDateString < todayString
 
     // Generate time slots
     const currentTime = new Date(startTime)
     while (currentTime.getTime() + (duration * 60000) <= endTime.getTime()) {
       const slotEnd = new Date(currentTime.getTime() + (duration * 60000))
       
-      // Skip slots in the past (only for today)
+      // Skip slots in the past
+      if (isPastDate) {
+        currentTime.setMinutes(currentTime.getMinutes() + 15)
+        continue
+      }
+      
+      // For today, skip slots that are in the past
       if (isToday && currentTime < now) {
-        currentTime.setMinutes(currentTime.getMinutes() + 30)
+        currentTime.setMinutes(currentTime.getMinutes() + 15)
         continue
       }
       
@@ -155,7 +176,7 @@ export default function BookingPage() {
       slots.push({
         time: currentTime.toTimeString().slice(0, 5),
         available: !hasConflict,
-        isPast: isToday && currentTime < now
+        isPast: isPastDate || (isToday && currentTime < now)
       })
 
       currentTime.setMinutes(currentTime.getMinutes() + 15) // 15-minute intervals
@@ -171,7 +192,11 @@ export default function BookingPage() {
     const firstDay = new Date(year, month, 1)
     const lastDay = new Date(year, month + 1, 0)
     const daysInMonth = lastDay.getDate()
-    const startingDayOfWeek = firstDay.getDay()
+    
+    // Adjust for Monday start (0=Sunday, 1=Monday, ..., 6=Saturday)
+    // We want Monday=0, Tuesday=1, ..., Sunday=6
+    let startingDayOfWeek = firstDay.getDay()
+    startingDayOfWeek = startingDayOfWeek === 0 ? 6 : startingDayOfWeek - 1
     
     const days = []
     
@@ -204,7 +229,8 @@ export default function BookingPage() {
     if (!isDateAvailable(date)) return
     
     setSelectedDate(date)
-    const dateString = date.toISOString().split('T')[0]
+    // Use local date string instead of ISO string to avoid timezone issues
+    const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
     setBooking({ ...booking, date: dateString, time: '' })
     setAvailableSlots([])
   }
@@ -450,7 +476,7 @@ export default function BookingPage() {
 
                 {/* Calendar Grid */}
                 <div className="grid grid-cols-7 gap-1 mb-2">
-                  {['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'].map(day => (
+                  {['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'].map(day => (
                     <div key={day} className="text-center text-sm font-medium text-gray-500 p-2">
                       {day}
                     </div>

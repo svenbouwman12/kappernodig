@@ -187,6 +187,12 @@ export default function KapperDashboardPage() {
         return
       }
 
+      // Save opening hours to salon_hours table
+      if (barberResult && barberResult.length > 0) {
+        const barberId = barberResult[0].id
+        await saveOpeningHours(barberId, barberData)
+      }
+
       // Save local services if any
       if (localServices.length > 0) {
         const barberId = barberResult[0]?.id
@@ -216,6 +222,112 @@ export default function KapperDashboardPage() {
     } catch (err) {
       console.error('Error saving barber:', err)
       alert('Er is een fout opgetreden bij het opslaan.')
+    }
+  }
+
+  // Helper function to load opening hours for a barber
+  async function loadOpeningHours(barberId) {
+    try {
+      const { data, error } = await supabase
+        .from('salon_hours')
+        .select('*')
+        .eq('salon_id', barberId)
+
+      if (error) {
+        console.error('Error loading opening hours:', error)
+        return {}
+      }
+
+      // Convert to the format expected by the form
+      const openingHours = {}
+      
+      // Map day numbers to day names
+      const dayMap = {
+        0: 'sunday',
+        1: 'monday', 
+        2: 'tuesday',
+        3: 'wednesday',
+        4: 'thursday',
+        5: 'friday',
+        6: 'saturday'
+      }
+
+      data.forEach(hour => {
+        const dayName = dayMap[hour.day_of_week]
+        if (dayName && !hour.is_closed) {
+          openingHours[`${dayName}_open`] = hour.open_time
+          openingHours[`${dayName}_close`] = hour.close_time
+        }
+      })
+
+      return openingHours
+    } catch (err) {
+      console.error('Error loading opening hours:', err)
+      return {}
+    }
+  }
+
+  // Helper function to save opening hours
+  async function saveOpeningHours(barberId, barberData) {
+    try {
+      // First, delete existing opening hours for this salon
+      await supabase
+        .from('salon_hours')
+        .delete()
+        .eq('salon_id', barberId)
+
+      // Map day names to day numbers (0 = Sunday, 6 = Saturday)
+      const dayMap = {
+        'sunday': 0,
+        'monday': 1,
+        'tuesday': 2,
+        'wednesday': 3,
+        'thursday': 4,
+        'friday': 5,
+        'saturday': 6
+      }
+
+      // Prepare opening hours data
+      const openingHoursData = []
+      
+      Object.entries(dayMap).forEach(([dayName, dayNumber]) => {
+        const openTime = barberData[`${dayName}_open`]
+        const closeTime = barberData[`${dayName}_close`]
+        
+        if (openTime && closeTime) {
+          openingHoursData.push({
+            salon_id: barberId,
+            day_of_week: dayNumber,
+            open_time: openTime,
+            close_time: closeTime,
+            is_closed: false
+          })
+        } else {
+          // Mark as closed if no times are set
+          openingHoursData.push({
+            salon_id: barberId,
+            day_of_week: dayNumber,
+            open_time: '09:00', // Required field, but won't be used
+            close_time: '18:00', // Required field, but won't be used
+            is_closed: true
+          })
+        }
+      })
+
+      // Insert opening hours
+      if (openingHoursData.length > 0) {
+        const { error: hoursError } = await supabase
+          .from('salon_hours')
+          .insert(openingHoursData)
+
+        if (hoursError) {
+          console.error('Error saving opening hours:', hoursError)
+          alert('Kapperszaak opgeslagen, maar er was een fout bij het opslaan van de openingstijden.')
+        }
+      }
+    } catch (err) {
+      console.error('Error saving opening hours:', err)
+      alert('Kapperszaak opgeslagen, maar er was een fout bij het opslaan van de openingstijden.')
     }
   }
 
@@ -706,18 +818,79 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
     location: barber?.location || '',
     address: barber?.address || '',
     phone: barber?.phone || '',
-    website: barber?.website || '',
     price_range: barber?.price_range || '€€',
     rating: barber?.rating || '',
     image_url: barber?.image_url || '',
     latitude: barber?.latitude || '',
     longitude: barber?.longitude || '',
     gender_served: barber?.gender_served || 'both',
+    // Opening hours for each day
+    monday_open: barber?.monday_open || '',
+    monday_close: barber?.monday_close || '',
+    tuesday_open: barber?.tuesday_open || '',
+    tuesday_close: barber?.tuesday_close || '',
+    wednesday_open: barber?.wednesday_open || '',
+    wednesday_close: barber?.wednesday_close || '',
+    thursday_open: barber?.thursday_open || '',
+    thursday_close: barber?.thursday_close || '',
+    friday_open: barber?.friday_open || '',
+    friday_close: barber?.friday_close || '',
+    saturday_open: barber?.saturday_open || '',
+    saturday_close: barber?.saturday_close || '',
+    sunday_open: barber?.sunday_open || '',
+    sunday_close: barber?.sunday_close || '',
     // Postcode lookup fields
     postcode: '',
     houseNumber: '',
     foundAddress: null
   })
+  
+  // Load opening hours when editing an existing barber
+  useEffect(() => {
+    if (barber?.id) {
+      loadOpeningHoursForForm(barber.id)
+    }
+  }, [barber?.id])
+
+  async function loadOpeningHoursForForm(barberId) {
+    try {
+      const { data, error } = await supabase
+        .from('salon_hours')
+        .select('*')
+        .eq('salon_id', barberId)
+
+      if (error) {
+        console.error('Error loading opening hours:', error)
+        return
+      }
+
+      // Update form data with opening hours
+      const openingHoursUpdate = {}
+      
+      // Map day numbers to day names
+      const dayMap = {
+        0: 'sunday',
+        1: 'monday', 
+        2: 'tuesday',
+        3: 'wednesday',
+        4: 'thursday',
+        5: 'friday',
+        6: 'saturday'
+      }
+
+      data.forEach(hour => {
+        const dayName = dayMap[hour.day_of_week]
+        if (dayName && !hour.is_closed) {
+          openingHoursUpdate[`${dayName}_open`] = hour.open_time
+          openingHoursUpdate[`${dayName}_close`] = hour.close_time
+        }
+      })
+
+      setFormData(prev => ({ ...prev, ...openingHoursUpdate }))
+    } catch (err) {
+      console.error('Error loading opening hours:', err)
+    }
+  }
   
   const [services, setServices] = useState([])
   const [saving, setSaving] = useState(false)
@@ -928,15 +1101,6 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
             />
           </div>
           
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Website</label>
-            <input
-              value={formData.website}
-              onChange={(e) => setFormData({...formData, website: e.target.value})}
-              placeholder="https://www.kapper.nl"
-              className="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
-          </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Prijsniveau</label>
@@ -967,7 +1131,7 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Geslacht</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Welk geslacht knip je?</label>
             <select
               value={formData.gender_served}
               onChange={(e) => setFormData({...formData, gender_served: e.target.value})}
@@ -977,6 +1141,58 @@ function BarberForm({ barber, onSave, onCancel, geocoding }) {
               <option value="man">Alleen mannen</option>
               <option value="vrouw">Alleen vrouwen</option>
             </select>
+          </div>
+          
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-4">Openingstijden *</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                { key: 'monday', label: 'Maandag' },
+                { key: 'tuesday', label: 'Dinsdag' },
+                { key: 'wednesday', label: 'Woensdag' },
+                { key: 'thursday', label: 'Donderdag' },
+                { key: 'friday', label: 'Vrijdag' },
+                { key: 'saturday', label: 'Zaterdag' },
+                { key: 'sunday', label: 'Zondag' }
+              ].map(day => (
+                <div key={day.key} className="flex items-center space-x-3">
+                  <div className="w-20 text-sm font-medium text-gray-700">
+                    {day.label}
+                  </div>
+                  <div className="flex items-center space-x-2 flex-1">
+                    <input
+                      type="time"
+                      value={formData[`${day.key}_open`] || ''}
+                      onChange={(e) => setFormData({...formData, [`${day.key}_open`]: e.target.value})}
+                      className="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                      placeholder="09:00"
+                    />
+                    <span className="text-gray-500">-</span>
+                    <input
+                      type="time"
+                      value={formData[`${day.key}_close`] || ''}
+                      onChange={(e) => setFormData({...formData, [`${day.key}_close`]: e.target.value})}
+                      className="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                      placeholder="18:00"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData({
+                          ...formData,
+                          [`${day.key}_open`]: '',
+                          [`${day.key}_close`]: ''
+                        })
+                      }}
+                      className="text-gray-400 hover:text-red-500 text-sm px-2 py-1"
+                      title="Gesloten"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
