@@ -57,7 +57,7 @@ export default function KapperDashboardPage() {
     // Only load barbers when both user and userProfile are available AND we haven't loaded yet
     if (user?.id && userProfile && !hasLoadedRef.current) {
       hasLoadedRef.current = true
-      loadBarbers()
+      loadBarbers(false) // Normal loading state for initial load
       loadKapperName()
     } else if (!user?.id || !userProfile) {
       // Keep loading state true while waiting for user and userProfile
@@ -81,8 +81,10 @@ export default function KapperDashboardPage() {
     }
   }
 
-  async function loadBarbers() {
-    setLoading(true)
+  async function loadBarbers(skipLoadingState = false) {
+    if (!skipLoadingState) {
+      setLoading(true)
+    }
     try {
       const { data, error } = await supabase
         .from('barbers')
@@ -92,7 +94,9 @@ export default function KapperDashboardPage() {
 
       if (error) {
         console.error('Error loading barbers:', error)
-        setLoading(false)
+        if (!skipLoadingState) {
+          setLoading(false)
+        }
         return
       }
 
@@ -123,7 +127,9 @@ export default function KapperDashboardPage() {
     } catch (err) {
       console.error('Error loading barbers:', err)
     } finally {
-      setLoading(false)
+      if (!skipLoadingState) {
+        setLoading(false)
+      }
     }
   }
 
@@ -220,7 +226,8 @@ export default function KapperDashboardPage() {
 
       setShowAddForm(false)
       setEditingBarber(null)
-      loadBarbers()
+      // Reload barbers without triggering loading state
+      await loadBarbers(true)
     } catch (err) {
       console.error('Error saving barber:', err)
       alert('Er is een fout opgetreden bij het opslaan.')
