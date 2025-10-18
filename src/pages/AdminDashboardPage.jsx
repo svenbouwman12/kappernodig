@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext.jsx'
 import Card from '../components/Card.jsx'
+import DataTable from '../components/admin/DataTable.jsx'
+import Button from '../components/Button.jsx'
 import { 
   Building2, 
   MapPin, 
@@ -10,9 +12,14 @@ import {
   Wrench, 
   Calendar, 
   MessageSquare,
-  Search,
   LogOut,
-  ArrowLeft
+  ArrowLeft,
+  Plus,
+  Eye,
+  Edit,
+  Trash2,
+  Phone,
+  Globe
 } from 'lucide-react'
 
 export default function AdminDashboardPage() {
@@ -20,7 +27,8 @@ export default function AdminDashboardPage() {
   const [kapperszaken, setKapperszaken] = useState([])
   const [userProfile, setUserProfile] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedKapperszaak, setSelectedKapperszaak] = useState(null)
+  const [showModal, setShowModal] = useState(false)
 
   useEffect(() => {
     loadUserProfile()
@@ -90,9 +98,23 @@ export default function AdminDashboardPage() {
             .select('*', { count: 'exact', head: true })
             .eq('salon_id', kapperszaak.id)
 
+          // Load services data
+          const { data: servicesData } = await supabase
+            .from('services')
+            .select('id, name, price')
+            .eq('barber_id', kapperszaak.id)
+
+          // Load reviews data
+          const { data: reviewsData } = await supabase
+            .from('reviews')
+            .select('id, rating, is_published, is_approved')
+            .eq('salon_id', kapperszaak.id)
+
           return {
             ...kapperszaak,
             owner: ownerData,
+            services: servicesData || [],
+            reviews: reviewsData || [],
             servicesCount: servicesCount || 0,
             appointmentsCount: appointmentsCount || 0,
             reviewsCount: reviewsCount || 0
@@ -108,10 +130,6 @@ export default function AdminDashboardPage() {
     }
   }
 
-  const handleCardClick = (kapperszaak) => {
-    console.log('Card clicked:', kapperszaak.name)
-    window.location.href = `/admin/kapperszaken/${kapperszaak.id}`
-  }
 
   const handleLogout = async () => {
     try {
@@ -121,11 +139,113 @@ export default function AdminDashboardPage() {
     }
   }
 
-  const filteredKapperszaken = kapperszaken.filter(kapperszaak =>
-    kapperszaak.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    kapperszaak.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (kapperszaak.owner?.naam && kapperszaak.owner.naam.toLowerCase().includes(searchTerm.toLowerCase()))
-  )
+  const handleView = (kapperszaak) => {
+    setSelectedKapperszaak(kapperszaak)
+    setShowModal(true)
+  }
+
+  const handleEdit = (kapperszaak) => {
+    // Navigate to detail page for editing
+    window.location.href = `/admin/kapperszaken/${kapperszaak.id}`
+  }
+
+  const handleDelete = async (kapperszaak) => {
+    if (!confirm(`Weet je zeker dat je ${kapperszaak.name} wilt verwijderen?`)) {
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('barbers')
+        .delete()
+        .eq('id', kapperszaak.id)
+
+      if (error) {
+        console.error('Error deleting kapperszaak:', error)
+        alert('Er is een fout opgetreden bij het verwijderen van de kapperszaak.')
+        return
+      }
+
+      loadKapperszaken()
+      alert('Kapperszaak succesvol verwijderd!')
+    } catch (err) {
+      console.error('Error deleting kapperszaak:', err)
+      alert('Er is een fout opgetreden bij het verwijderen van de kapperszaak.')
+    }
+  }
+
+  const getAverageRating = (reviews) => {
+    const publishedReviews = reviews?.filter(r => r.is_published && r.is_approved) || []
+    if (publishedReviews.length === 0) return 0
+    const sum = publishedReviews.reduce((acc, review) => acc + review.rating, 0)
+    return (sum / publishedReviews.length).toFixed(1)
+  }
+
+
+  const columns = [
+    {
+      key: 'name',
+      title: 'Naam',
+      render: (value, row) => (
+        <div className="flex items-center">
+          <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mr-3">
+            <Building2 size={16} className="text-primary" />
+          </div>
+          <span className="font-medium">{value}</span>
+        </div>
+      )
+    },
+    {
+      key: 'location',
+      title: 'Locatie',
+      render: (value) => (
+        <div className="flex items-center">
+          <MapPin size={16} className="text-gray-400 mr-1" />
+          <span>{value}</span>
+        </div>
+      )
+    },
+    {
+      key: 'owner',
+      title: 'Eigenaar',
+      render: (value) => (
+        <span>{value?.naam || 'Onbekend'}</span>
+      )
+    },
+    {
+      key: 'rating',
+      title: 'Rating',
+      render: (value, row) => {
+        const avgRating = getAverageRating(row.reviews)
+        return (
+          <div className="flex items-center">
+            <Star size={16} className="text-yellow-400 fill-current mr-1" />
+            <span>{avgRating || 'N/A'}</span>
+          </div>
+        )
+      }
+    },
+    {
+      key: 'services',
+      title: 'Diensten',
+      render: (value) => (
+        <span>{value?.length || 0}</span>
+      )
+    },
+    {
+      key: 'reviews',
+      title: 'Reviews',
+      render: (value) => {
+        const publishedCount = value?.filter(r => r.is_published && r.is_approved).length || 0
+        return <span>{publishedCount}</span>
+      }
+    },
+    {
+      key: 'created_at',
+      title: 'Aangemaakt',
+      render: (value) => new Date(value).toLocaleDateString('nl-NL')
+    }
+  ]
 
   if (loading) {
     return (
@@ -145,16 +265,6 @@ export default function AdminDashboardPage() {
         <div className="flex items-center justify-between h-16 px-6">
           <div className="flex items-center space-x-4">
             <h1 className="text-xl font-bold text-primary">Kapper Nodig</h1>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Zoek kapper, locatie..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-64 px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-            </div>
           </div>
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
@@ -179,97 +289,197 @@ export default function AdminDashboardPage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto p-6">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Kapperszaken Dashboard</h2>
-          <p className="text-gray-600">
-            Beheer alle kapperszaken in het systeem. Klik op een kapperszaak voor meer details.
-          </p>
-        </div>
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Kapperszaken Beheer</h1>
+              <p className="mt-2 text-gray-600">
+                Beheer alle kapperszaken in het systeem
+              </p>
+            </div>
+            <Button className="flex items-center gap-2">
+              <Plus size={16} />
+              Nieuwe Kapperszaak
+            </Button>
+          </div>
 
-        {/* Kapperszaken Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredKapperszaken.map((kapperszaak) => (
-            <div
-              key={kapperszaak.id}
-              onClick={() => handleCardClick(kapperszaak)}
-              className="cursor-pointer"
-              style={{ pointerEvents: 'auto' }}
-            >
-              <Card 
-                className="p-6 hover:shadow-lg hover:bg-gray-50 transition-all duration-200 border-2 hover:border-primary/20"
-                style={{ pointerEvents: 'none' }}
-              >
-                <div className="flex items-start justify-between mb-4" style={{ pointerEvents: 'none' }}>
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      <Building2 className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        {kapperszaak.name}
-                      </h3>
-                      <p className="text-sm text-gray-600 flex items-center">
-                        <MapPin className="h-4 w-4 mr-1" />
-                        {kapperszaak.location}
-                      </p>
-                    </div>
+          {/* Data Table */}
+          <DataTable
+            data={kapperszaken}
+            columns={columns}
+            onView={handleView}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            loading={loading}
+            searchable={true}
+            filterable={true}
+            sortable={true}
+            pagination={true}
+            pageSize={10}
+          />
+        </div>
+      </main>
+
+      {/* Kapperszaak Detail Modal */}
+      {showModal && selectedKapperszaak && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-gray-900">
+                  Kapperszaak Details
+                </h3>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {/* Basic Info */}
+                <div className="flex items-start space-x-4">
+                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+                    <Building2 size={24} className="text-primary" />
                   </div>
-                  <div className="text-right">
-                    <div className="flex items-center text-yellow-500">
-                      <Star className="h-4 w-4 fill-current" />
-                      <span className="ml-1 text-sm font-medium">{kapperszaak.rating || 'N/A'}</span>
+                  <div className="flex-1">
+                    <h4 className="text-xl font-medium text-gray-900">
+                      {selectedKapperszaak.name}
+                    </h4>
+                    <p className="text-gray-600">{selectedKapperszaak.location}</p>
+                    <div className="flex items-center mt-2">
+                      <Star size={16} className="text-yellow-400 fill-current mr-1" />
+                      <span className="text-sm text-gray-600">
+                        {getAverageRating(selectedKapperszaak.reviews)} ({selectedKapperszaak.reviews?.filter(r => r.is_published && r.is_approved).length || 0} reviews)
+                      </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Owner Info */}
-                {kapperszaak.owner && (
-                  <div className="mb-4 p-3 bg-gray-50 rounded-lg" style={{ pointerEvents: 'none' }}>
-                    <div className="flex items-center space-x-2">
-                      <User className="h-4 w-4 text-gray-500" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          {kapperszaak.owner.naam}
-                        </p>
-                        <p className="text-xs text-gray-500">{kapperszaak.owner.email}</p>
+                {/* Contact Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Locatie
+                    </label>
+                    <div className="flex items-center">
+                      <MapPin size={16} className="text-gray-400 mr-2" />
+                      <span className="text-sm text-gray-900">{selectedKapperszaak.location}</span>
+                    </div>
+                  </div>
+                  {selectedKapperszaak.phone && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Telefoon
+                      </label>
+                      <div className="flex items-center">
+                        <Phone size={16} className="text-gray-400 mr-2" />
+                        <span className="text-sm text-gray-900">{selectedKapperszaak.phone}</span>
                       </div>
+                    </div>
+                  )}
+                  {selectedKapperszaak.website && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Website
+                      </label>
+                      <div className="flex items-center">
+                        <Globe size={16} className="text-gray-400 mr-2" />
+                        <a href={selectedKapperszaak.website} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
+                          {selectedKapperszaak.website}
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Eigenaar
+                    </label>
+                    <span className="text-sm text-gray-900">
+                      {selectedKapperszaak.owner?.naam || 'Onbekend'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Description */}
+                {selectedKapperszaak.description && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Beschrijving
+                    </label>
+                    <p className="text-sm text-gray-900 leading-relaxed">
+                      {selectedKapperszaak.description}
+                    </p>
+                  </div>
+                )}
+
+                {/* Services */}
+                {selectedKapperszaak.services && selectedKapperszaak.services.length > 0 && (
+                  <div>
+                    <h5 className="text-sm font-medium text-gray-700 mb-3">
+                      Diensten ({selectedKapperszaak.services.length})
+                    </h5>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {selectedKapperszaak.services.map((service) => (
+                        <div key={service.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <span className="font-medium text-gray-900">{service.name}</span>
+                          <span className="text-sm text-gray-600">€{service.price}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
 
-                {/* Stats */}
-                <div className="grid grid-cols-3 gap-4 text-center" style={{ pointerEvents: 'none' }}>
-                  <div className="flex flex-col items-center">
-                    <Wrench className="h-5 w-5 text-blue-500 mb-1" />
-                    <span className="text-sm font-medium text-gray-900">{kapperszaak.servicesCount}</span>
-                    <span className="text-xs text-gray-500">Diensten</span>
+                {/* Recent Reviews */}
+                {selectedKapperszaak.reviews && selectedKapperszaak.reviews.length > 0 && (
+                  <div>
+                    <h5 className="text-sm font-medium text-gray-700 mb-3">
+                      Recente Reviews ({selectedKapperszaak.reviews.filter(r => r.is_published && r.is_approved).length})
+                    </h5>
+                    <div className="space-y-3 max-h-40 overflow-y-auto">
+                      {selectedKapperszaak.reviews
+                        .filter(r => r.is_published && r.is_approved)
+                        .slice(0, 3)
+                        .map((review) => (
+                        <div key={review.id} className="p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star 
+                                  key={star}
+                                  size={12} 
+                                  className={star <= review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'} 
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          <p className="text-xs text-gray-600">{review.content?.substring(0, 100)}...</p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex flex-col items-center">
-                    <Calendar className="h-5 w-5 text-green-500 mb-1" />
-                    <span className="text-sm font-medium text-gray-900">{kapperszaak.appointmentsCount}</span>
-                    <span className="text-xs text-gray-500">Afspraken</span>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <MessageSquare className="h-5 w-5 text-purple-500 mb-1" />
-                    <span className="text-sm font-medium text-gray-900">{kapperszaak.reviewsCount}</span>
-                    <span className="text-xs text-gray-500">Reviews</span>
-                  </div>
-                </div>
-              </Card>
-            </div>
-          ))}
-        </div>
+                )}
+              </div>
 
-        {filteredKapperszaken.length === 0 && (
-          <Card className="p-12 text-center">
-            <Building2 className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Geen kapperszaken gevonden</h3>
-            <p className="text-gray-500">
-              {searchTerm ? 'Probeer een andere zoekterm.' : 'Er zijn nog geen kapperszaken geregistreerd.'}
-            </p>
-          </Card>
-        )}
-      </main>
+              <div className="flex justify-end space-x-3 mt-6 pt-6 border-t border-gray-200">
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowModal(false)}
+                >
+                  Sluiten
+                </Button>
+                <Button
+                  onClick={() => handleEdit(selectedKapperszaak)}
+                >
+                  Bewerken
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
