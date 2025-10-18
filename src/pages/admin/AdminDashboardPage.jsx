@@ -169,18 +169,6 @@ const AdminDashboardPage = () => {
                 Klik op een kapperszaak om deze te beheren
               </p>
             </div>
-            <div className="flex items-center space-x-3">
-              <button 
-                onClick={() => console.log('TEST BUTTON CLICKED')}
-                className="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-              >
-                TEST CLICK
-              </button>
-              <button className="flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
-                <Plus size={18} className="mr-2" />
-                Kapper toevoegen
-              </button>
-            </div>
           </div>
 
       {/* Kapperszaken Grid */}
