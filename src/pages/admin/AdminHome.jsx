@@ -125,6 +125,7 @@ const AdminHome = () => {
   }
 
   const handleCardClick = (kapperszaak) => {
+    console.log('Card clicked:', kapperszaak.name, kapperszaak.id)
     navigate(`/admin/kapperszaken/${kapperszaak.id}`)
   }
 
@@ -172,14 +173,22 @@ const AdminHome = () => {
             <h1 className="text-xl font-bold text-primary">Admin Dashboard</h1>
           </div>
           <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                <User size={16} className="text-white" />
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                  <User size={16} className="text-white" />
+                </div>
+                <span className="text-sm font-medium text-gray-900">
+                  {userProfile?.naam || 'Admin'}
+                </span>
               </div>
-              <span className="text-sm font-medium text-gray-900">
-                {userProfile?.naam || 'Admin'}
-              </span>
-            </div>
+              
+              {/* Test Button */}
+              <button
+                onClick={() => console.log('Test button clicked')}
+                className="px-2 py-1 bg-blue-500 text-white text-xs rounded"
+              >
+                TEST
+              </button>
             
             <button
               onClick={handleLogout}
@@ -218,11 +227,16 @@ const AdminHome = () => {
         {/* Kapperszaken Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredKapperszaken.map((kapperszaak) => (
-            <Card 
+            <div
               key={kapperszaak.id}
-              className="p-6 hover:shadow-lg hover:bg-gray-50 transition-all duration-200 border-2 hover:border-primary/20 cursor-pointer"
+              className="cursor-pointer"
               onClick={() => handleCardClick(kapperszaak)}
+              style={{ pointerEvents: 'auto' }}
             >
+              <Card 
+                className="p-6 hover:shadow-lg hover:bg-gray-50 transition-all duration-200 border-2 hover:border-primary/20 h-full"
+                style={{ pointerEvents: 'none' }}
+              >
               {/* Header with Status */}
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-3">
@@ -287,7 +301,8 @@ const AdminHome = () => {
                   </div>
                 </div>
               )}
-            </Card>
+              </Card>
+            </div>
           ))}
         </div>
 
