@@ -20,6 +20,7 @@ import AdminKapperszakenPage from './pages/admin/AdminKapperszakenPage.jsx'
 import AdminBoekingenPage from './pages/admin/AdminBoekingenPage.jsx'
 import AdminDienstenPage from './pages/admin/AdminDienstenPage.jsx'
 import AdminReviewsPage from './pages/admin/AdminReviewsPage.jsx'
+import KapperszaakDetailPage from './pages/admin/KapperszaakDetailPage.jsx'
 import ClientLoginPage from './pages/client/ClientLoginPage.jsx'
 import ClientRegisterPage from './pages/client/ClientRegisterPage.jsx'
 import ClientDashboardPage from './pages/client/ClientDashboardPage.jsx'
@@ -198,6 +199,7 @@ function AppContent() {
                     <Route path="/kappers" element={<AdminKappersPage />} />
                     <Route path="/klanten" element={<AdminKlantenPage />} />
                     <Route path="/kapperszaken" element={<AdminKapperszakenPage />} />
+                    <Route path="/kapperszaken/:id" element={<KapperszaakDetailPage />} />
                     <Route path="/boekingen" element={<AdminBoekingenPage />} />
                     <Route path="/diensten" element={<AdminDienstenPage />} />
                     <Route path="/reviews" element={<AdminReviewsPage />} />
