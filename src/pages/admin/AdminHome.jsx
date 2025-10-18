@@ -20,7 +20,7 @@ import {
 } from 'lucide-react'
 
 const AdminHome = () => {
-  const { user, signOut } = useAuth()
+  const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [kapperszaken, setKapperszaken] = useState([])
   const [userProfile, setUserProfile] = useState(null)
@@ -138,9 +138,11 @@ const AdminHome = () => {
 
   const handleLogout = async () => {
     try {
-      await signOut()
+      await logout()
     } catch (error) {
       console.error('Error signing out:', error)
+      // Fallback: redirect to login page
+      window.location.href = '/admin/login'
     }
   }
 
