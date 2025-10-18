@@ -149,7 +149,7 @@ const KapperszaakDetail = () => {
       const { data, error } = await supabase
         .from('appointments')
         .select('*')
-        .eq('barber_id', id)
+        .eq('salon_id', id)
         .order('start_tijd', { ascending: false })
 
       if (error) {
@@ -723,25 +723,55 @@ const AgendaTab = ({ appointments }) => (
   <Card className="p-6">
     <div className="flex items-center justify-between mb-6">
       <h2 className="text-2xl font-bold text-gray-900">Agenda</h2>
+      <div className="text-sm text-gray-500">
+        {appointments.length} afspraak{appointments.length !== 1 ? 'en' : ''}
+      </div>
     </div>
 
     <div className="space-y-4">
       {appointments.map((appointment) => (
-        <div key={appointment.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-          <div>
-            <h3 className="font-medium text-gray-900">
-              {new Date(appointment.start_tijd).toLocaleDateString('nl-NL')} om {new Date(appointment.start_tijd).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
-            </h3>
-            <p className="text-sm text-gray-600">{appointment.client_name} • {appointment.service_name}</p>
+        <div key={appointment.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+          <div className="flex-1">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Calendar className="w-6 h-6 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="font-medium text-gray-900">
+                  {new Date(appointment.start_tijd).toLocaleDateString('nl-NL', { 
+                    weekday: 'short',
+                    day: 'numeric',
+                    month: 'short'
+                  })} om {new Date(appointment.start_tijd).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
+                </h3>
+                <div className="text-sm text-gray-600 space-y-1">
+                  {appointment.client_name && (
+                    <p><strong>Klant:</strong> {appointment.client_name}</p>
+                  )}
+                  {appointment.dienst && (
+                    <p><strong>Dienst:</strong> {appointment.dienst}</p>
+                  )}
+                  {appointment.client_email && (
+                    <p><strong>Email:</strong> {appointment.client_email}</p>
+                  )}
+                  {appointment.client_phone && appointment.client_phone !== 'Niet opgegeven' && (
+                    <p><strong>Telefoon:</strong> {appointment.client_phone}</p>
+                  )}
+                  {appointment.notities && (
+                    <p><strong>Opmerkingen:</strong> {appointment.notities}</p>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
           <div className="flex space-x-2">
-            <Button variant="secondary">
+            <Button variant="secondary" size="sm">
               <Eye size={16} />
             </Button>
-            <Button variant="secondary">
+            <Button variant="secondary" size="sm">
               <Edit size={16} />
             </Button>
-            <Button variant="secondary" className="text-red-600 hover:bg-red-50">
+            <Button variant="secondary" size="sm" className="text-red-600 hover:bg-red-50">
               <Trash2 size={16} />
             </Button>
           </div>
@@ -749,8 +779,10 @@ const AgendaTab = ({ appointments }) => (
       ))}
       
       {appointments.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
-          Geen afspraken gevonden.
+        <div className="text-center py-12 text-gray-500">
+          <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+          <p className="text-lg font-medium mb-2">Geen afspraken gevonden</p>
+          <p className="text-sm">Er zijn nog geen afspraken geboekt voor deze kapperszaak.</p>
         </div>
       )}
     </div>
