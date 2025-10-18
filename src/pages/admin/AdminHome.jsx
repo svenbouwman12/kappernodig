@@ -77,9 +77,9 @@ const AdminHome = () => {
               .from('profiles')
               .select('id, naam, email')
               .eq('id', kapperszaak.owner_id)
-              .single()
+              .maybeSingle()
             
-            if (!ownerError) {
+            if (!ownerError && owner) {
               ownerData = owner
             }
           }

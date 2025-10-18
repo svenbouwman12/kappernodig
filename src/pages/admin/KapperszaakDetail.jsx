@@ -97,16 +97,19 @@ const KapperszaakDetail = () => {
           .from('profiles')
           .select('*')
           .eq('id', kapperszaakData.owner_id)
-          .single()
+          .maybeSingle()
 
         if (ownerError) {
           console.error('Error loading owner:', ownerError)
-          // Don't return, just continue without owner data
           setOwner(null)
-        } else {
+        } else if (ownerData) {
           setOwner(ownerData)
+        } else {
+          console.log('No owner found for owner_id:', kapperszaakData.owner_id)
+          setOwner(null)
         }
       } else {
+        console.log('No owner_id found for kapperszaak:', kapperszaakData.id)
         setOwner(null)
       }
     } catch (error) {
