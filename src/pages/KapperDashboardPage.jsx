@@ -178,8 +178,21 @@ export default function KapperDashboardPage() {
         }
       }
 
+      // Filter out opening hours fields that don't belong in the barbers table
+      const { 
+        monday_open, monday_close, monday_closed,
+        tuesday_open, tuesday_close, tuesday_closed,
+        wednesday_open, wednesday_close, wednesday_closed,
+        thursday_open, thursday_close, thursday_closed,
+        friday_open, friday_close, friday_closed,
+        saturday_open, saturday_close, saturday_closed,
+        sunday_open, sunday_close, sunday_closed,
+        street, houseNumber, postcode,
+        ...barberFields 
+      } = barberData
+
       const dataWithOwner = {
-        ...barberData,
+        ...barberFields,
         owner_id: user?.id,
         latitude: coordinates.lat,
         longitude: coordinates.lng
@@ -198,7 +211,17 @@ export default function KapperDashboardPage() {
       // Save opening hours to salon_hours table
       if (barberResult && barberResult.length > 0) {
         const barberId = barberResult[0].id
-        await saveOpeningHours(barberId, barberData)
+        // Create opening hours object from the filtered data
+        const openingHoursData = {
+          monday_open, monday_close, monday_closed,
+          tuesday_open, tuesday_close, tuesday_closed,
+          wednesday_open, wednesday_close, wednesday_closed,
+          thursday_open, thursday_close, thursday_closed,
+          friday_open, friday_close, friday_closed,
+          saturday_open, saturday_close, saturday_closed,
+          sunday_open, sunday_close, sunday_closed
+        }
+        await saveOpeningHours(barberId, openingHoursData)
       }
 
       // Save local services if any
