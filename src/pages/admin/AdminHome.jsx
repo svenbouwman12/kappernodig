@@ -71,11 +71,18 @@ const AdminHome = () => {
       const kapperszakenWithData = await Promise.all(
         (barbersData || []).map(async (kapperszaak) => {
           // Load owner profile
-          const { data: ownerData } = await supabase
-            .from('profiles')
-            .select('id, naam, email')
-            .eq('id', kapperszaak.owner_id)
-            .single()
+          let ownerData = null
+          if (kapperszaak.owner_id) {
+            const { data: owner, error: ownerError } = await supabase
+              .from('profiles')
+              .select('id, naam, email')
+              .eq('id', kapperszaak.owner_id)
+              .single()
+            
+            if (!ownerError) {
+              ownerData = owner
+            }
+          }
 
           // Load services count
           const { count: servicesCount } = await supabase

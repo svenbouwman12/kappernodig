@@ -92,18 +92,23 @@ const KapperszaakDetail = () => {
       setKapperszaakForm(kapperszaakData)
 
       // Load owner profile
-      const { data: ownerData, error: ownerError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', kapperszaakData.owner_id)
-        .single()
+      if (kapperszaakData.owner_id) {
+        const { data: ownerData, error: ownerError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', kapperszaakData.owner_id)
+          .single()
 
-      if (ownerError) {
-        console.error('Error loading owner:', ownerError)
-        return
+        if (ownerError) {
+          console.error('Error loading owner:', ownerError)
+          // Don't return, just continue without owner data
+          setOwner(null)
+        } else {
+          setOwner(ownerData)
+        }
+      } else {
+        setOwner(null)
       }
-
-      setOwner(ownerData)
     } catch (error) {
       console.error('Error loading kapperszaak data:', error)
     }
