@@ -44,11 +44,19 @@ const KapperszaakDetail = () => {
   const [editingService, setEditingService] = useState(null)
   const [editingReview, setEditingReview] = useState(null)
   const [editingClient, setEditingClient] = useState(null)
+  const [showAddReviewModal, setShowAddReviewModal] = useState(false)
   
   // Form states
   const [kapperszaakForm, setKapperszaakForm] = useState({})
   const [serviceForm, setServiceForm] = useState({})
   const [reviewForm, setReviewForm] = useState({})
+  const [newReviewForm, setNewReviewForm] = useState({
+    reviewer_name: '',
+    reviewer_email: '',
+    rating: 5,
+    title: '',
+    content: ''
+  })
   const [clientForm, setClientForm] = useState({})
 
   useEffect(() => {
@@ -329,6 +337,63 @@ const KapperszaakDetail = () => {
     }
   }
 
+  const handleAddReview = async () => {
+    if (!newReviewForm.reviewer_name.trim() || !newReviewForm.title.trim() || !newReviewForm.content.trim()) {
+      alert('Vul alle verplichte velden in.')
+      return
+    }
+
+    if (newReviewForm.content.trim().length < 20) {
+      alert('De review moet minimaal 20 karakters bevatten.')
+      return
+    }
+
+    if (newReviewForm.title.trim().length < 5) {
+      alert('De titel moet minimaal 5 karakters bevatten.')
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('reviews')
+        .insert({
+          salon_id: id,
+          user_id: null, // Admin created review
+          reviewer_name: newReviewForm.reviewer_name.trim(),
+          reviewer_email: newReviewForm.reviewer_email.trim() || null,
+          rating: newReviewForm.rating,
+          title: newReviewForm.title.trim(),
+          content: newReviewForm.content.trim(),
+          is_published: true, // Admin reviews are published immediately
+          is_approved: true,
+          user_agent: 'Admin Dashboard'
+        })
+
+      if (error) {
+        console.error('Error adding review:', error)
+        alert('Er is een fout opgetreden bij het toevoegen van de review.')
+        return
+      }
+
+      // Reset form
+      setNewReviewForm({
+        reviewer_name: '',
+        reviewer_email: '',
+        rating: 5,
+        title: '',
+        content: ''
+      })
+      setShowAddReviewModal(false)
+
+      // Reload reviews
+      await loadReviews()
+      alert('Review succesvol toegevoegd!')
+    } catch (error) {
+      console.error('Error adding review:', error)
+      alert('Er is een fout opgetreden bij het toevoegen van de review.')
+    }
+  }
+
   const tabs = [
     { id: 'overview', label: 'Algemene Info', icon: Building2 },
     { id: 'services', label: 'Diensten', icon: Wrench },
@@ -460,6 +525,7 @@ const KapperszaakDetail = () => {
               setReviewForm={setReviewForm}
               saveReview={saveReview}
               deleteReview={deleteReview}
+              onAddReview={() => setShowAddReviewModal(true)}
             />
           )}
           
@@ -479,6 +545,15 @@ const KapperszaakDetail = () => {
           )}
         </div>
       </div>
+
+      {/* Add Review Modal */}
+      <AddReviewModal
+        isOpen={showAddReviewModal}
+        onClose={() => setShowAddReviewModal(false)}
+        onSave={handleAddReview}
+        formData={newReviewForm}
+        setFormData={setNewReviewForm}
+      />
     </div>
   )
 }
@@ -722,11 +797,16 @@ const ReviewsTab = ({
   reviewForm, 
   setReviewForm, 
   saveReview, 
-  deleteReview 
+  deleteReview,
+  onAddReview
 }) => (
   <Card className="p-6">
     <div className="flex items-center justify-between mb-6">
       <h2 className="text-2xl font-bold text-gray-900">Reviews</h2>
+      <Button onClick={onAddReview} className="flex items-center space-x-2">
+        <Plus size={16} />
+        <span>Review toevoegen</span>
+      </Button>
     </div>
 
     <div className="space-y-4">
@@ -861,5 +941,126 @@ const OwnerTab = ({ owner }) => (
     )}
   </Card>
 )
+
+// Add Review Modal Component
+const AddReviewModal = ({ isOpen, onClose, onSave, formData, setFormData }) => {
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Review toevoegen</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={(e) => { e.preventDefault(); onSave(); }} className="space-y-4">
+            {/* Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Naam reviewer *
+              </label>
+              <input
+                type="text"
+                value={formData.reviewer_name}
+                onChange={(e) => setFormData({...formData, reviewer_name: e.target.value})}
+                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                required
+              />
+            </div>
+
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email reviewer
+              </label>
+              <input
+                type="email"
+                value={formData.reviewer_email}
+                onChange={(e) => setFormData({...formData, reviewer_email: e.target.value})}
+                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            </div>
+
+            {/* Rating */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Beoordeling *
+              </label>
+              <div className="flex space-x-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setFormData({...formData, rating: star})}
+                    className="text-2xl"
+                  >
+                    <Star 
+                      className={star <= formData.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'} 
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Title */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Titel *
+              </label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={(e) => setFormData({...formData, title: e.target.value})}
+                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                required
+              />
+            </div>
+
+            {/* Content */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Review inhoud *
+              </label>
+              <textarea
+                value={formData.content}
+                onChange={(e) => setFormData({...formData, content: e.target.value})}
+                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                rows={4}
+                required
+              />
+            </div>
+
+            {/* Buttons */}
+            <div className="flex space-x-3 pt-4">
+              <Button
+                type="button"
+                onClick={onClose}
+                variant="secondary"
+                className="flex-1"
+              >
+                Annuleren
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1"
+              >
+                Review toevoegen
+              </Button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default KapperszaakDetail
