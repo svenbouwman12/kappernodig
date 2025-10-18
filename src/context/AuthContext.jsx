@@ -99,11 +99,12 @@ export function AuthProvider({ children }) {
         try {
           await Promise.race([
             loadUserProfile(session.user.id, session.user.email),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Profile loading timeout')), 1000))
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Profile loading timeout')), 5000))
           ])
         } catch (err) {
           console.log('Profile loading timeout or error, using fallback')
-          setUserProfile({ role: 'client', naam: 'Nieuwe gebruiker', profielfoto: null })
+          // Don't set fallback profile immediately, let ProtectedRoute handle it
+          setUserProfile(null)
         }
       } else {
         setUser(null)
