@@ -59,13 +59,16 @@ export default function ClientLoginPage() {
             .from('profiles')
             .select('role, naam')
             .eq('id', data.user.id)
-            .single()
+            .maybeSingle()
 
           if (profileError) {
             console.error('Error loading profile:', profileError)
-            // If profiles table doesn't exist, assume client role
-            if (profileError.message.includes('relation "profiles" does not exist')) {
-              console.log('Profiles table does not exist - assuming client role')
+            // If profiles table doesn't exist or RLS blocks access, assume client role
+            if (profileError.message.includes('relation "profiles" does not exist') || 
+                profileError.code === 'PGRST301' || 
+                profileError.message.includes('permission denied') ||
+                profileError.code === '42501') {
+              console.log('Cannot access profiles table - assuming client role')
               navigate('/client/dashboard')
               return
             }
@@ -156,9 +159,14 @@ export default function ClientLoginPage() {
           if (profileError) {
             console.error('Error creating/updating profile:', profileError)
             
-            // If profiles table doesn't exist, show helpful message
-            if (profileError.message.includes('relation "profiles" does not exist')) {
-              setError('Database setup niet compleet. Neem contact op met de beheerder.')
+            // If profiles table doesn't exist or RLS blocks access, continue anyway
+            if (profileError.message.includes('relation "profiles" does not exist') ||
+                profileError.code === 'PGRST301' || 
+                profileError.message.includes('permission denied') ||
+                profileError.code === '42501') {
+              console.log('Cannot create profile due to database restrictions - continuing anyway')
+            } else {
+              setError('Er is een fout opgetreden bij het aanmaken van je profiel')
               return
             }
           } else {
