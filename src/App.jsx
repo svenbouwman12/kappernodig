@@ -72,7 +72,14 @@ function AppContent() {
               </ProtectedAdminRoute>
             } 
           />
-          <Route path="/admin/kapperszaken/:id" element={<KapperszaakDetailPage />} />
+          <Route 
+            path="/admin/kapperszaken/:id" 
+            element={
+              <ProtectedAdminRoute>
+                <KapperszaakDetailPage />
+              </ProtectedAdminRoute>
+            } 
+          />
           <Route
             path="/admin/*"
             element={
