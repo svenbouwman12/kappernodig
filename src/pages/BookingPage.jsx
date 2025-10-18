@@ -323,11 +323,6 @@ export default function BookingPage() {
             naam: clientName,
             email: clientEmail,
             telefoon: clientPhone || null,
-            adres: null, // Will be filled later if needed
-            stad: null,
-            postcode: null,
-            geboortedatum: null,
-            geslacht: null,
             notities: `Klant aangemaakt via anonieme booking op ${new Date().toLocaleDateString('nl-NL')}`
           })
           .select('id')
