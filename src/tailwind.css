@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body, #root { height: 100%; }
+}
+
+@layer components {
+  .container-max { @apply max-w-7xl mx-auto px-4; }
+  .card { @apply bg-white rounded-xl shadow-card p-4; }
+  .btn { @apply inline-flex items-center justify-center rounded-xl font-medium transition duration-200; }
+  .btn-primary { @apply bg-primary text-white hover:brightness-95 active:brightness-90; }
+  .btn-secondary { @apply bg-white border border-gray-200 text-secondary hover:bg-grayNeutral; }
+}
+
+@layer utilities {
+  .fade-in { animation: fade-in 300ms ease-out both; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+

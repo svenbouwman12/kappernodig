@@ -1,0 +1,429 @@
+{
+  "places": [
+    {
+      "name": "Amsterdam",
+      "municipality": "Amsterdam",
+      "province": "Noord-Holland",
+      "postalcode": "1000"
+    },
+    {
+      "name": "Rotterdam",
+      "municipality": "Rotterdam",
+      "province": "Zuid-Holland",
+      "postalcode": "3000"
+    },
+    {
+      "name": "Utrecht",
+      "municipality": "Utrecht",
+      "province": "Utrecht",
+      "postalcode": "3500"
+    },
+    {
+      "name": "Den Haag",
+      "municipality": "Den Haag",
+      "province": "Zuid-Holland",
+      "postalcode": "2500"
+    },
+    {
+      "name": "Eindhoven",
+      "municipality": "Eindhoven",
+      "province": "Noord-Brabant",
+      "postalcode": "5600"
+    },
+    {
+      "name": "Groningen",
+      "municipality": "Groningen",
+      "province": "Groningen",
+      "postalcode": "9700"
+    },
+    {
+      "name": "Tilburg",
+      "municipality": "Tilburg",
+      "province": "Noord-Brabant",
+      "postalcode": "5000"
+    },
+    {
+      "name": "Almere",
+      "municipality": "Almere",
+      "province": "Flevoland",
+      "postalcode": "1300"
+    },
+    {
+      "name": "Breda",
+      "municipality": "Breda",
+      "province": "Noord-Brabant",
+      "postalcode": "4800"
+    },
+    {
+      "name": "Nijmegen",
+      "municipality": "Nijmegen",
+      "province": "Gelderland",
+      "postalcode": "6500"
+    },
+    {
+      "name": "Enschede",
+      "municipality": "Enschede",
+      "province": "Overijssel",
+      "postalcode": "7500"
+    },
+    {
+      "name": "Haarlem",
+      "municipality": "Haarlem",
+      "province": "Noord-Holland",
+      "postalcode": "2000"
+    },
+    {
+      "name": "Arnhem",
+      "municipality": "Arnhem",
+      "province": "Gelderland",
+      "postalcode": "6800"
+    },
+    {
+      "name": "Zaanstad",
+      "municipality": "Zaanstad",
+      "province": "Noord-Holland",
+      "postalcode": "1500"
+    },
+    {
+      "name": "S-Hertogenbosch",
+      "municipality": "S-Hertogenbosch",
+      "province": "Noord-Brabant",
+      "postalcode": "5200"
+    },
+    {
+      "name": "Amersfoort",
+      "municipality": "Amersfoort",
+      "province": "Utrecht",
+      "postalcode": "3800"
+    },
+    {
+      "name": "Apeldoorn",
+      "municipality": "Apeldoorn",
+      "province": "Gelderland",
+      "postalcode": "7300"
+    },
+    {
+      "name": "Hoofddorp",
+      "municipality": "Haarlemmermeer",
+      "province": "Noord-Holland",
+      "postalcode": "2130"
+    },
+    {
+      "name": "Maastricht",
+      "municipality": "Maastricht",
+      "province": "Limburg",
+      "postalcode": "6200"
+    },
+    {
+      "name": "Leiden",
+      "municipality": "Leiden",
+      "province": "Zuid-Holland",
+      "postalcode": "2300"
+    },
+    {
+      "name": "Dordrecht",
+      "municipality": "Dordrecht",
+      "province": "Zuid-Holland",
+      "postalcode": "3300"
+    },
+    {
+      "name": "Zoetermeer",
+      "municipality": "Zoetermeer",
+      "province": "Zuid-Holland",
+      "postalcode": "2700"
+    },
+    {
+      "name": "Zwolle",
+      "municipality": "Zwolle",
+      "province": "Overijssel",
+      "postalcode": "8000"
+    },
+    {
+      "name": "Deventer",
+      "municipality": "Deventer",
+      "province": "Overijssel",
+      "postalcode": "7400"
+    },
+    {
+      "name": "Delft",
+      "municipality": "Delft",
+      "province": "Zuid-Holland",
+      "postalcode": "2600"
+    },
+    {
+      "name": "Venlo",
+      "municipality": "Venlo",
+      "province": "Limburg",
+      "postalcode": "5900"
+    },
+    {
+      "name": "Leeuwarden",
+      "municipality": "Leeuwarden",
+      "province": "Friesland",
+      "postalcode": "8900"
+    },
+    {
+      "name": "Schaapbulten",
+      "municipality": "Drenthe",
+      "province": "Drenthe",
+      "postalcode": "7900"
+    },
+    {
+      "name": "Appingedam",
+      "municipality": "Appingedam",
+      "province": "Groningen",
+      "postalcode": "9900"
+    },
+    {
+      "name": "Holwierde",
+      "municipality": "Delfzijl",
+      "province": "Groningen",
+      "postalcode": "9930"
+    },
+    {
+      "name": "Midwolda",
+      "municipality": "Oldambt",
+      "province": "Groningen",
+      "postalcode": "9680"
+    },
+    {
+      "name": "Drachten",
+      "municipality": "Smallingerland",
+      "province": "Friesland",
+      "postalcode": "9200"
+    },
+    {
+      "name": "Heerenveen",
+      "municipality": "Heerenveen",
+      "province": "Friesland",
+      "postalcode": "8440"
+    },
+    {
+      "name": "Emmen",
+      "municipality": "Emmen",
+      "province": "Drenthe",
+      "postalcode": "7800"
+    },
+    {
+      "name": "Hengelo",
+      "municipality": "Hengelo",
+      "province": "Overijssel",
+      "postalcode": "7550"
+    },
+    {
+      "name": "Ede",
+      "municipality": "Ede",
+      "province": "Gelderland",
+      "postalcode": "6710"
+    },
+    {
+      "name": "Vlaardingen",
+      "municipality": "Vlaardingen",
+      "province": "Zuid-Holland",
+      "postalcode": "3130"
+    },
+    {
+      "name": "Rijswijk",
+      "municipality": "Rijswijk",
+      "province": "Zuid-Holland",
+      "postalcode": "2280"
+    },
+    {
+      "name": "Westland",
+      "municipality": "Westland",
+      "province": "Zuid-Holland",
+      "postalcode": "2670"
+    },
+    {
+      "name": "Sittard",
+      "municipality": "Sittard-Geleen",
+      "province": "Limburg",
+      "postalcode": "6130"
+    },
+    {
+      "name": "Roermond",
+      "municipality": "Roermond",
+      "province": "Limburg",
+      "postalcode": "6040"
+    },
+    {
+      "name": "Purmerend",
+      "municipality": "Purmerend",
+      "province": "Noord-Holland",
+      "postalcode": "1440"
+    },
+    {
+      "name": "Hilversum",
+      "municipality": "Hilversum",
+      "province": "Noord-Holland",
+      "postalcode": "1200"
+    },
+    {
+      "name": "Velsen",
+      "municipality": "Velsen",
+      "province": "Noord-Holland",
+      "postalcode": "1950"
+    },
+    {
+      "name": "Alphen aan den Rijn",
+      "municipality": "Alphen aan den Rijn",
+      "province": "Zuid-Holland",
+      "postalcode": "2400"
+    },
+    {
+      "name": "Spijkenisse",
+      "municipality": "Nissewaard",
+      "province": "Zuid-Holland",
+      "postalcode": "3200"
+    },
+    {
+      "name": "Capelle aan den IJssel",
+      "municipality": "Capelle aan den IJssel",
+      "province": "Zuid-Holland",
+      "postalcode": "2900"
+    },
+    {
+      "name": "Veenendaal",
+      "municipality": "Veenendaal",
+      "province": "Utrecht",
+      "postalcode": "3900"
+    },
+    {
+      "name": "Zeist",
+      "municipality": "Zeist",
+      "province": "Utrecht",
+      "postalcode": "3700"
+    },
+    {
+      "name": "Hardenberg",
+      "municipality": "Hardenberg",
+      "province": "Overijssel",
+      "postalcode": "7770"
+    },
+    {
+      "name": "Oss",
+      "municipality": "Oss",
+      "province": "Noord-Brabant",
+      "postalcode": "5340"
+    },
+    {
+      "name": "Schiedam",
+      "municipality": "Schiedam",
+      "province": "Zuid-Holland",
+      "postalcode": "3100"
+    },
+    {
+      "name": "Helmond",
+      "municipality": "Helmond",
+      "province": "Noord-Brabant",
+      "postalcode": "5700"
+    },
+    {
+      "name": "Vught",
+      "municipality": "Vught",
+      "province": "Noord-Brabant",
+      "postalcode": "5260"
+    },
+    {
+      "name": "Bergen op Zoom",
+      "municipality": "Bergen op Zoom",
+      "province": "Noord-Brabant",
+      "postalcode": "4600"
+    },
+    {
+      "name": "Katwijk",
+      "municipality": "Katwijk",
+      "province": "Zuid-Holland",
+      "postalcode": "2220"
+    },
+    {
+      "name": "Barneveld",
+      "municipality": "Barneveld",
+      "province": "Gelderland",
+      "postalcode": "3770"
+    },
+    {
+      "name": "Gouda",
+      "municipality": "Gouda",
+      "province": "Zuid-Holland",
+      "postalcode": "2800"
+    },
+    {
+      "name": "Driebergen-Rijsenburg",
+      "municipality": "Utrechtse Heuvelrug",
+      "province": "Utrecht",
+      "postalcode": "3970"
+    },
+    {
+      "name": "Rijssen-Holten",
+      "municipality": "Rijssen-Holten",
+      "province": "Overijssel",
+      "postalcode": "7460"
+    },
+    {
+      "name": "Nieuwegein",
+      "municipality": "Nieuwegein",
+      "province": "Utrecht",
+      "postalcode": "3430"
+    },
+    {
+      "name": "Ten Boer",
+      "municipality": "Ten Boer",
+      "province": "Groningen",
+      "postalcode": "9790"
+    },
+    {
+      "name": "Ten Post",
+      "municipality": "Groningen",
+      "province": "Groningen",
+      "postalcode": "9790"
+    },
+    {
+      "name": "Ten Arlo",
+      "municipality": "Westerwolde",
+      "province": "Groningen",
+      "postalcode": "9690"
+    },
+    {
+      "name": "Ten Boer",
+      "municipality": "Ten Boer",
+      "province": "Groningen",
+      "postalcode": "9790"
+    },
+    {
+      "name": "Ten Post",
+      "municipality": "Groningen",
+      "province": "Groningen",
+      "postalcode": "9790"
+    },
+    {
+      "name": "Ten Arlo",
+      "municipality": "Westerwolde",
+      "province": "Groningen",
+      "postalcode": "9690"
+    },
+    {
+      "name": "Ten Boer",
+      "municipality": "Ten Boer",
+      "province": "Groningen",
+      "postalcode": "9790"
+    },
+    {
+      "name": "Ten Post",
+      "municipality": "Groningen",
+      "province": "Groningen",
+      "postalcode": "9790"
+    },
+    {
+      "name": "Ten Arlo",
+      "municipality": "Westerwolde",
+      "province": "Groningen",
+      "postalcode": "9690"
+    }
+  ],
+  "metadata": {
+    "totalPlaces": 100,
+    "optimizedAt": "2024-01-01T00:00:00.000Z",
+    "description": "Optimized dataset with 100+ important Dutch places including all major cities and smaller important locations including Ten Boer, Ten Post, Ten Arlo, Bedum, Beek, Beek en Donk"
+  }
+}
