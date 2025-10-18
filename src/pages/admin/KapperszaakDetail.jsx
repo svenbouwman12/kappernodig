@@ -93,19 +93,27 @@ const KapperszaakDetail = () => {
 
       // Load owner profile
       if (kapperszaakData.owner_id) {
-        const { data: ownerData, error: ownerError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', kapperszaakData.owner_id)
-          .maybeSingle()
+        console.log('Loading owner for owner_id:', kapperszaakData.owner_id)
+        
+        try {
+          const { data: ownerData, error: ownerError } = await supabase
+            .from('profiles')
+            .select('id, naam, email, role, profielfoto, created_at')
+            .eq('id', kapperszaakData.owner_id)
+            .maybeSingle()
 
-        if (ownerError) {
-          console.error('Error loading owner:', ownerError)
-          setOwner(null)
-        } else if (ownerData) {
-          setOwner(ownerData)
-        } else {
-          console.log('No owner found for owner_id:', kapperszaakData.owner_id)
+          if (ownerError) {
+            console.error('Error loading owner:', ownerError)
+            setOwner(null)
+          } else if (ownerData) {
+            console.log('Owner loaded successfully:', ownerData)
+            setOwner(ownerData)
+          } else {
+            console.log('No owner found for owner_id:', kapperszaakData.owner_id)
+            setOwner(null)
+          }
+        } catch (error) {
+          console.error('Exception loading owner:', error)
           setOwner(null)
         }
       } else {

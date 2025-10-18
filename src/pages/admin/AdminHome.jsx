@@ -73,14 +73,21 @@ const AdminHome = () => {
           // Load owner profile
           let ownerData = null
           if (kapperszaak.owner_id) {
+            console.log('Loading owner for kapperszaak:', kapperszaak.naam, 'owner_id:', kapperszaak.owner_id)
+            
             const { data: owner, error: ownerError } = await supabase
               .from('profiles')
-              .select('id, naam, email')
+              .select('id, naam, email, role')
               .eq('id', kapperszaak.owner_id)
               .maybeSingle()
             
-            if (!ownerError && owner) {
+            if (ownerError) {
+              console.error('Error loading owner for kapperszaak:', kapperszaak.naam, ownerError)
+            } else if (owner) {
+              console.log('Owner loaded successfully for kapperszaak:', kapperszaak.naam, owner)
               ownerData = owner
+            } else {
+              console.log('No owner found for kapperszaak:', kapperszaak.naam, 'owner_id:', kapperszaak.owner_id)
             }
           }
 
