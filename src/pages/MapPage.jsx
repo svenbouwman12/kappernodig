@@ -494,23 +494,6 @@ export default function MapPage() {
                 </button>
               </div>
             )}
-            <div className="text-sm text-secondary/70 bg-gray-100 px-3 py-1 rounded-full">
-              Zoom: {zoom.toFixed(1)} | 
-              {             zoom < 7 ? ' Heel Nederland' : 
-               zoom < 8 ? ' Grote regios' : 
-               zoom < 9 ? ' Meerdere clusters' : 
-               zoom < 10 ? ' Regio overzicht' : 
-               zoom < 11 ? ' Stad niveau' : 
-               zoom < 12 ? ' Wijk niveau' : 
-               zoom < 13 ? ' Buurt niveau' : 
-               zoom < 14 ? ' Kleine clusters' : 
-               zoom < 15 ? ' Zeer kleine clusters' : 
-               zoom < 16 ? ' Mini clusters' : 
-               zoom < 17 ? ' Micro clusters' : 
-               zoom < 18 ? ' Nano clusters' : 
-               zoom < 19 ? ' Pin markers' : 
-               zoom < 20 ? ' Labels' : ' Auto-popup'}
-            </div>
           </div>
         </div>
         

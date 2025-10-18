@@ -38,13 +38,22 @@ export default function ClientDashboardPage() {
               <div className="h-8 w-8 bg-primary/10 rounded-lg flex items-center justify-center">
                 <User className="h-5 w-5 text-primary" />
               </div>
-              <div>
-                <h1 className="text-lg font-semibold text-gray-900">Mijn Dashboard</h1>
-                <p className="text-sm text-gray-500">
-                  <Greeting name={userProfile?.naam} />
-                </p>
-              </div>
+            <div>
+              <h1 className="text-lg font-semibold text-gray-900">Mijn Dashboard</h1>
+              <p className="text-sm text-gray-500">
+                <Greeting name={userProfile?.naam} />
+              </p>
             </div>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setActiveTab('profile')}
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <User className="h-4 w-4" />
+              <span>Profiel</span>
+            </button>
             
             <button
               onClick={handleLogout}
@@ -53,6 +62,7 @@ export default function ClientDashboardPage() {
               <LogOut className="h-4 w-4" />
               <span>Uitloggen</span>
             </button>
+          </div>
           </div>
         </div>
       </div>

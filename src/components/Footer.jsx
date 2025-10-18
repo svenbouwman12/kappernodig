@@ -6,7 +6,7 @@ export default function Footer() {
   return (
     <footer className="mt-12 border-t border-gray-100 bg-grayNeutral/60">
       <div className="container-max py-8">
-        <div className="grid md:grid-cols-4 gap-8">
+        <div className="grid md:grid-cols-3 gap-8">
           {/* Company Info */}
           <div>
             <h3 className="font-semibold text-secondary mb-3">Kapper Nodig</h3>
@@ -24,14 +24,6 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Customer Section */}
-          <div>
-            <h3 className="font-semibold text-secondary mb-3">Klant Login</h3>
-            <div className="space-y-2">
-              <Link to="/client/login" className="block text-sm text-secondary/70 hover:text-primary transition-colors">Klant Inloggen</Link>
-              <Link to="/client/register" className="block text-sm text-secondary/70 hover:text-primary transition-colors">Klant Registreren</Link>
-            </div>
-          </div>
 
           {/* Kapper Section */}
           <div>

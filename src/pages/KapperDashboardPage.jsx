@@ -26,6 +26,7 @@ import {
   BarChart3,
   UserCheck,
   Heart,
+  User,
   LogOut
 } from 'lucide-react'
 
@@ -305,6 +306,14 @@ export default function KapperDashboardPage() {
                 <Plus size={20} />
                 <span>Nieuwe Kapperzaak Toevoegen</span>
               </Button>
+              
+              <button
+                onClick={() => {/* TODO: Add profile functionality */}}
+                className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <User size={20} />
+                <span>Profiel</span>
+              </button>
               
               <button
                 onClick={handleLogout}

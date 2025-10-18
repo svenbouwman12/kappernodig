@@ -64,7 +64,7 @@ export default function ClientProfile() {
           stad: formData.stad,
           postcode: formData.postcode,
           geboortedatum: formData.geboortedatum || null,
-          geslacht: formData.geslacht,
+          geslacht: formData.geslacht || null,
           notities: formData.notities
         })
         .eq('id', user?.id)
