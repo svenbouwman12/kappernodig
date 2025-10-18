@@ -689,24 +689,36 @@ export default function BookingPage() {
       {/* Confirmation Popup */}
       {showConfirmation && bookedAppointment && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full">
             <div className="p-6">
+              {/* Close Button */}
+              <div className="flex justify-end mb-2">
+                <button
+                  onClick={() => {
+                    setShowConfirmation(false)
+                    setBookedAppointment(null)
+                  }}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+
               {/* Header */}
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="w-8 h-8 text-green-600" />
+              <div className="text-center mb-4">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <CheckCircle className="w-6 h-6 text-green-600" />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                <h2 className="text-xl font-bold text-gray-900 mb-1">
                   Afspraak Bevestigd! 🎉
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-sm text-gray-600">
                   Je afspraak is succesvol geboekt
                 </p>
               </div>
 
               {/* Appointment Details */}
-              <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                <h3 className="font-semibold text-gray-900 mb-3">Afspraakdetails</h3>
+              <div className="bg-gray-50 rounded-lg p-3 mb-4">
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Dienst:</span>
@@ -715,97 +727,43 @@ export default function BookingPage() {
                   <div className="flex justify-between">
                     <span className="text-gray-600">Datum:</span>
                     <span className="font-medium">{new Date(bookedAppointment.date).toLocaleDateString('nl-NL', { 
-                      weekday: 'long', 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
+                      weekday: 'short', 
+                      day: 'numeric',
+                      month: 'short'
                     })}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Tijd:</span>
-                    <span className="font-medium">{bookedAppointment.time} ({bookedAppointment.duration} min)</span>
+                    <span className="font-medium">{bookedAppointment.time}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Kapper:</span>
                     <span className="font-medium">{bookedAppointment.barberName}</span>
                   </div>
-                  {bookedAppointment.barberAddress && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Adres:</span>
-                      <span className="font-medium text-right">{bookedAppointment.barberAddress}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Naam:</span>
-                    <span className="font-medium">{bookedAppointment.clientName}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">E-mail:</span>
-                    <span className="font-medium">{bookedAppointment.clientEmail}</span>
-                  </div>
-                  {bookedAppointment.notes && (
-                    <div className="pt-2 border-t">
-                      <span className="text-gray-600 block mb-1">Opmerkingen:</span>
-                      <span className="font-medium">{bookedAppointment.notes}</span>
-                    </div>
-                  )}
                 </div>
               </div>
 
               {/* Important Notes */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <div className="flex items-start">
-                  <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
-                  <div className="text-sm text-blue-800">
-                    <p className="font-medium mb-1">Belangrijke informatie:</p>
-                    <ul className="space-y-1 text-xs">
-                      <li>• Je ontvangt een bevestigingsmail op {bookedAppointment.clientEmail}</li>
-                      <li>• Kom 5 minuten van tevoren</li>
-                      <li>• Annuleren kan tot 24 uur van tevoren</li>
-                    </ul>
-                  </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                <div className="text-xs text-blue-800">
+                  <p className="font-medium mb-1">Belangrijke informatie:</p>
+                  <p>• Je ontvangt een bevestigingsmail</p>
+                  <p>• Kom 5 minuten van tevoren</p>
+                  <p>• Annuleren kan tot 24 uur van tevoren</p>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex space-x-3">
-                <Button
-                  onClick={() => {
-                    setShowConfirmation(false)
-                    setBookedAppointment(null)
-                    if (user && userProfile?.role === 'client') {
-                      navigate('/client/dashboard')
-                    } else {
-                      navigate('/')
-                    }
-                  }}
-                  className="flex-1"
-                >
-                  Naar Dashboard
-                </Button>
-                <Button
-                  onClick={() => {
-                    setShowConfirmation(false)
-                    setBookedAppointment(null)
-                    setBooking({
-                      serviceId: '',
-                      date: '',
-                      time: '',
-                      notes: '',
-                      clientFirstName: '',
-                      clientLastName: '',
-                      clientEmail: '',
-                      clientPhone: ''
-                    })
-                    setSelectedDate(null)
-                    setAvailableSlots([])
-                  }}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  Nieuwe Afspraak
-                </Button>
-              </div>
+              {/* Close Button */}
+              <Button
+                onClick={() => {
+                  setShowConfirmation(false)
+                  setBookedAppointment(null)
+                }}
+                className="w-full"
+                variant="secondary"
+              >
+                Sluiten
+              </Button>
             </div>
           </div>
         </div>
