@@ -17,25 +17,35 @@ const AdminDienstenPage = () => {
   const loadDiensten = async () => {
     setLoading(true)
     try {
-      // Load diensten with related data
-      const { data, error } = await supabase
+      // Load diensten first
+      const { data: servicesData, error: servicesError } = await supabase
         .from('services')
-        .select(`
-          *,
-          barbers (
-            id,
-            name,
-            location
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
 
-      if (error) {
-        console.error('Error loading diensten:', error)
+      if (servicesError) {
+        console.error('Error loading diensten:', servicesError)
         return
       }
 
-      setDiensten(data || [])
+      // Load related data for each service
+      const servicesWithData = await Promise.all(
+        (servicesData || []).map(async (service) => {
+          // Load barber info
+          const { data: barberData } = await supabase
+            .from('barbers')
+            .select('id, name, location')
+            .eq('id', service.barber_id)
+            .single()
+
+          return {
+            ...service,
+            barbers: barberData
+          }
+        })
+      )
+
+      setDiensten(servicesWithData)
     } catch (err) {
       console.error('Error loading diensten:', err)
     } finally {

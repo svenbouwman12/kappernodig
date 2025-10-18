@@ -19,36 +19,49 @@ const AdminKapperszakenPage = () => {
   const loadKapperszaken = async () => {
     setLoading(true)
     try {
-      // Load kapperszaken with related data
-      const { data, error } = await supabase
+      // Load kapperszaken first
+      const { data: barbersData, error: barbersError } = await supabase
         .from('barbers')
-        .select(`
-          *,
-          profiles (
-            id,
-            naam,
-            email
-          ),
-          services (
-            id,
-            name,
-            price
-          ),
-          reviews (
-            id,
-            rating,
-            is_published,
-            is_approved
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
 
-      if (error) {
-        console.error('Error loading kapperszaken:', error)
+      if (barbersError) {
+        console.error('Error loading kapperszaken:', barbersError)
         return
       }
 
-      setKapperszaken(data || [])
+      // Load related data for each kapperszaak
+      const barbersWithData = await Promise.all(
+        (barbersData || []).map(async (barber) => {
+          // Load owner profile
+          const { data: ownerData } = await supabase
+            .from('profiles')
+            .select('id, naam, email')
+            .eq('id', barber.owner_id)
+            .single()
+
+          // Load services
+          const { data: servicesData } = await supabase
+            .from('services')
+            .select('id, name, price')
+            .eq('barber_id', barber.id)
+
+          // Load reviews
+          const { data: reviewsData } = await supabase
+            .from('reviews')
+            .select('id, rating, is_published, is_approved')
+            .eq('salon_id', barber.id)
+
+          return {
+            ...barber,
+            profiles: ownerData,
+            services: servicesData || [],
+            reviews: reviewsData || []
+          }
+        })
+      )
+
+      setKapperszaken(barbersWithData)
     } catch (err) {
       console.error('Error loading kapperszaken:', err)
     } finally {

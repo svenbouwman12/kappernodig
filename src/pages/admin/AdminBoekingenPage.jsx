@@ -20,19 +20,7 @@ const AdminBoekingenPage = () => {
     try {
       let query = supabase
         .from('appointments')
-        .select(`
-          *,
-          barbers (
-            id,
-            name,
-            location
-          ),
-          clients (
-            id,
-            naam,
-            email
-          )
-        `)
+        .select('*')
         .order('appointment_date', { ascending: true })
 
       // Apply filter
@@ -45,14 +33,39 @@ const AdminBoekingenPage = () => {
         query = query.lt('appointment_date', today)
       }
 
-      const { data, error } = await query
+      const { data: appointmentsData, error: appointmentsError } = await query
 
-      if (error) {
-        console.error('Error loading boekingen:', error)
+      if (appointmentsError) {
+        console.error('Error loading boekingen:', appointmentsError)
         return
       }
 
-      setBoekingen(data || [])
+      // Load related data for each appointment
+      const appointmentsWithData = await Promise.all(
+        (appointmentsData || []).map(async (appointment) => {
+          // Load barber info
+          const { data: barberData } = await supabase
+            .from('barbers')
+            .select('id, name, location')
+            .eq('id', appointment.barber_id)
+            .single()
+
+          // Load client info
+          const { data: clientData } = await supabase
+            .from('profiles')
+            .select('id, naam, email')
+            .eq('id', appointment.client_id)
+            .single()
+
+          return {
+            ...appointment,
+            barbers: barberData,
+            clients: clientData
+          }
+        })
+      )
+
+      setBoekingen(appointmentsWithData)
     } catch (err) {
       console.error('Error loading boekingen:', err)
     } finally {

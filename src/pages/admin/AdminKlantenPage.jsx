@@ -17,36 +17,49 @@ const AdminKlantenPage = () => {
   const loadKlanten = async () => {
     setLoading(true)
     try {
-      // Load klanten with their related data
-      const { data, error } = await supabase
+      // Load klanten first
+      const { data: klantenData, error: klantenError } = await supabase
         .from('profiles')
-        .select(`
-          *,
-          appointments (
-            id,
-            appointment_date,
-            appointment_time,
-            barbers (
-              name
-            )
-          ),
-          reviews (
-            id,
-            rating,
-            title,
-            is_published,
-            is_approved
-          )
-        `)
+        .select('*')
         .eq('role', 'client')
         .order('created_at', { ascending: false })
 
-      if (error) {
-        console.error('Error loading klanten:', error)
+      if (klantenError) {
+        console.error('Error loading klanten:', klantenError)
         return
       }
 
-      setKlanten(data || [])
+      // Load related data for each klant
+      const klantenWithData = await Promise.all(
+        (klantenData || []).map(async (klant) => {
+          // Load appointments
+          const { data: appointmentsData } = await supabase
+            .from('appointments')
+            .select(`
+              id,
+              appointment_date,
+              appointment_time,
+              barbers (
+                name
+              )
+            `)
+            .eq('client_id', klant.id)
+
+          // Load reviews
+          const { data: reviewsData } = await supabase
+            .from('reviews')
+            .select('id, rating, title, is_published, is_approved')
+            .eq('user_id', klant.id)
+
+          return {
+            ...klant,
+            appointments: appointmentsData || [],
+            reviews: reviewsData || []
+          }
+        })
+      )
+
+      setKlanten(klantenWithData)
     } catch (err) {
       console.error('Error loading klanten:', err)
     } finally {

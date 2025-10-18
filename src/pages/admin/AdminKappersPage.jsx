@@ -19,27 +19,34 @@ const AdminKappersPage = () => {
   const loadKappers = async () => {
     setLoading(true)
     try {
-      // Load kappers with their related data
-      const { data, error } = await supabase
+      // Load kappers first
+      const { data: kappersData, error: kappersError } = await supabase
         .from('profiles')
-        .select(`
-          *,
-          barbers (
-            id,
-            name,
-            location,
-            rating
-          )
-        `)
+        .select('*')
         .eq('role', 'kapper')
         .order('created_at', { ascending: false })
 
-      if (error) {
-        console.error('Error loading kappers:', error)
+      if (kappersError) {
+        console.error('Error loading kappers:', kappersError)
         return
       }
 
-      setKappers(data || [])
+      // Load barbers for each kapper
+      const kappersWithBarbers = await Promise.all(
+        (kappersData || []).map(async (kapper) => {
+          const { data: barbersData } = await supabase
+            .from('barbers')
+            .select('id, name, location, rating')
+            .eq('owner_id', kapper.id)
+          
+          return {
+            ...kapper,
+            barbers: barbersData || []
+          }
+        })
+      )
+
+      setKappers(kappersWithBarbers)
     } catch (err) {
       console.error('Error loading kappers:', err)
     } finally {
