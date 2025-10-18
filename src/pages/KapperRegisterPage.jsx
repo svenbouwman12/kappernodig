@@ -160,7 +160,7 @@ export default function KapperRegisterPage() {
             Kapper Account Aanmaken
           </h1>
           <p className="text-gray-600 mt-2">
-            Maak een kapper account aan om je salon te beheren
+            Maak een kapper account aan om een kapperszaak te maken
           </p>
         </div>
 

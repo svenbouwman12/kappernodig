@@ -3,6 +3,10 @@ import { Link } from 'react-router-dom'
 
 export default function Footer() {
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   return (
     <footer className="mt-12 border-t border-gray-100 bg-grayNeutral/60">
       <div className="container-max py-8">
@@ -29,8 +33,20 @@ export default function Footer() {
           <div>
             <h3 className="font-semibold text-secondary mb-3">Kapper Login</h3>
             <div className="space-y-2">
-              <Link to="/kapper/login" className="block text-sm text-secondary/70 hover:text-primary transition-colors">Kapper Inloggen</Link>
-              <Link to="/kapper/register" className="block text-sm text-secondary/70 hover:text-primary transition-colors">Kapper Registreren</Link>
+              <Link 
+                to="/kapper/login" 
+                onClick={scrollToTop}
+                className="block text-sm text-secondary/70 hover:text-primary transition-colors"
+              >
+                Kapper Inloggen
+              </Link>
+              <Link 
+                to="/kapper/register" 
+                onClick={scrollToTop}
+                className="block text-sm text-secondary/70 hover:text-primary transition-colors"
+              >
+                Kapper Registreren
+              </Link>
             </div>
           </div>
         </div>
