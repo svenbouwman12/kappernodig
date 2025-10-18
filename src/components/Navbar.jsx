@@ -71,7 +71,7 @@ export default function Navbar() {
                 </>
               )}
               {userProfile?.role === 'admin' && (
-                <Link className="btn btn-secondary px-3 py-2" to="/admin">Admin Dashboard</Link>
+                <Link className="btn btn-secondary px-3 py-2" to="/dashboard/admin">Admin Dashboard</Link>
               )}
             </>
           ) : (

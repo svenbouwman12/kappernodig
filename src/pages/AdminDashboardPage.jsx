@@ -146,7 +146,7 @@ export default function AdminDashboardPage() {
 
   const handleEdit = (kapperszaak) => {
     // Navigate to detail page for editing
-    window.location.href = `/admin/kapperszaken/${kapperszaak.id}`
+    window.location.href = `/dashboard/admin/kapperszaken/${kapperszaak.id}`
   }
 
   const handleDelete = async (kapperszaak) => {

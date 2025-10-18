@@ -438,7 +438,7 @@ const KapperszaakDetailPage = () => {
         <h3 className="text-lg font-medium text-gray-900 mb-2">Kapperszaak niet gevonden</h3>
         <p className="text-gray-500 mb-4">De opgevraagde kapperszaak bestaat niet of is verwijderd.</p>
         <button
-          onClick={() => navigate('/admin')}
+          onClick={() => navigate('/dashboard/admin')}
           className="flex items-center mx-auto px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -454,7 +454,7 @@ const KapperszaakDetailPage = () => {
       <div className="w-64 bg-white border-r border-gray-200 p-6 flex-shrink-0">
         <div className="mb-6">
           <button
-            onClick={() => navigate('/admin')}
+            onClick={() => navigate('/dashboard/admin')}
             className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />

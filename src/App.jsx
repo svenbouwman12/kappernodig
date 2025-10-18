@@ -10,14 +10,7 @@ import RegisterPage from './pages/RegisterPage.jsx'
 import MapPage from './pages/MapPage.jsx'
 import AdminDashboardPage from './pages/AdminDashboardPage.jsx'
 import AdminLoginPage from './pages/admin/AdminLoginPage.jsx'
-import AdminKappersPage from './pages/admin/AdminKappersPage.jsx'
-import AdminKlantenPage from './pages/admin/AdminKlantenPage.jsx'
-import AdminKapperszakenPage from './pages/admin/AdminKapperszakenPage.jsx'
-import AdminBoekingenPage from './pages/admin/AdminBoekingenPage.jsx'
-import AdminDienstenPage from './pages/admin/AdminDienstenPage.jsx'
-import AdminReviewsPage from './pages/admin/AdminReviewsPage.jsx'
 import KapperszaakDetailPage from './pages/admin/KapperszaakDetailPage.jsx'
-import AdminLayout from './components/admin/AdminLayout.jsx'
 import ProtectedAdminRoute from './components/admin/ProtectedAdminRoute.jsx'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
 
@@ -38,7 +31,7 @@ function AppContent() {
       const currentPath = window.location.pathname
       if (currentPath === '/login' || currentPath === '/register') {
         if (userProfile.role === 'admin') {
-          navigate('/admin', { replace: true })
+          navigate('/dashboard/admin', { replace: true })
         } else if (userProfile.role === 'barber') {
           navigate('/dashboard', { replace: true })
         }
@@ -65,7 +58,7 @@ function AppContent() {
           {/* Admin Routes */}
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route 
-            path="/admin" 
+            path="/dashboard/admin" 
             element={
               <ProtectedAdminRoute>
                 <AdminDashboardPage />
@@ -73,30 +66,12 @@ function AppContent() {
             } 
           />
           <Route 
-            path="/admin/kapperszaken/:id" 
+            path="/dashboard/admin/kapperszaken/:id" 
             element={
               <ProtectedAdminRoute>
                 <KapperszaakDetailPage />
               </ProtectedAdminRoute>
             } 
-          />
-          <Route
-            path="/admin/*"
-            element={
-              <ProtectedAdminRoute>
-                <AdminLayout>
-                  <Routes>
-                    <Route path="/kappers" element={<AdminKappersPage />} />
-                    <Route path="/klanten" element={<AdminKlantenPage />} />
-                    <Route path="/kapperszaken" element={<AdminKapperszakenPage />} />
-                    <Route path="/boekingen" element={<AdminBoekingenPage />} />
-                    <Route path="/diensten" element={<AdminDienstenPage />} />
-                    <Route path="/reviews" element={<AdminReviewsPage />} />
-                    <Route path="/instellingen" element={<div>Instellingen - TODO: Implement</div>} />
-                  </Routes>
-                </AdminLayout>
-              </ProtectedAdminRoute>
-            }
           />
           <Route path="/login" element={<div className="container-max"><LoginPage /></div>} />
           <Route path="/register" element={<div className="container-max"><RegisterPage /></div>} />
